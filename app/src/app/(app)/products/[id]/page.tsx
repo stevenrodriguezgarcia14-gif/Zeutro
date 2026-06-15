@@ -101,6 +101,12 @@ export default async function ProductCostingPage({
   const currentMargin = salePrice > 0 ? Math.round(((salePrice - unitCost) / salePrice) * 100) : null;
   const sellingBelowCost = salePrice > 0 && salePrice < unitCost;
 
+  // Recuperación de inversión por tanda
+  const incomeIfAll = Math.round(outputQty * salePrice);
+  const cleanProfit = incomeIfAll - totalCost;
+  const unitsToRecover = salePrice > 0 ? Math.ceil(totalCost / salePrice) : 0;
+  const recovers = unitsToRecover > 0 && unitsToRecover <= outputQty;
+
   const fieldCls =
     "mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-slate-900 outline-none focus:border-slate-900";
 
@@ -322,6 +328,53 @@ export default async function ProductCostingPage({
               </>
             )}
           </div>
+
+          {/* Recuperación de inversión por tanda */}
+          {totalCost > 0 && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-6">
+              <h2 className="font-semibold text-slate-900">Inversión y recuperación (por tanda)</h2>
+              <p className="text-sm text-slate-500">
+                Cuánto inviertes para hacer una tanda y cuándo lo recuperas vendiendo.
+              </p>
+              {salePrice === 0 ? (
+                <p className="mt-3 text-sm text-slate-600">Fija un precio de venta (arriba) para ver esto.</p>
+              ) : (
+                <div className="mt-4 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Inversión de la tanda</span>
+                    <b className="text-slate-900">{formatMoney(totalCost, currency)}</b>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Produce</span>
+                    <b className="text-slate-900">{outputQty} unidad(es)</b>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Precio por unidad</span>
+                    <b className="text-slate-900">{formatMoney(salePrice, currency)}</b>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Si vendes toda la tanda recibes</span>
+                    <b className="text-slate-900">{formatMoney(incomeIfAll, currency)}</b>
+                  </div>
+                  <div className="mt-2 space-y-1 border-t border-slate-200 pt-3">
+                    {recovers ? (
+                      <p className="text-slate-700">
+                        ♻️ Recuperas tu inversión al vender <b>{unitsToRecover}</b> de {outputQty}. Con eso vuelves a comprar
+                        ingredientes; las {outputQty - unitsToRecover} restantes son ganancia.
+                      </p>
+                    ) : (
+                      <p className="text-red-700">
+                        ⚠️ Vendiendo toda la tanda no recuperas la inversión: el precio es muy bajo o el costo muy alto. Sube el precio o baja costos.
+                      </p>
+                    )}
+                    <p className={cleanProfit >= 0 ? "font-semibold text-green-700" : "font-semibold text-red-700"}>
+                      Ganancia limpia si vendes todo: {formatMoney(cleanProfit, currency)}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </section>
       </div>
     </div>

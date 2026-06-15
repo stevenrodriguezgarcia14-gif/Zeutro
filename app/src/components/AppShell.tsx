@@ -21,6 +21,7 @@ const groups: { label: string; items: { href: string; name: string }[] }[] = [
       { href: "/collections", name: "Cobranzas" },
       { href: "/expenses", name: "Gastos" },
       { href: "/accounts", name: "Cuentas" },
+      { href: "/profitability", name: "Rentabilidad" },
     ],
   },
   { label: "Cuenta", items: [{ href: "/settings", name: "Configuración" }] },
