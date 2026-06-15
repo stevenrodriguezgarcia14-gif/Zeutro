@@ -25,7 +25,12 @@ export async function register(formData: FormData) {
   const password = String(formData.get("password") ?? "");
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const origin = (await headers()).get("origin") ?? "https://zentro-ten-phi.vercel.app";
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo: `${origin}/auth/callback?next=/onboarding` },
+  });
 
   if (error) {
     redirect(`/register?error=${encodeURIComponent(error.message)}`);
