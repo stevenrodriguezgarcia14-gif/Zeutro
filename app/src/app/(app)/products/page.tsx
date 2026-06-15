@@ -54,7 +54,11 @@ export default async function ProductsPage() {
             <tbody className="divide-y divide-slate-100">
               {rows.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-900">{p.name}</td>
+                  <td className="px-4 py-3 font-medium text-slate-900">
+                    <Link href={`/products/${p.id}`} className="hover:underline">
+                      {p.name}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-slate-600">
                     {p.type === "product" ? "Producto" : p.type === "bundle" ? "Paquete" : "Servicio"}
                   </td>
