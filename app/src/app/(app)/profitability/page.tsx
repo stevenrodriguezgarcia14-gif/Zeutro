@@ -19,13 +19,44 @@ export default async function ProfitabilityPage() {
   const supabase = await createClient();
   const monthStart = new Date().toISOString().slice(0, 7) + "-01";
 
-  const [{ data: payments }, { data: expenses }] = await Promise.all([
+  const [{ data: payments }, { data: expenses }, { data: items }, { data: products }] = await Promise.all([
     supabase.from("payments").select("amount_minor, paid_at"),
     supabase.from("expenses").select("amount_minor, expense_date, category"),
+    supabase.from("invoice_items").select("product_id, quantity, unit_price_minor, invoices!inner(status)"),
+    supabase.from("products").select("id, name, cost_price_minor"),
   ]);
 
   const pays = payments ?? [];
   const exps = expenses ?? [];
+
+  // Rentabilidad por producto: ventas (facturas no borrador/anuladas) × costo del producto
+  type ProdRow = { id: string; name: string; cost: number; units: number; revenue: number };
+  const prodMap = new Map<string, ProdRow>();
+  for (const p of products ?? []) {
+    prodMap.set(p.id, { id: p.id, name: p.name, cost: p.cost_price_minor ?? 0, units: 0, revenue: 0 });
+  }
+  for (const it of (items ?? []) as unknown as {
+    product_id: string | null;
+    quantity: number;
+    unit_price_minor: number;
+    invoices: { status: string } | null;
+  }[]) {
+    const status = it.invoices?.status;
+    if (!it.product_id || !status || status === "draft" || status === "void") continue;
+    const row = prodMap.get(it.product_id);
+    if (!row) continue;
+    row.units += Number(it.quantity) || 0;
+    row.revenue += Math.round((Number(it.quantity) || 0) * (it.unit_price_minor ?? 0));
+  }
+  const prodRows = [...prodMap.values()]
+    .filter((r) => r.units > 0)
+    .map((r) => {
+      const cost = Math.round(r.units * r.cost);
+      const profit = r.revenue - cost;
+      const margin = r.revenue > 0 ? Math.round((profit / r.revenue) * 100) : 0;
+      return { ...r, totalCost: cost, profit, margin };
+    })
+    .sort((a, b) => b.profit - a.profit);
 
   const incomeTotal = pays.reduce((s, p) => s + (p.amount_minor ?? 0), 0);
   const expenseTotal = exps.reduce((s, e) => s + (e.amount_minor ?? 0), 0);
@@ -68,6 +99,55 @@ export default async function ProfitabilityPage() {
           <p className="text-amber-800">
             ⏳ Aún no recuperas tu inversión: te faltan <b>{formatMoney(Math.abs(netTotal), currency)}</b> por cobrar para igualar lo invertido.
           </p>
+        )}
+      </div>
+
+      {/* Rentabilidad por producto */}
+      <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">Rentabilidad por producto</h2>
+      <p className="mt-1 text-xs text-slate-400">
+        Según lo vendido en facturas (sin contar borradores) y el costo configurado de cada producto. Te muestra cuáles dejan
+        más dinero, no solo cuáles se venden más.
+      </p>
+      <div className="mt-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+        {prodRows.length === 0 ? (
+          <p className="p-5 text-sm text-slate-500">
+            Aún no hay ventas con productos para analizar. Emite facturas eligiendo productos del catálogo y aquí verás cuáles
+            son rentables.
+          </p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-left text-slate-500">
+              <tr>
+                <th className="px-4 py-2 font-medium">Producto</th>
+                <th className="px-4 py-2 font-medium text-right">Vendidas</th>
+                <th className="px-4 py-2 font-medium text-right">Ingreso</th>
+                <th className="px-4 py-2 font-medium text-right">Costo</th>
+                <th className="px-4 py-2 font-medium text-right">Ganancia</th>
+                <th className="px-4 py-2 font-medium text-right">Margen</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {prodRows.map((r) => (
+                <tr key={r.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-2 text-slate-900">
+                    {r.name}
+                    {r.cost === 0 && (
+                      <span className="ml-1 text-xs text-amber-600" title="Configura el costo de este producto para una ganancia real">
+                        ⚠️ sin costo
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2 text-right text-slate-600">{r.units}</td>
+                  <td className="px-4 py-2 text-right text-slate-700">{formatMoney(r.revenue, currency)}</td>
+                  <td className="px-4 py-2 text-right text-slate-700">{formatMoney(r.totalCost, currency)}</td>
+                  <td className={`px-4 py-2 text-right font-medium ${r.profit >= 0 ? "text-green-700" : "text-red-700"}`}>
+                    {formatMoney(r.profit, currency)}
+                  </td>
+                  <td className={`px-4 py-2 text-right ${r.profit >= 0 ? "text-slate-600" : "text-red-700"}`}>{r.margin}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 
