@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { sendMail, brandedEmail } from "@/lib/email";
 
 export async function updateOrganization(formData: FormData) {
   const id = String(formData.get("org_id") ?? "");
@@ -40,7 +42,7 @@ export async function inviteUser(formData: FormData) {
   if (!email) redirect(`/settings?error=${encodeURIComponent("Escribe el correo a invitar.")}`);
 
   const supabase = await createClient();
-  const { data: org } = await supabase.from("organizations").select("id").limit(1).maybeSingle();
+  const { data: org } = await supabase.from("organizations").select("id, name").limit(1).maybeSingle();
   if (!org) redirect("/onboarding");
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -48,6 +50,18 @@ export async function inviteUser(formData: FormData) {
     .from("invitations")
     .upsert({ organization_id: org.id, email, role, status: "pending", created_by: user?.id }, { onConflict: "organization_id,email" });
   if (error) redirect(`/settings?error=${encodeURIComponent(error.message)}`);
+
+  // Enviar correo de invitación (no bloquea si falla el envío)
+  const origin = (await headers()).get("origin") ?? "https://zentro-ten-phi.vercel.app";
+  const html = brandedEmail(
+    `Te invitaron a ${org.name} en Zentro`,
+    `<p>Te uniste a un equipo en <b>Zentro</b>, el sistema operativo del negocio.</p>
+     <p>Para entrar, crea tu cuenta (o inicia sesión) usando <b>este mismo correo</b>: ${email}. Te unirás automáticamente.</p>`,
+    "Crear mi cuenta",
+    `${origin}/register`,
+  );
+  await sendMail(email, `Invitación a ${org.name} — Zentro`, html);
+
   redirect(`/settings?ok=invite`);
 }
 
