@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Sidebar } from "@/components/Sidebar";
+import { AppShell } from "@/components/AppShell";
 import { getCurrentOrg } from "@/lib/org";
 
 export default async function AppLayout({
@@ -10,12 +10,5 @@ export default async function AppLayout({
   const org = await getCurrentOrg();
   if (!org) redirect("/onboarding");
 
-  return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar orgName={org.name} />
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-6xl p-8">{children}</div>
-      </main>
-    </div>
-  );
+  return <AppShell orgName={org.name}>{children}</AppShell>;
 }

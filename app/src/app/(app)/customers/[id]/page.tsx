@@ -112,7 +112,7 @@ export default async function CustomerDetailPage({
         {/* Facturas */}
         <div>
           <h2 className="mb-2 font-semibold text-slate-900">Facturas</h2>
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
             {invs.length === 0 ? (
               <p className="p-5 text-sm text-slate-500">Sin facturas todavía.</p>
             ) : (
