@@ -1,0 +1,27 @@
+# Dependencias e instalaciones
+**/node_modules/
+**/.pnp
+**/.pnp.*
+
+# Build / cache de Next.js
+**/.next/
+**/out/
+**/build/
+**/*.tsbuildinfo
+
+# Variables de entorno (incluye claves)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+*.pem
+
+# Logs
+**/npm-debug.log*
+**/*.log
+
+# Vercel
+**/.vercel
