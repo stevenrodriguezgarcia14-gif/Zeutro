@@ -83,9 +83,16 @@ export default async function DashboardPage() {
         <Card title="Clientes" value={String(customersCount ?? 0)} />
       </div>
 
-      <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
-        Próximamente aquí: Centro de Prioridades (qué cobrar y hacer hoy), flujo de caja y embudo de
-        ventas.
+      <div className="mt-8 flex flex-wrap gap-3 text-sm">
+        <a href="/priorities" className="rounded-lg bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-800">
+          Ver qué hacer hoy →
+        </a>
+        <a href="/cashflow" className="rounded-lg border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-slate-50">
+          Flujo de caja
+        </a>
+        <a href="/sales" className="rounded-lg border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-slate-50">
+          Embudo de ventas
+        </a>
       </div>
     </div>
   );

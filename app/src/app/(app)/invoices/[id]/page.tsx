@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney, fromMinor } from "@/lib/money";
-import { issueInvoice, registerPayment } from "../actions";
+import { issueInvoice, registerPayment, setPaymentLink } from "../actions";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   draft: { label: "Borrador", cls: "bg-slate-100 text-slate-600" },
@@ -221,6 +221,23 @@ export default async function InvoiceDetailPage({
               </ul>
             )}
           </div>
+
+          <form action={setPaymentLink} className="mt-4 rounded-2xl border border-slate-200 bg-white p-5">
+            <input type="hidden" name="invoice_id" value={invoice.id} />
+            <h2 className="font-semibold text-slate-900">Link de pago</h2>
+            <p className="mt-1 text-xs text-slate-400">
+              Pega tu enlace de cobro (SINPE Móvil, PayPal, transferencia…). Se incluirá en los recordatorios de cobranza.
+            </p>
+            <input
+              name="payment_link"
+              defaultValue={invoice.payment_link ?? ""}
+              placeholder="https://..."
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900"
+            />
+            <button className="mt-2 w-full rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+              Guardar link
+            </button>
+          </form>
         </div>
       </div>
     </div>

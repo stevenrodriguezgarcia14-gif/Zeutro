@@ -6,11 +6,19 @@ import { usePathname } from "next/navigation";
 import { signOut } from "@/app/auth/actions";
 
 const groups: { label: string; items: { href: string; name: string }[] }[] = [
-  { label: "Inicio", items: [{ href: "/dashboard", name: "Dashboard" }] },
+  {
+    label: "Inicio",
+    items: [
+      { href: "/dashboard", name: "Dashboard" },
+      { href: "/priorities", name: "Centro de Prioridades" },
+    ],
+  },
   {
     label: "Comercial",
     items: [
       { href: "/customers", name: "Clientes" },
+      { href: "/sales", name: "Ventas (Embudo)" },
+      { href: "/quotations", name: "Cotizaciones" },
       { href: "/products", name: "Productos y servicios" },
     ],
   },
@@ -21,6 +29,7 @@ const groups: { label: string; items: { href: string; name: string }[] }[] = [
       { href: "/collections", name: "Cobranzas" },
       { href: "/expenses", name: "Gastos" },
       { href: "/accounts", name: "Cuentas" },
+      { href: "/cashflow", name: "Flujo de caja" },
       { href: "/profitability", name: "Rentabilidad" },
     ],
   },

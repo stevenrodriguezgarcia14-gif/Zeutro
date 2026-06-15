@@ -117,6 +117,16 @@ export async function issueInvoice(formData: FormData) {
   redirect(`/invoices/${id}`);
 }
 
+export async function setPaymentLink(formData: FormData) {
+  const id = String(formData.get("invoice_id") ?? "");
+  const payment_link = String(formData.get("payment_link") ?? "").trim() || null;
+  const supabase = await createClient();
+  await supabase.from("invoices").update({ payment_link }).eq("id", id);
+  revalidatePath(`/invoices/${id}`);
+  revalidatePath("/collections");
+  redirect(`/invoices/${id}?ok=link`);
+}
+
 export async function registerPayment(formData: FormData) {
   const invoice_id = String(formData.get("invoice_id") ?? "");
   const amount = String(formData.get("amount") ?? "0");
