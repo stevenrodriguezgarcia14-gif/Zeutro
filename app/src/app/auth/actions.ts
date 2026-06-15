@@ -24,9 +24,10 @@ export async function register(formData: FormData) {
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
   const password2 = String(formData.get("password2") ?? "");
+  const full_name = String(formData.get("full_name") ?? "").trim();
 
-  if (password.length < 6) {
-    redirect(`/register?error=${encodeURIComponent("La contraseña debe tener al menos 6 caracteres.")}`);
+  if (password.length < 8) {
+    redirect(`/register?error=${encodeURIComponent("La contraseña debe tener al menos 8 caracteres.")}`);
   }
   if (password !== password2) {
     redirect(`/register?error=${encodeURIComponent("Las contraseñas no coinciden.")}`);
@@ -37,7 +38,10 @@ export async function register(formData: FormData) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: `${origin}/auth/callback?next=/onboarding` },
+    options: {
+      data: { full_name },
+      emailRedirectTo: `${origin}/auth/callback?next=/onboarding`,
+    },
   });
 
   if (error) {
@@ -69,8 +73,8 @@ export async function requestPasswordReset(formData: FormData) {
 export async function updatePassword(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const password2 = String(formData.get("password2") ?? "");
-  if (password.length < 6) {
-    redirect(`/auth/update-password?error=${encodeURIComponent("La contraseña debe tener al menos 6 caracteres.")}`);
+  if (password.length < 8) {
+    redirect(`/auth/update-password?error=${encodeURIComponent("La contraseña debe tener al menos 8 caracteres.")}`);
   }
   if (password !== password2) {
     redirect(`/auth/update-password?error=${encodeURIComponent("Las contraseñas no coinciden.")}`);

@@ -34,6 +34,52 @@ export async function saveLogo(orgId: string, url: string) {
   revalidatePath("/", "layout");
 }
 
+export async function inviteUser(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const role = String(formData.get("role") ?? "member");
+  if (!email) redirect(`/settings?error=${encodeURIComponent("Escribe el correo a invitar.")}`);
+
+  const supabase = await createClient();
+  const { data: org } = await supabase.from("organizations").select("id").limit(1).maybeSingle();
+  if (!org) redirect("/onboarding");
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { error } = await supabase
+    .from("invitations")
+    .upsert({ organization_id: org.id, email, role, status: "pending", created_by: user?.id }, { onConflict: "organization_id,email" });
+  if (error) redirect(`/settings?error=${encodeURIComponent(error.message)}`);
+  redirect(`/settings?ok=invite`);
+}
+
+export async function cancelInvitation(formData: FormData) {
+  const id = String(formData.get("invitation_id") ?? "");
+  const supabase = await createClient();
+  await supabase.from("invitations").delete().eq("id", id);
+  redirect("/settings?ok=1");
+}
+
+export async function changeMemberRole(formData: FormData) {
+  const org_id = String(formData.get("org_id") ?? "");
+  const user_id = String(formData.get("user_id") ?? "");
+  const role = String(formData.get("role") ?? "member");
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("memberships")
+    .update({ role })
+    .eq("organization_id", org_id)
+    .eq("user_id", user_id);
+  if (error) redirect(`/settings?error=${encodeURIComponent(error.message)}`);
+  redirect("/settings?ok=1");
+}
+
+export async function removeMember(formData: FormData) {
+  const org_id = String(formData.get("org_id") ?? "");
+  const user_id = String(formData.get("user_id") ?? "");
+  const supabase = await createClient();
+  await supabase.from("memberships").delete().eq("organization_id", org_id).eq("user_id", user_id);
+  redirect("/settings?ok=1");
+}
+
 export async function deleteOrganization(formData: FormData) {
   const id = String(formData.get("org_id") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
