@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createOrganization } from "./actions";
 import { getCurrentOrg } from "@/lib/org";
+import { createClient } from "@/lib/supabase/server";
 import { OrgLocaleFields } from "@/components/OrgLocaleFields";
 
 export default async function OnboardingPage({
@@ -10,7 +11,11 @@ export default async function OnboardingPage({
 }) {
   const { error } = await searchParams;
 
-  // Si ya tiene negocio, al dashboard.
+  // Si fue invitado a un negocio, unirlo automáticamente antes de ofrecer crear uno.
+  const supabase = await createClient();
+  await supabase.rpc("accept_pending_invitations");
+
+  // Si ya tiene negocio (propio o por invitación), al dashboard.
   const org = await getCurrentOrg();
   if (org) redirect("/dashboard");
 
