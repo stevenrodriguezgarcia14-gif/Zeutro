@@ -4,15 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
-import { toMinor } from "@/lib/money";
 
 export async function createProduct(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const type = String(formData.get("type") ?? "service");
   const unit = String(formData.get("unit") ?? "unidad").trim() || "unidad";
-  const sale_price_minor = toMinor(String(formData.get("sale_price") ?? "0"));
-  const cost_raw = String(formData.get("cost_price") ?? "").trim();
-  const cost_price_minor = cost_raw ? toMinor(cost_raw) : null;
+  const description = String(formData.get("description") ?? "").trim() || null;
 
   if (!name) {
     redirect(`/products/new?error=${encodeURIComponent("El nombre es obligatorio.")}`);
@@ -26,20 +23,25 @@ export async function createProduct(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { error } = await supabase.from("products").insert({
-    organization_id: org.id,
-    type,
-    name,
-    unit,
-    sale_price_minor,
-    cost_price_minor,
-    created_by: user?.id,
-  });
+  const { data: product, error } = await supabase
+    .from("products")
+    .insert({
+      organization_id: org.id,
+      type,
+      name,
+      unit,
+      description,
+      sale_price_minor: 0, // se define luego con los precios sugeridos
+      created_by: user?.id,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    redirect(`/products/new?error=${encodeURIComponent(error.message)}`);
+  if (error || !product) {
+    redirect(`/products/new?error=${encodeURIComponent(error?.message ?? "No se pudo crear.")}`);
   }
 
   revalidatePath("/products");
-  redirect("/products");
+  // Llevar a la ficha para subir foto y configurar costos/precio
+  redirect(`/products/${product.id}`);
 }

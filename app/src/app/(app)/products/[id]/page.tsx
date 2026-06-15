@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney, fromMinor } from "@/lib/money";
 import { ProductImageUploader } from "@/components/ProductImageUploader";
-import { updateProduct, addComponent, deleteComponent, updateSheetSettings } from "./actions";
+import { updateProduct, addComponent, deleteComponent, updateSheetSettings, applySuggestedPrice } from "./actions";
 
 const GROUPS: { type: string; label: string; help: string }[] = [
   { type: "material", label: "Ingredientes / materiales", help: "Ej. leche condensada, harina, empaque…" },
@@ -206,6 +206,13 @@ export default async function ProductCostingPage({
                       <p className="mt-1 text-2xl font-bold text-slate-900">{formatMoney(x.p.price, currency)}</p>
                       <p className="mt-1 text-sm text-green-700">Ganas {formatMoney(x.p.profit, currency)}</p>
                       <p className="text-xs text-slate-400">Margen {Math.round(x.p.marginBps / 100)}%</p>
+                      <form action={applySuggestedPrice} className="mt-3">
+                        <input type="hidden" name="product_id" value={product.id} />
+                        <input type="hidden" name="price_minor" value={x.p.price} />
+                        <button className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                          Usar este precio
+                        </button>
+                      </form>
                     </div>
                   ))}
                 </div>

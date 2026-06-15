@@ -61,6 +61,16 @@ export async function updateProduct(formData: FormData) {
   redirect(`/products/${id}?ok=1`);
 }
 
+export async function applySuggestedPrice(formData: FormData) {
+  const id = String(formData.get("product_id") ?? "");
+  const price_minor = parseInt(String(formData.get("price_minor") ?? "0"), 10) || 0;
+  const supabase = await createClient();
+  await supabase.from("products").update({ sale_price_minor: price_minor }).eq("id", id);
+  revalidatePath(`/products/${id}`);
+  revalidatePath("/products");
+  redirect(`/products/${id}?ok=1`);
+}
+
 export async function saveProductImage(productId: string, url: string) {
   const supabase = await createClient();
   await supabase.from("products").update({ image_url: url }).eq("id", productId);
