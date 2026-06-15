@@ -38,6 +38,16 @@ export default async function RegisterPage({
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-900"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700">Repite la contraseña</label>
+            <input
+              name="password2"
+              type="password"
+              required
+              minLength={6}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-900"
+            />
+          </div>
           <button
             type="submit"
             className="w-full rounded-lg bg-slate-900 py-2.5 font-medium text-white hover:bg-slate-800"

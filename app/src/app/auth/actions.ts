@@ -23,6 +23,14 @@ export async function login(formData: FormData) {
 export async function register(formData: FormData) {
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
+  const password2 = String(formData.get("password2") ?? "");
+
+  if (password.length < 6) {
+    redirect(`/register?error=${encodeURIComponent("La contraseña debe tener al menos 6 caracteres.")}`);
+  }
+  if (password !== password2) {
+    redirect(`/register?error=${encodeURIComponent("Las contraseñas no coinciden.")}`);
+  }
 
   const supabase = await createClient();
   const origin = (await headers()).get("origin") ?? "https://zentro-ten-phi.vercel.app";
@@ -60,8 +68,12 @@ export async function requestPasswordReset(formData: FormData) {
 
 export async function updatePassword(formData: FormData) {
   const password = String(formData.get("password") ?? "");
+  const password2 = String(formData.get("password2") ?? "");
   if (password.length < 6) {
     redirect(`/auth/update-password?error=${encodeURIComponent("La contraseña debe tener al menos 6 caracteres.")}`);
+  }
+  if (password !== password2) {
+    redirect(`/auth/update-password?error=${encodeURIComponent("Las contraseñas no coinciden.")}`);
   }
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password });
