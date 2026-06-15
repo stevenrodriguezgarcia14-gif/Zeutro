@@ -12,25 +12,21 @@ export type Organization = {
 };
 
 /**
- * Devuelve la organización (negocio) activa del usuario actual.
- * MVP: el usuario pertenece a una sola organización (la primera).
- * Devuelve null si el usuario aún no tiene negocio (debe ir a /onboarding).
+ * Devuelve la organización (negocio) activa del usuario actual en una sola
+ * consulta (membership + organización embebida). Devuelve null si el usuario
+ * aún no tiene negocio (debe ir a /onboarding).
  */
 export async function getCurrentOrg(): Promise<Organization | null> {
   const supabase = await createClient();
 
-  const { data: memberships } = await supabase
+  const { data } = await supabase
     .from("memberships")
-    .select("organization_id")
-    .limit(1);
+    .select(
+      "organizations(id, name, country, base_currency, timezone, locale, legal_name, tax_id)",
+    )
+    .limit(1)
+    .maybeSingle();
 
-  if (!memberships || memberships.length === 0) return null;
-
-  const { data: org } = await supabase
-    .from("organizations")
-    .select("id, name, country, base_currency, timezone, locale, legal_name, tax_id")
-    .eq("id", memberships[0].organization_id)
-    .single();
-
-  return (org as Organization) ?? null;
+  const org = (data as { organizations: Organization | null } | null)?.organizations;
+  return org ?? null;
 }

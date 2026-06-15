@@ -6,10 +6,50 @@ import { formatMoney, fromMinor } from "@/lib/money";
 import { ProductImageUploader } from "@/components/ProductImageUploader";
 import { updateProduct, addComponent, deleteComponent, updateSheetSettings, applySuggestedPrice } from "./actions";
 
-const GROUPS: { type: string; label: string; help: string }[] = [
-  { type: "material", label: "Ingredientes / materiales", help: "Ej. leche condensada, harina, empaque…" },
-  { type: "labor", label: "Mano de obra", help: "Ej. horas de trabajo × costo por hora" },
-  { type: "other", label: "Otros costos", help: "Ej. luz, gas, transporte, comisiones" },
+const GROUPS: {
+  type: string;
+  title: string;
+  intro: string;
+  nameLabel: string;
+  qtyLabel: string;
+  costLabel: string;
+  addLabel: string;
+  listId: string;
+  suggestions: string[];
+}[] = [
+  {
+    type: "material",
+    title: "Ingredientes / materiales",
+    intro: "Lo que lleva el producto.",
+    nameLabel: "Ingrediente o material",
+    qtyLabel: "Cantidad",
+    costLabel: "Costo por unidad",
+    addLabel: "Agregar ingrediente",
+    listId: "sug-material",
+    suggestions: ["Harina", "Azúcar", "Leche", "Leche condensada", "Huevos", "Mantequilla", "Empaque", "Etiqueta", "Bolsa"],
+  },
+  {
+    type: "labor",
+    title: "Mano de obra",
+    intro: "El trabajo de hacerlo. Pon las horas y cuánto cuesta la hora.",
+    nameLabel: "Tarea",
+    qtyLabel: "Horas",
+    costLabel: "Costo por hora",
+    addLabel: "Agregar mano de obra",
+    listId: "sug-labor",
+    suggestions: ["Preparación", "Cocción / horneado", "Decoración", "Empaquetado", "Atención"],
+  },
+  {
+    type: "other",
+    title: "Otros costos",
+    intro: "Gastos para producirlo (luz, gas, transporte…).",
+    nameLabel: "Concepto",
+    qtyLabel: "Cantidad",
+    costLabel: "Costo",
+    addLabel: "Agregar costo",
+    listId: "sug-other",
+    suggestions: ["Luz", "Agua", "Gas", "Transporte", "Empaque", "Comisión de venta", "Renta", "Internet"],
+  },
 ];
 
 function priceFor(unitCost: number, marginBps: number) {
@@ -35,11 +75,7 @@ export default async function ProductCostingPage({
   const { data: product } = await supabase.from("products").select("*").eq("id", id).single();
   if (!product) notFound();
 
-  const { data: sheet } = await supabase
-    .from("cost_sheets")
-    .select("*")
-    .eq("product_id", id)
-    .maybeSingle();
+  const { data: sheet } = await supabase.from("cost_sheets").select("*").eq("product_id", id).maybeSingle();
 
   const { data: components } = sheet
     ? await supabase
@@ -65,13 +101,16 @@ export default async function ProductCostingPage({
   const currentMargin = salePrice > 0 ? Math.round(((salePrice - unitCost) / salePrice) * 100) : null;
   const sellingBelowCost = salePrice > 0 && salePrice < unitCost;
 
+  const fieldCls =
+    "mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-slate-900 outline-none focus:border-slate-900";
+
   return (
     <div>
       <Link href="/products" className="text-sm text-slate-500 hover:underline">
         ← Productos y servicios
       </Link>
 
-      <div className="mt-2 flex flex-wrap items-center gap-4">
+      <div className="mt-2 flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-bold text-slate-900">{product.name}</h1>
         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
           {product.type === "product" ? "Producto" : product.type === "bundle" ? "Paquete" : "Servicio"}
@@ -92,51 +131,60 @@ export default async function ProductCostingPage({
             <input type="hidden" name="product_id" value={product.id} />
             <div>
               <label className="block text-slate-700">Nombre</label>
-              <input name="name" defaultValue={product.name} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-900" />
+              <input name="name" defaultValue={product.name} required className={fieldCls} />
             </div>
             <div>
               <label className="block text-slate-700">Descripción</label>
-              <textarea name="description" rows={3} defaultValue={product.description ?? ""} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-900" />
+              <textarea name="description" rows={3} defaultValue={product.description ?? ""} className={fieldCls} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-slate-700">Unidad</label>
-                <input name="unit" defaultValue={product.unit} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-900" />
+                <input name="unit" defaultValue={product.unit} className={fieldCls} />
               </div>
               <div>
                 <label className="block text-slate-700">Precio de venta</label>
-                <input name="sale_price" type="number" step="0.01" min="0" defaultValue={fromMinor(salePrice)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-900" />
+                <input name="sale_price" type="number" step="0.01" min="0" defaultValue={fromMinor(salePrice)} className={fieldCls} />
               </div>
             </div>
-            <button className="rounded-lg bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-800">Guardar datos</button>
+            <button className="rounded-lg bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-800">
+              Guardar datos
+            </button>
           </form>
         </section>
 
         {/* Costeo */}
-        <section className="lg:col-span-2 space-y-6">
+        <section className="space-y-6 lg:col-span-2">
           {/* Componentes */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6">
-            <h2 className="font-semibold text-slate-900">Costo del producto</h2>
-            <p className="text-sm text-slate-500">Agrega lo que necesitas para producirlo; Zentro suma todo.</p>
+            <h2 className="font-semibold text-slate-900">¿Qué necesitas para hacerlo? (costos)</h2>
+            <p className="text-sm text-slate-500">
+              Agrega cuántas veces quieras en cada grupo; Zentro suma todo automáticamente.
+            </p>
 
             {GROUPS.map((g) => {
               const list = comps.filter((c) => c.type === g.type);
               const subtotal = list.reduce((s, c) => s + (c.line_total_minor ?? 0), 0);
               return (
-                <div key={g.type} className="mt-4">
+                <div key={g.type} className="mt-5">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-slate-700">{g.label}</p>
-                    <span className="text-sm text-slate-500">{formatMoney(subtotal, currency)}</span>
+                    <p className="text-sm font-semibold text-slate-800">{g.title}</p>
+                    <span className="text-sm font-medium text-slate-700">{formatMoney(subtotal, currency)}</span>
                   </div>
+                  <p className="text-xs text-slate-400">{g.intro}</p>
+
                   {list.length > 0 && (
-                    <ul className="mt-1 divide-y divide-slate-100">
+                    <ul className="mt-2 divide-y divide-slate-100 rounded-lg bg-slate-50 px-3">
                       {list.map((c) => (
-                        <li key={c.id} className="flex items-center justify-between py-1.5 text-sm">
+                        <li key={c.id} className="flex items-center justify-between py-2 text-sm">
                           <span className="text-slate-700">
-                            {c.name} <span className="text-slate-400">({c.quantity} × {formatMoney(c.unit_cost_minor, currency)})</span>
+                            {c.name}{" "}
+                            <span className="text-slate-400">
+                              ({c.quantity} × {formatMoney(c.unit_cost_minor, currency)})
+                            </span>
                           </span>
                           <span className="flex items-center gap-3">
-                            <span className="text-slate-900">{formatMoney(c.line_total_minor, currency)}</span>
+                            <span className="font-medium text-slate-900">{formatMoney(c.line_total_minor, currency)}</span>
                             <form action={deleteComponent}>
                               <input type="hidden" name="product_id" value={product.id} />
                               <input type="hidden" name="component_id" value={c.id} />
@@ -147,52 +195,94 @@ export default async function ProductCostingPage({
                       ))}
                     </ul>
                   )}
-                  <form action={addComponent} className="mt-2 flex flex-wrap items-end gap-2 text-sm">
+
+                  <datalist id={g.listId}>
+                    {g.suggestions.map((s) => (
+                      <option key={s} value={s} />
+                    ))}
+                  </datalist>
+                  <form action={addComponent} className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_5rem_8rem_auto] sm:items-end">
                     <input type="hidden" name="product_id" value={product.id} />
                     <input type="hidden" name="type" value={g.type} />
-                    <input name="name" placeholder={g.help} className="min-w-40 flex-1 rounded-lg border border-slate-300 px-2 py-1.5 outline-none focus:border-slate-900" />
-                    <input name="quantity" type="number" step="0.001" min="0" defaultValue="1" title="Cantidad" className="w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-right outline-none focus:border-slate-900" />
-                    <input name="unit_cost" type="number" step="0.01" min="0" placeholder="costo" title="Costo unitario" className="w-28 rounded-lg border border-slate-300 px-2 py-1.5 text-right outline-none focus:border-slate-900" />
-                    <button className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50">+ Agregar</button>
+                    <div>
+                      <label className="block text-xs text-slate-500">{g.nameLabel}</label>
+                      <input name="name" list={g.listId} placeholder="Elige o escribe" className={fieldCls} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500">{g.qtyLabel}</label>
+                      <input name="quantity" type="number" step="0.001" min="0" defaultValue="1" className={`${fieldCls} text-right`} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500">{g.costLabel}</label>
+                      <input name="unit_cost" type="number" step="0.01" min="0" placeholder="0.00" className={`${fieldCls} text-right`} />
+                    </div>
+                    <button className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                      + {g.addLabel}
+                    </button>
                   </form>
                 </div>
               );
             })}
 
-            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
-              <form action={updateSheetSettings} className="flex flex-wrap items-end gap-2 text-sm">
-                <input type="hidden" name="product_id" value={product.id} />
-                <div>
-                  <label className="block text-slate-700">Rinde (unidades)</label>
-                  <input name="output_qty" type="number" step="0.001" min="0.001" defaultValue={outputQty} className="mt-1 w-24 rounded-lg border border-slate-300 px-2 py-1.5 text-right outline-none focus:border-slate-900" />
-                </div>
-                <div>
-                  <label className="block text-slate-700">Margen mín %</label>
-                  <input name="margin_min" type="number" step="1" min="0" max="90" defaultValue={Math.round(marginMin / 100)} className="mt-1 w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-right outline-none focus:border-slate-900" />
-                </div>
-                <div>
-                  <label className="block text-slate-700">Recom. %</label>
-                  <input name="margin_target" type="number" step="1" min="0" max="90" defaultValue={Math.round(marginTarget / 100)} className="mt-1 w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-right outline-none focus:border-slate-900" />
-                </div>
-                <div>
-                  <label className="block text-slate-700">Máx %</label>
-                  <input name="margin_max" type="number" step="1" min="0" max="90" defaultValue={Math.round(marginMax / 100)} className="mt-1 w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-right outline-none focus:border-slate-900" />
-                </div>
-                <button className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50">Actualizar</button>
-              </form>
-              <div className="text-right">
-                <p className="text-sm text-slate-500">Costo total</p>
-                <p className="text-xl font-bold text-slate-900">{formatMoney(totalCost, currency)}</p>
-                <p className="text-xs text-slate-400">Costo por unidad: <b>{formatMoney(unitCost, currency)}</b></p>
+            <div className="mt-5 rounded-lg bg-slate-900 p-4 text-white">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-300">Costo total de la receta</span>
+                <span className="text-lg font-bold">{formatMoney(totalCost, currency)}</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between">
+                <span className="text-sm text-slate-300">Costo por unidad</span>
+                <span className="text-lg font-bold">{formatMoney(unitCost, currency)}</span>
               </div>
             </div>
           </div>
 
+          {/* Producción y margen */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6">
+            <h2 className="font-semibold text-slate-900">Producción y ganancia</h2>
+            <form action={updateSheetSettings} className="mt-4 space-y-5 text-sm">
+              <input type="hidden" name="product_id" value={product.id} />
+
+              <div>
+                <label className="block font-medium text-slate-700">¿Cuántas unidades produces con esos costos?</label>
+                <p className="text-xs text-slate-400">
+                  Si los costos de arriba alcanzan para 8 porciones, escribe 8. Si es 1 sola unidad, deja 1.
+                </p>
+                <input name="output_qty" type="number" step="0.001" min="0.001" defaultValue={outputQty} className="mt-1 w-32 rounded-lg border border-slate-300 px-2 py-1.5 text-right text-slate-900 outline-none focus:border-slate-900" />
+              </div>
+
+              <div>
+                <label className="block font-medium text-slate-700">Margen de ganancia (%)</label>
+                <p className="text-xs text-slate-400">
+                  Es qué parte del precio es tu ganancia. Ej.: con 45%, de cada ₡100 vendidos, ₡45 son ganancia.
+                  Define tres niveles para ver opciones de precio.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-4">
+                  <div>
+                    <label className="block text-xs text-slate-500">Mínimo</label>
+                    <input name="margin_min" type="number" step="1" min="0" max="90" defaultValue={Math.round(marginMin / 100)} className="mt-1 w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-right outline-none focus:border-slate-900" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500">Recomendado</label>
+                    <input name="margin_target" type="number" step="1" min="0" max="90" defaultValue={Math.round(marginTarget / 100)} className="mt-1 w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-right outline-none focus:border-slate-900" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500">Máximo</label>
+                    <input name="margin_max" type="number" step="1" min="0" max="90" defaultValue={Math.round(marginMax / 100)} className="mt-1 w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-right outline-none focus:border-slate-900" />
+                  </div>
+                </div>
+              </div>
+
+              <button className="rounded-lg bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-800">
+                Guardar producción y margen
+              </button>
+            </form>
+          </div>
+
           {/* Precios sugeridos */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6">
-            <h2 className="font-semibold text-slate-900">Precios sugeridos (por unidad)</h2>
+            <h2 className="font-semibold text-slate-900">¿A cuánto vender? (por unidad)</h2>
             {unitCost === 0 ? (
-              <p className="mt-2 text-sm text-slate-500">Agrega costos arriba para ver los precios recomendados.</p>
+              <p className="mt-2 text-sm text-slate-500">Agrega costos arriba y verás aquí los precios recomendados.</p>
             ) : (
               <>
                 <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -219,14 +309,14 @@ export default async function ProductCostingPage({
                 <div className="mt-4 rounded-lg bg-slate-50 p-3 text-sm">
                   {sellingBelowCost ? (
                     <p className="text-red-700">
-                      ⚠️ Tu precio actual ({formatMoney(salePrice, currency)}) está <b>por debajo del costo</b> ({formatMoney(unitCost, currency)}): estás perdiendo dinero en cada venta.
+                      ⚠️ Tu precio actual ({formatMoney(salePrice, currency)}) está <b>por debajo del costo</b> ({formatMoney(unitCost, currency)}): pierdes dinero en cada venta.
                     </p>
                   ) : salePrice > 0 ? (
                     <p className="text-slate-600">
                       Tu precio actual es <b>{formatMoney(salePrice, currency)}</b> → ganas {formatMoney(salePrice - unitCost, currency)} por unidad (margen {currentMargin}%).
                     </p>
                   ) : (
-                    <p className="text-slate-600">Aún no has fijado un precio de venta. Usa uno de los sugeridos como referencia.</p>
+                    <p className="text-slate-600">Aún no fijas precio. Toca “Usar este precio” en la opción que prefieras.</p>
                   )}
                 </div>
               </>
