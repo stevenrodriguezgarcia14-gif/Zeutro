@@ -8,9 +8,9 @@ import { createInvoice } from "../actions";
 export default async function NewInvoicePage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; customer?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, customer } = await searchParams;
   const org = await getCurrentOrg();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
@@ -54,6 +54,7 @@ export default async function NewInvoicePage({
           products={products ?? []}
           currency={currency}
           action={createInvoice}
+          defaultCustomerId={customer ?? ""}
         />
       </div>
     </div>

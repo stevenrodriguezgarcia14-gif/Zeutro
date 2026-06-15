@@ -23,11 +23,13 @@ export function InvoiceForm({
   products,
   currency,
   action,
+  defaultCustomerId = "",
 }: {
   customers: CustomerOpt[];
   products: ProductOpt[];
   currency: string;
   action: (formData: FormData) => void;
+  defaultCustomerId?: string;
 }) {
   const today = new Date().toISOString().slice(0, 10);
   const in15 = new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10);
@@ -86,7 +88,7 @@ export function InvoiceForm({
             <select
               name="customer_id"
               required
-              defaultValue=""
+              defaultValue={defaultCustomerId}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-900"
             >
               <option value="" disabled>

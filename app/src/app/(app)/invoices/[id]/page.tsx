@@ -65,7 +65,17 @@ export default async function InvoiceDetailPage({
             {invoice.customers?.legal_name} · emitida {invoice.issue_date} · vence {invoice.due_date}
           </p>
         </div>
-        <span className={`rounded-full px-3 py-1 text-sm font-medium ${st.cls}`}>{st.label}</span>
+        <div className="flex flex-col items-end gap-2">
+          <span className={`rounded-full px-3 py-1 text-sm font-medium ${st.cls}`}>{st.label}</span>
+          <a
+            href={`/print/invoices/${invoice.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-medium text-slate-700 underline hover:text-slate-900"
+          >
+            Ver / Descargar PDF
+          </a>
+        </div>
       </div>
 
       {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}

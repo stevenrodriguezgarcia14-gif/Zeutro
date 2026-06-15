@@ -21,7 +21,13 @@ const groups: { label: string; items: { href: string; name: string; soon?: boole
     items: [
       { href: "/invoices", name: "Facturas" },
       { href: "/collections", name: "Cobranzas" },
+      { href: "/expenses", name: "Gastos" },
+      { href: "/accounts", name: "Cuentas" },
     ],
+  },
+  {
+    label: "Cuenta",
+    items: [{ href: "/settings", name: "Configuración" }],
   },
 ];
 

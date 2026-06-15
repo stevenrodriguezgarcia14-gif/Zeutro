@@ -50,7 +50,11 @@ export default async function CustomersPage() {
             <tbody className="divide-y divide-slate-100">
               {rows.map((c) => (
                 <tr key={c.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-900">{c.legal_name}</td>
+                  <td className="px-4 py-3 font-medium text-slate-900">
+                    <Link href={`/customers/${c.id}`} className="hover:underline">
+                      {c.legal_name}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-slate-600">
                     {c.type === "company" ? "Empresa" : "Persona"}
                   </td>
