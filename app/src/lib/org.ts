@@ -18,14 +18,11 @@ const ACTIVE_COOKIE = "zentro_active_org";
 /** Empresas a las que pertenece el usuario actual (id + nombre). */
 export async function getUserOrgs(): Promise<{ id: string; name: string }[]> {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("memberships")
-    .select("organizations(id, name)")
-    .order("created_at");
-  const list = ((data as { organizations: { id: string; name: string } | null }[] | null) ?? [])
-    .map((m) => m.organizations)
-    .filter((o): o is { id: string; name: string } => !!o);
-  return list;
+  // my_organizations() es SECURITY DEFINER: incluye también orgs suspendidas
+  // (RLS las ocultaría) para poder mostrarlas en el selector y la pantalla
+  // de "Cuenta suspendida".
+  const { data } = await supabase.rpc("my_organizations");
+  return ((data as Organization[] | null) ?? []).map((o) => ({ id: o.id, name: o.name }));
 }
 
 /**
@@ -34,14 +31,8 @@ export async function getUserOrgs(): Promise<{ id: string; name: string }[]> {
  */
 export async function getCurrentOrg(): Promise<Organization | null> {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("memberships")
-    .select("organizations(id, name, country, base_currency, timezone, locale, legal_name, tax_id, status)")
-    .order("created_at");
-
-  const orgs = ((data as { organizations: Organization | null }[] | null) ?? [])
-    .map((m) => m.organizations)
-    .filter((o): o is Organization => !!o);
+  const { data } = await supabase.rpc("my_organizations");
+  const orgs = (data as Organization[] | null) ?? [];
   if (orgs.length === 0) return null;
 
   const cookieStore = await cookies();
