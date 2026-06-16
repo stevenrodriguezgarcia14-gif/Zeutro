@@ -20,6 +20,7 @@ const groups: { label: string; items: { href: string; name: string }[] }[] = [
       { href: "/sales", name: "Ventas (Embudo)" },
       { href: "/quotations", name: "Cotizaciones" },
       { href: "/products", name: "Productos y servicios" },
+      { href: "/purchases", name: "Compras (reventa)" },
     ],
   },
   {
