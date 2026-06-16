@@ -9,7 +9,7 @@ type OrgRow = {
   id: string; name: string; country: string; base_currency: string;
   status: string; plan: string; created_at: string; members: number; invoices: number;
 };
-type Plan = { id: string; name: string };
+type Plan = { id: string; name: string; notes: string | null; monthly_price_minor: number };
 type Audit = { action: string; target_org: string | null; detail: Record<string, unknown> | null; created_at: string };
 type UserRow = { id: string; email: string; created_at: string; last_sign_in: string | null; orgs: number; is_admin: boolean };
 
@@ -32,7 +32,7 @@ export default async function AdminDashboard({
   const [{ data: ov }, { data: orgs, error: orgsErr }, { data: plans }, { data: audit }, { data: users, error: usersErr }] = await Promise.all([
     supabase.rpc("admin_overview"),
     supabase.rpc("admin_list_orgs"),
-    supabase.from("plans").select("id, name").order("monthly_price_minor"),
+    supabase.from("plans").select("id, name, notes, monthly_price_minor").order("monthly_price_minor"),
     supabase.rpc("admin_recent_audit"),
     supabase.rpc("admin_list_users"),
   ]);
@@ -61,6 +61,20 @@ export default async function AdminDashboard({
         <Metric label="Nuevos usuarios (7d)" value={o.new_users_7d ?? 0} />
         <Metric label="Facturas (todas)" value={o.invoices ?? 0} />
         <Metric label="Clientes (todas)" value={o.customers ?? 0} />
+      </div>
+
+      <h2 className="mt-8 text-lg font-semibold">Planes y beneficios</h2>
+      <p className="mt-1 text-xs text-slate-500">Referencia de lo que incluye cada plan. Aún no impone restricciones (solo descriptivo).</p>
+      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {planList.map((p) => (
+          <div key={p.id} className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="text-sm font-semibold text-white">{p.name}</p>
+            <p className="mt-1 text-xl font-bold text-amber-300">
+              {p.id === "enterprise" ? "A medida" : p.monthly_price_minor === 0 ? "Gratis" : `$${(p.monthly_price_minor / 100).toFixed(0)} / mes`}
+            </p>
+            <p className="mt-3 text-xs leading-relaxed text-slate-400">{p.notes}</p>
+          </div>
+        ))}
       </div>
 
       <h2 className="mt-8 text-lg font-semibold">Empresas</h2>
