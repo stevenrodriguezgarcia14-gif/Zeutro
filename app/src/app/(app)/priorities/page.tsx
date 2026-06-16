@@ -27,7 +27,7 @@ export default async function PrioritiesPage() {
   const in7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
   const days = (d: string) => Math.round((Date.now() - new Date(d).getTime()) / 86400000);
 
-  const [{ data: invoices }, { data: opps }, { data: quotes }] = await Promise.all([
+  const [{ data: invoices }, { data: opps }, { data: quotes }, { data: tasks }] = await Promise.all([
     supabase
       .from("invoices")
       .select("id, number, balance_minor, due_date, customers(legal_name)")
@@ -41,7 +41,16 @@ export default async function PrioritiesPage() {
       .from("quotations")
       .select("id, number, total_minor, customers(legal_name)")
       .eq("status", "sent"),
+    supabase
+      .from("tasks")
+      .select("id, title, due_date, priority")
+      .neq("status", "done")
+      .neq("status", "cancelled")
+      .not("due_date", "is", null)
+      .lte("due_date", in7),
   ]);
+
+  const taskList = (tasks ?? []) as { id: string; title: string; due_date: string; priority: string }[];
 
   const items: Item[] = [];
 
@@ -74,6 +83,28 @@ export default async function PrioritiesPage() {
     <div>
       <h1 className="text-2xl font-bold text-slate-900">Centro de Prioridades</h1>
       <p className="mt-1 text-sm text-slate-500">Lo más importante de hoy, ordenado por impacto en tu dinero.</p>
+
+      {taskList.length > 0 && (
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
+          <h2 className="text-sm font-semibold text-slate-700">Tus tareas (hoy y vencidas)</h2>
+          <ul className="mt-2 space-y-1 text-sm">
+            {taskList
+              .sort((a, b) => a.due_date.localeCompare(b.due_date))
+              .map((t) => {
+                const overdue = t.due_date < today;
+                return (
+                  <li key={t.id} className="flex items-center justify-between">
+                    <span className="text-slate-800">{t.title}</span>
+                    <span className={`text-xs ${overdue ? "font-medium text-red-600" : "text-slate-400"}`}>
+                      {overdue ? "vencida" : t.due_date === today ? "hoy" : t.due_date}
+                    </span>
+                  </li>
+                );
+              })}
+          </ul>
+          <Link href="/tasks" className="mt-2 inline-block text-xs font-medium text-slate-600 hover:underline">Ver todas las tareas →</Link>
+        </div>
+      )}
 
       {top.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-600">

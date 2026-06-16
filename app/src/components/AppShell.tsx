@@ -35,6 +35,14 @@ const groups: { label: string; items: { href: string; name: string }[] }[] = [
       { href: "/profitability", name: "Rentabilidad" },
     ],
   },
+  {
+    label: "Operación",
+    items: [
+      { href: "/tasks", name: "Tareas" },
+      { href: "/projects", name: "Proyectos" },
+      { href: "/calendar", name: "Calendario" },
+    ],
+  },
   { label: "Cuenta", items: [{ href: "/settings", name: "Configuración" }] },
 ];
 
