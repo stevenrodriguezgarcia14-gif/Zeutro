@@ -39,3 +39,20 @@ export async function getCurrentOrg(): Promise<Organization | null> {
   const activeId = cookieStore.get(ACTIVE_COOKIE)?.value;
   return orgs.find((o) => o.id === activeId) ?? orgs[0];
 }
+
+/**
+ * Devuelve la lista de empresas y la activa en UNA sola consulta.
+ * Pensado para el layout (evita pedir las organizaciones dos veces por navegación).
+ */
+export async function getOrgContext(): Promise<{ orgs: { id: string; name: string }[]; current: Organization | null }> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("my_organizations");
+  const all = (data as Organization[] | null) ?? [];
+  const orgs = all.map((o) => ({ id: o.id, name: o.name }));
+  if (all.length === 0) return { orgs, current: null };
+
+  const cookieStore = await cookies();
+  const activeId = cookieStore.get(ACTIVE_COOKIE)?.value;
+  const current = all.find((o) => o.id === activeId) ?? all[0];
+  return { orgs, current };
+}

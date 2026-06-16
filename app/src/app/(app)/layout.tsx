@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
-import { getCurrentOrg, getUserOrgs } from "@/lib/org";
+import { getOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AppLayout({
@@ -8,11 +8,18 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Si el usuario fue invitado a un negocio, se une automáticamente.
   const supabase = await createClient();
+  // Si el usuario fue invitado a un negocio, se une automáticamente (debe correr
+  // antes de leer las organizaciones para que la recién aceptada aparezca).
   await supabase.rpc("accept_pending_invitations");
 
-  const org = await getCurrentOrg();
+  // Organizaciones (lista + activa) e indicador de admin: en paralelo, una sola
+  // consulta de organizaciones en vez de dos.
+  const [{ orgs, current: org }, { data: isPlatformAdmin }] = await Promise.all([
+    getOrgContext(),
+    supabase.rpc("is_platform_admin"),
+  ]);
+
   if (!org) redirect("/onboarding");
 
   if (org.status === "suspended") {
@@ -27,9 +34,6 @@ export default async function AppLayout({
       </div>
     );
   }
-
-  const orgs = await getUserOrgs();
-  const { data: isPlatformAdmin } = await supabase.rpc("is_platform_admin");
 
   return (
     <AppShell orgName={org.name} orgs={orgs} activeId={org.id} isPlatformAdmin={!!isPlatformAdmin}>
