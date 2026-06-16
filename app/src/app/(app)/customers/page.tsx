@@ -17,12 +17,20 @@ export default async function CustomersPage() {
           <h1 className="text-2xl font-bold text-slate-900">Clientes</h1>
           <p className="mt-1 text-sm text-slate-500">{rows.length} cliente(s)</p>
         </div>
-        <Link
-          href="/customers/new"
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-        >
-          + Nuevo cliente
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/customers/import"
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Importar
+          </Link>
+          <Link
+            href="/customers/new"
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+          >
+            + Nuevo cliente
+          </Link>
+        </div>
       </div>
 
       {rows.length === 0 ? (
