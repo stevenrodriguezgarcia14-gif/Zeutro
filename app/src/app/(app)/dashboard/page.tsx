@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
+import { getPurchasesOverview } from "@/lib/purchasesOverview";
 
 function Card({
   title,
@@ -53,6 +54,7 @@ export default async function DashboardPage() {
   const expenseMonth = (expenses ?? []).reduce((s, e) => s + (e.amount_minor ?? 0), 0);
   const profitMonth = incomeMonth - expenseMonth;
   const cashTotal = (accounts ?? []).reduce((s, a) => s + (a.current_balance_minor ?? 0), 0);
+  const compras = await getPurchasesOverview();
 
   return (
     <div>
@@ -80,6 +82,9 @@ export default async function DashboardPage() {
         <Card title="Dinero en cuentas" value={formatMoney(cashTotal, currency)} hint="Bancos + efectivo" />
         <Card title="Por cobrar" value={formatMoney(outstanding, currency)} hint="Saldo de facturas abiertas" />
         <Card title="Facturas vencidas" value={String(overdueCount)} hint="Requieren cobranza" />
+        {compras.count > 0 && (
+          <Card title="Capital en mercancía" value={formatMoney(compras.capitalEnMercancia, currency)} hint="Compras por recuperar" />
+        )}
         <Card title="Clientes" value={String(customersCount ?? 0)} />
       </div>
 

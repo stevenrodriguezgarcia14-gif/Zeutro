@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "@/app/auth/actions";
+import { setActiveOrg } from "@/app/(app)/org-actions";
 
 const groups: { label: string; items: { href: string; name: string }[] }[] = [
   {
@@ -37,7 +38,17 @@ const groups: { label: string; items: { href: string; name: string }[] }[] = [
   { label: "Cuenta", items: [{ href: "/settings", name: "Configuración" }] },
 ];
 
-export function AppShell({ orgName, children }: { orgName: string; children: React.ReactNode }) {
+export function AppShell({
+  orgName,
+  orgs,
+  activeId,
+  children,
+}: {
+  orgName: string;
+  orgs: { id: string; name: string }[];
+  activeId: string;
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
@@ -74,7 +85,25 @@ export function AppShell({ orgName, children }: { orgName: string; children: Rea
           <div className="flex items-center justify-between border-b border-slate-200 p-4">
             <div className="min-w-0">
               <p className="text-lg font-bold text-slate-900">Zentro</p>
-              <p className="truncate text-sm text-slate-500">{orgName}</p>
+              {orgs.length > 1 ? (
+                <form action={setActiveOrg} className="mt-1">
+                  <select
+                    name="org_id"
+                    defaultValue={activeId}
+                    onChange={(e) => e.currentTarget.form?.requestSubmit()}
+                    className="w-full max-w-[11rem] truncate rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-700 outline-none focus:border-slate-900"
+                    title="Cambiar de empresa"
+                  >
+                    {orgs.map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.name}
+                      </option>
+                    ))}
+                  </select>
+                </form>
+              ) : (
+                <p className="truncate text-sm text-slate-500">{orgName}</p>
+              )}
             </div>
             <button
               onClick={close}

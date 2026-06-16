@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getUserOrgs } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AppLayout({
@@ -14,6 +14,11 @@ export default async function AppLayout({
 
   const org = await getCurrentOrg();
   if (!org) redirect("/onboarding");
+  const orgs = await getUserOrgs();
 
-  return <AppShell orgName={org.name}>{children}</AppShell>;
+  return (
+    <AppShell orgName={org.name} orgs={orgs} activeId={org.id}>
+      {children}
+    </AppShell>
+  );
 }

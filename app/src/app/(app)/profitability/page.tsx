@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
+import { getPurchasesOverview } from "@/lib/purchasesOverview";
 
 function Card({ title, value, tone = "default", hint }: { title: string; value: string; tone?: "default" | "good" | "bad"; hint?: string }) {
   const cls = tone === "good" ? "text-green-600" : tone === "bad" ? "text-red-600" : "text-slate-900";
@@ -26,6 +27,7 @@ export default async function ProfitabilityPage() {
     supabase.from("products").select("id, name, cost_price_minor"),
   ]);
 
+  const compras = await getPurchasesOverview();
   const pays = payments ?? [];
   const exps = expenses ?? [];
 
@@ -101,6 +103,21 @@ export default async function ProfitabilityPage() {
           </p>
         )}
       </div>
+
+      {/* Compras para reventa */}
+      {compras.count > 0 && (
+        <>
+          <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">Compras para reventa</h2>
+          <div className="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            <Card title="Invertido" value={formatMoney(compras.invertido, currency)} />
+            <Card title="Recuperado" value={formatMoney(compras.recuperado, currency)} tone="good" />
+            <Card title="Ganancia" value={formatMoney(compras.ganancia, currency)} tone={compras.ganancia >= 0 ? "good" : "bad"} />
+            <Card title="ROI" value={`${compras.roi}%`} tone={compras.roi >= 0 ? "good" : "bad"} />
+            <Card title="Capital en mercancía" value={formatMoney(compras.capitalEnMercancia, currency)} hint="Invertido aún no recuperado" />
+            <Card title="Sin vender" value={`${compras.mercanciaSinVender} u`} hint="Unidades en stock" />
+          </div>
+        </>
+      )}
 
       {/* Rentabilidad por producto */}
       <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">Rentabilidad por producto</h2>

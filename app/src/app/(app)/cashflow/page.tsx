@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
+import { getPurchasesOverview } from "@/lib/purchasesOverview";
 
 export default async function CashflowPage() {
   const org = await getCurrentOrg();
@@ -24,6 +25,7 @@ export default async function CashflowPage() {
   const porCobrar = invs.reduce((s, i) => s + i.balance_minor, 0);
   const pipelinePond = oppList.reduce((s, o) => s + Math.round((o.amount_minor * (o.stages?.probability_bps ?? 0)) / 10000), 0);
   const porPagar = exps.reduce((s, e) => s + e.amount_minor, 0);
+  const compras = await getPurchasesOverview();
 
   function projection(days: number) {
     const limit = horizonDate(days);
@@ -74,6 +76,9 @@ export default async function CashflowPage() {
         <div className="flex justify-between"><span className="text-slate-600">+ Por cobrar (facturas)</span><b className="text-green-700">{formatMoney(porCobrar, currency)}</b></div>
         <div className="flex justify-between"><span className="text-slate-600">+ Ventas probables (embudo ponderado)</span><b className="text-green-700">{formatMoney(pipelinePond, currency)}</b></div>
         <div className="flex justify-between"><span className="text-slate-600">− Por pagar (gastos pendientes)</span><b className="text-red-700">{formatMoney(porPagar, currency)}</b></div>
+        {compras.count > 0 && (
+          <div className="flex justify-between border-t border-slate-100 pt-2"><span className="text-slate-600">+ Inventario de compras por vender (potencial)</span><b className="text-green-700">{formatMoney(compras.valorPorVender, currency)}</b></div>
+        )}
       </div>
       <p className="mt-3 text-xs text-slate-400">
         Nota: asumimos que cada factura se cobra en su fecha de vencimiento y que las ventas del embudo entran en su fecha de
