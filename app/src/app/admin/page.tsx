@@ -11,6 +11,7 @@ type OrgRow = {
 };
 type Plan = { id: string; name: string };
 type Audit = { action: string; target_org: string | null; detail: Record<string, unknown> | null; created_at: string };
+type UserRow = { id: string; email: string; created_at: string; last_sign_in: string | null; orgs: number; is_admin: boolean };
 
 function Metric({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
   return (
@@ -28,16 +29,19 @@ export default async function AdminDashboard({
 }) {
   const { error, ok } = await searchParams;
   const supabase = await createClient();
-  const [{ data: ov }, { data: orgs }, { data: plans }, { data: audit }] = await Promise.all([
+  const [{ data: ov }, { data: orgs, error: orgsErr }, { data: plans }, { data: audit }, { data: users, error: usersErr }] = await Promise.all([
     supabase.rpc("admin_overview"),
     supabase.rpc("admin_list_orgs"),
     supabase.from("plans").select("id, name").order("monthly_price_minor"),
     supabase.rpc("admin_recent_audit"),
+    supabase.rpc("admin_list_users"),
   ]);
   const o = (ov ?? {}) as Overview;
   const orgList = (orgs ?? []) as OrgRow[];
   const planList = (plans ?? []) as Plan[];
   const auditList = (audit ?? []) as Audit[];
+  const userList = (users ?? []) as UserRow[];
+  const loadErr = orgsErr?.message || usersErr?.message;
 
   return (
     <div>
@@ -46,6 +50,7 @@ export default async function AdminDashboard({
 
       {ok && <p className="mt-4 rounded-lg bg-green-500/15 p-3 text-sm text-green-300">Acción aplicada.</p>}
       {error && <p className="mt-4 rounded-lg bg-red-500/15 p-3 text-sm text-red-300">{error}</p>}
+      {loadErr && <p className="mt-4 rounded-lg bg-red-500/15 p-3 text-sm text-red-300">No se pudieron cargar algunos datos: {loadErr}</p>}
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         <Metric label="Empresas" value={o.orgs ?? 0} accent />
@@ -72,6 +77,9 @@ export default async function AdminDashboard({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800">
+            {orgList.length === 0 && (
+              <tr><td colSpan={6} className="px-4 py-6 text-center text-slate-500">No hay empresas para mostrar.</td></tr>
+            )}
             {orgList.map((r) => (
               <tr key={r.id}>
                 <td className="px-4 py-3">
@@ -110,6 +118,39 @@ export default async function AdminDashboard({
                     </form>
                   </div>
                 </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h2 className="mt-8 text-lg font-semibold">Usuarios ({userList.length})</h2>
+      <div className="mt-3 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900">
+        <table className="w-full text-sm">
+          <thead className="text-left text-slate-400">
+            <tr className="border-b border-slate-800">
+              <th className="px-4 py-3 font-medium">Correo</th>
+              <th className="px-4 py-3 font-medium">Rol</th>
+              <th className="px-4 py-3 font-medium text-right">Empresas</th>
+              <th className="px-4 py-3 font-medium">Registrado</th>
+              <th className="px-4 py-3 font-medium">Último ingreso</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800">
+            {userList.length === 0 && (
+              <tr><td colSpan={5} className="px-4 py-6 text-center text-slate-500">No hay usuarios para mostrar.</td></tr>
+            )}
+            {userList.map((u) => (
+              <tr key={u.id}>
+                <td className="px-4 py-3 font-medium text-white">{u.email}</td>
+                <td className="px-4 py-3">
+                  {u.is_admin
+                    ? <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-300">Administrador</span>
+                    : <span className="text-slate-400">Usuario</span>}
+                </td>
+                <td className="px-4 py-3 text-right text-slate-300">{u.orgs}</td>
+                <td className="px-4 py-3 text-slate-400">{new Date(u.created_at).toLocaleDateString("es")}</td>
+                <td className="px-4 py-3 text-slate-400">{u.last_sign_in ? new Date(u.last_sign_in).toLocaleString("es") : "—"}</td>
               </tr>
             ))}
           </tbody>
