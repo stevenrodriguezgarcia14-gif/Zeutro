@@ -15,9 +15,10 @@ export default async function AppLayout({
   const org = await getCurrentOrg();
   if (!org) redirect("/onboarding");
   const orgs = await getUserOrgs();
+  const { data: isPlatformAdmin } = await supabase.rpc("is_platform_admin");
 
   return (
-    <AppShell orgName={org.name} orgs={orgs} activeId={org.id}>
+    <AppShell orgName={org.name} orgs={orgs} activeId={org.id} isPlatformAdmin={!!isPlatformAdmin}>
       {children}
     </AppShell>
   );

@@ -22,6 +22,7 @@ const groups: { label: string; items: { href: string; name: string }[] }[] = [
       { href: "/quotations", name: "Cotizaciones" },
       { href: "/products", name: "Productos y servicios" },
       { href: "/purchases", name: "Compras (reventa)" },
+      { href: "/inventory", name: "Inventario" },
     ],
   },
   {
@@ -41,6 +42,7 @@ const groups: { label: string; items: { href: string; name: string }[] }[] = [
       { href: "/tasks", name: "Tareas" },
       { href: "/projects", name: "Proyectos" },
       { href: "/calendar", name: "Calendario" },
+      { href: "/documents", name: "Documentos" },
     ],
   },
   { label: "Cuenta", items: [{ href: "/settings", name: "Configuración" }] },
@@ -50,11 +52,13 @@ export function AppShell({
   orgName,
   orgs,
   activeId,
+  isPlatformAdmin,
   children,
 }: {
   orgName: string;
   orgs: { id: string; name: string }[];
   activeId: string;
+  isPlatformAdmin?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -146,6 +150,14 @@ export function AppShell({
                 })}
               </div>
             ))}
+            {isPlatformAdmin && (
+              <div className="mb-4">
+                <p className="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Plataforma</p>
+                <Link href="/admin" onClick={close} className="block rounded-lg bg-slate-900 px-2 py-2 text-sm font-medium text-white hover:bg-slate-800">
+                  Administración
+                </Link>
+              </div>
+            )}
           </nav>
 
           <form action={signOut} className="border-t border-slate-200 p-3">

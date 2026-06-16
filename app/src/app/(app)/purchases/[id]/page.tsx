@@ -5,6 +5,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { formatMoney, fromMinor } from "@/lib/money";
 import { computePurchase, type PItem } from "@/lib/purchases";
 import { addExpense, deleteExpense, addItem, updateItem, deleteItem, updateMargins, setPurchaseStatus } from "../actions";
+import { sendPurchaseItemToInventory } from "@/app/(app)/inventory/actions";
 
 const EXP_TYPES: { v: string; l: string }[] = [
   { v: "envio", l: "Envío" },
@@ -185,6 +186,11 @@ export default async function PurchaseDetailPage({
                   <div><label className="block text-xs text-slate-500">Vendidas</label><input name="units_sold" type="number" step="0.001" min="0" defaultValue={it.units_sold} className="mt-1 w-24 rounded-lg border border-slate-300 px-2 py-1.5 text-right outline-none focus:border-slate-900" /></div>
                   <button className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800">Guardar</button>
                   <span className="ml-auto text-xs text-slate-500">Ganancia: <b className={it.profit >= 0 ? "text-green-700" : "text-red-600"}>{formatMoney(it.profit, currency)}</b></span>
+                </form>
+                <form action={sendPurchaseItemToInventory} className="mt-2">
+                  <input type="hidden" name="purchase_id" value={purchase.id} />
+                  <input type="hidden" name="item_id" value={it.id} />
+                  <button className="text-xs font-medium text-slate-500 hover:text-slate-900 hover:underline">📦 Agregar al inventario (catálogo)</button>
                 </form>
               </div>
             ))}
