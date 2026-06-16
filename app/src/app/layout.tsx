@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,9 +12,29 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
+  subsets: ["latin"],
+  weight: ["500", "700"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "Zentro — Sistema operativo para emprendedores",
-  description: "Unifica ventas, dinero y operaciones de tu negocio en un solo lugar.",
+  title: "Zentro — El centro de control de tu negocio",
+  description:
+    "Clientes, ventas, cobros, compras y ganancias en un solo lugar. Y cada día, Zentro te dice qué hacer y qué cobrar. El sistema operativo para emprendedores.",
+  openGraph: {
+    title: "Zentro — El centro de control de tu negocio",
+    description:
+      "Controla clientes, ventas, cobros, compras, proyectos y ganancias desde un solo lugar.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -25,7 +45,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${spaceGrotesk.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
