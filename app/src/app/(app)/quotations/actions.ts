@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { toMinor } from "@/lib/money";
+import { decrementStockForInvoice } from "@/lib/stock";
 
 type LineInput = { product_id?: string | null; description: string; quantity: number; unit_price: number; tax_pct: number };
 
@@ -112,8 +113,10 @@ export async function convertToInvoice(formData: FormData) {
     );
   }
   await supabase.from("quotations").update({ status: "converted", invoice_id: invoice.id }).eq("id", id);
+  await decrementStockForInvoice(supabase, invoice.id);
 
   revalidatePath("/invoices");
   revalidatePath("/quotations");
+  revalidatePath("/inventory");
   redirect(`/invoices/${invoice.id}`);
 }

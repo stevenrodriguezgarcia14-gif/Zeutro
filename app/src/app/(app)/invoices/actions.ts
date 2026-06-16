@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { toMinor } from "@/lib/money";
+import { decrementStockForInvoice } from "@/lib/stock";
 
 type LineInput = {
   product_id?: string | null;
@@ -100,7 +101,10 @@ export async function createInvoice(formData: FormData) {
     redirect(`/invoices/new?error=${encodeURIComponent(itemsError.message)}`);
   }
 
+  if (intent === "issue") await decrementStockForInvoice(supabase, invoice.id);
+
   revalidatePath("/invoices");
+  revalidatePath("/inventory");
   redirect(`/invoices/${invoice.id}`);
 }
 
@@ -113,7 +117,9 @@ export async function issueInvoice(formData: FormData) {
     .eq("id", id)
     .eq("status", "draft");
   if (error) redirect(`/invoices/${id}?error=${encodeURIComponent(error.message)}`);
+  await decrementStockForInvoice(supabase, id);
   revalidatePath(`/invoices/${id}`);
+  revalidatePath("/inventory");
   redirect(`/invoices/${id}`);
 }
 

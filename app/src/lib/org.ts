@@ -10,6 +10,7 @@ export type Organization = {
   locale: string;
   legal_name: string | null;
   tax_id: string | null;
+  status: string;
 };
 
 const ACTIVE_COOKIE = "zentro_active_org";
@@ -35,7 +36,7 @@ export async function getCurrentOrg(): Promise<Organization | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("memberships")
-    .select("organizations(id, name, country, base_currency, timezone, locale, legal_name, tax_id)")
+    .select("organizations(id, name, country, base_currency, timezone, locale, legal_name, tax_id, status)")
     .order("created_at");
 
   const orgs = ((data as { organizations: Organization | null }[] | null) ?? [])
