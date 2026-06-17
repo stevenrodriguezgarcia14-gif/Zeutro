@@ -11,3 +11,11 @@ export async function setActiveOrg(formData: FormData) {
   revalidatePath("/", "layout");
   redirect("/dashboard");
 }
+
+/** Oculta la tarjeta de activación del dashboard (sigue disponible en el Centro de Orientación). */
+export async function dismissActivation() {
+  const c = await cookies();
+  c.set("zentro_hide_activation", "1", { path: "/", maxAge: 60 * 60 * 24 * 365 });
+  revalidatePath("/dashboard");
+  redirect("/dashboard");
+}

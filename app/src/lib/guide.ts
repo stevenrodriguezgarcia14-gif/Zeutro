@@ -14,6 +14,9 @@ export type ActivationData = {
   products: number;
   productsWithPrice: number;
   purchases: number;
+  purchaseItems: number;          // productos dentro de compras
+  purchaseItemsWithPrice: number; // con precio de venta puesto
+  resaleSales: number;            // artículos de compra con unidades vendidas
   quotations: number;
   invoices: number;
   payments: number;
@@ -37,10 +40,10 @@ export type Step = {
 const PLAYBOOKS: Record<string, Step[]> = {
   resale: [
     { key: "compra", label: "Registra tu primera compra", href: "/purchases/new", cta: "Registrar compra", done: (d) => d.purchases > 0 },
-    { key: "productos", label: "Agrega tus productos", href: "/products/new", cta: "Agregar producto", done: (d) => d.products > 0 },
-    { key: "precios", label: "Configura precios de venta", href: "/products", cta: "Poner precios", done: (d) => d.productsWithPrice > 0 },
-    { key: "venta", label: "Registra tu primera venta", href: "/invoices/new", cta: "Crear factura", done: (d) => d.invoices > 0 || d.payments > 0 },
-    { key: "rentabilidad", label: "Revisa tu rentabilidad", href: "/profitability", cta: "Ver rentabilidad", done: (d) => d.purchases > 0 && d.payments > 0 },
+    { key: "productos", label: "Agrega tus productos", href: "/purchases", cta: "Agregar productos", done: (d) => d.products > 0 || d.purchaseItems > 0 },
+    { key: "precios", label: "Configura precios de venta", href: "/purchases", cta: "Poner precios", done: (d) => d.productsWithPrice > 0 || d.purchaseItemsWithPrice > 0 },
+    { key: "venta", label: "Registra tu primera venta", href: "/purchases", cta: "Registrar venta", done: (d) => d.invoices > 0 || d.payments > 0 || d.resaleSales > 0 },
+    { key: "rentabilidad", label: "Revisa tu rentabilidad", href: "/profitability", cta: "Ver rentabilidad", done: (d) => d.purchases > 0 && (d.payments > 0 || d.resaleSales > 0) },
   ],
   services: [
     { key: "cliente", label: "Crea tu primer cliente", href: "/customers/new", cta: "Crear cliente", done: (d) => d.customers > 0 },

@@ -20,13 +20,16 @@ async function loadData(): Promise<ActivationData> {
   const t = supabase;
 
   const [
-    customers, products, productsWithPrice, purchases, quotations, invoices,
-    payments, expenses, accounts, opportunities, projects, overdueInvoices, openQuotations,
+    customers, products, productsWithPrice, purchases, purchaseItems, purchaseItemsWithPrice, resaleSales,
+    quotations, invoices, payments, expenses, accounts, opportunities, projects, overdueInvoices, openQuotations,
   ] = await Promise.all([
     c(t.from("customers").select("*", { count: "exact", head: true })),
     c(t.from("products").select("*", { count: "exact", head: true })),
     c(t.from("products").select("*", { count: "exact", head: true }).gt("sale_price_minor", 0)),
     c(t.from("purchases").select("*", { count: "exact", head: true })),
+    c(t.from("purchase_items").select("*", { count: "exact", head: true })),
+    c(t.from("purchase_items").select("*", { count: "exact", head: true }).gt("sale_price_minor", 0)),
+    c(t.from("purchase_items").select("*", { count: "exact", head: true }).gt("units_sold", 0)),
     c(t.from("quotations").select("*", { count: "exact", head: true })),
     c(t.from("invoices").select("*", { count: "exact", head: true })),
     c(t.from("payments").select("*", { count: "exact", head: true })),
@@ -38,7 +41,7 @@ async function loadData(): Promise<ActivationData> {
     c(t.from("quotations").select("*", { count: "exact", head: true }).eq("status", "sent")),
   ]);
 
-  return { customers, products, productsWithPrice, purchases, quotations, invoices, payments, expenses, accounts, opportunities, projects, overdueInvoices, openQuotations };
+  return { customers, products, productsWithPrice, purchases, purchaseItems, purchaseItemsWithPrice, resaleSales, quotations, invoices, payments, expenses, accounts, opportunities, projects, overdueInvoices, openQuotations };
 }
 
 /** Calcula el estado de activación y las sugerencias de siguiente paso. */

@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { getPurchasesOverview } from "@/lib/purchasesOverview";
 import { getActivation } from "@/lib/activation";
+import { dismissActivation } from "../org-actions";
 
 function Card({
   title,
@@ -63,6 +65,7 @@ export default async function DashboardPage() {
     getPurchasesOverview(),
     getActivation(org?.business_type),
   ]);
+  const hideActivation = (await cookies()).get("zentro_hide_activation")?.value === "1";
 
   // Operación de hoy
   const taskList = (tasks ?? []) as { due_date: string | null; status: string }[];
@@ -77,17 +80,22 @@ export default async function DashboardPage() {
       <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
       <p className="mt-1 text-sm text-slate-500">¿Qué está pasando en tu negocio, {org?.name}?</p>
 
-      {/* Activación: guía de primeros pasos (desaparece al completar) */}
-      {activation.pct < 100 && (
+      {/* Activación: guía de primeros pasos (desaparece al completar o al ocultar) */}
+      {activation.pct < 100 && !hideActivation && (
         <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="font-semibold text-slate-900">Pon a punto tu Zentro</p>
               <p className="text-sm text-slate-600">Vas {activation.pct}% — {activation.doneCount} de {activation.total} pasos para arrancar.</p>
             </div>
-            <Link href="/guide" className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
-              Centro de Orientación →
-            </Link>
+            <div className="flex shrink-0 items-center gap-2">
+              <form action={dismissActivation}>
+                <button className="rounded-lg px-2 py-2 text-xs text-slate-500 hover:bg-white" title="No mostrar más (sigue disponible en el Centro de Orientación)">Ocultar</button>
+              </form>
+              <Link href="/guide" className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+                Centro de Orientación →
+              </Link>
+            </div>
           </div>
           <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white">
             <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${activation.pct}%` }} />

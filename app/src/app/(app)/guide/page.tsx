@@ -50,6 +50,16 @@ export default async function GuidePage() {
         </div>
       </div>
 
+      {!org?.business_type && (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4">
+          <p className="text-sm font-medium text-amber-900">Aún no nos dijiste qué tipo de negocio tienes</p>
+          <p className="mt-0.5 text-sm text-amber-800">Elígelo y Zentro te mostrará primero lo que más te sirve y una ruta hecha para ti.</p>
+          <Link href="/settings" className="mt-2 inline-block rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700">
+            Elegir mi tipo de negocio →
+          </Link>
+        </div>
+      )}
+
       {/* Siguiente paso */}
       {suggestions.length > 0 && (
         <section>
