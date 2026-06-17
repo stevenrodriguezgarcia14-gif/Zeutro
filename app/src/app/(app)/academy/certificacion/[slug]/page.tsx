@@ -20,10 +20,9 @@ export default async function CertificationPage({ params }: { params: Promise<{ 
     supabase.from("academy_progress").select("id, created_at").eq("kind", "certification").eq("item_slug", slug).maybeSingle(),
     getActivation(org?.business_type),
   ]);
-  const read = new Set((progress ?? []).filter((p) => p.kind === "guide").map((p) => p.item_slug));
   const passed = new Set((progress ?? []).filter((p) => p.kind === "challenge").map((p) => p.item_slug));
   const earnedCerts = new Set((progress ?? []).filter((p) => p.kind === "certification").map((p) => p.item_slug));
-  const { reqs, eligible } = certRequirements(cert, read, passed, act.data, earnedCerts);
+  const { reqs, eligible } = certRequirements(cert, passed, act.data, earnedCerts);
 
   const earned = !!record;
   const serial = record ? String(record.id).replace(/-/g, "").slice(0, 10).toUpperCase() : undefined;

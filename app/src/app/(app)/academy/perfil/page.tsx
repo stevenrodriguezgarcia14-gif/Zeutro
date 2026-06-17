@@ -19,10 +19,9 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
   );
 }
 
-function routeStats(catLessons: ReturnType<typeof routeLessons>, read: Set<string>, passed: Set<string>, d: ActivationData) {
+function routeStats(catLessons: ReturnType<typeof routeLessons>, passed: Set<string>, d: ActivationData) {
   let total = 0, done = 0;
   for (const l of catLessons) {
-    total++; if (read.has(l.slug)) done++;
     for (const c of l.challenges ?? []) { total++; if (c.type === "scenario" ? passed.has(c.id) : !!c.check?.(d)) done++; }
   }
   return { total, done, pct: total ? Math.round((done / total) * 100) : 0 };
@@ -36,11 +35,10 @@ export default async function AcademyProfilePage() {
     supabase.from("academy_progress").select("kind, item_slug, id, created_at"),
     getActivation(org?.business_type),
   ]);
-  const read = new Set((progress ?? []).filter((p) => p.kind === "guide").map((p) => p.item_slug));
   const passed = new Set((progress ?? []).filter((p) => p.kind === "challenge").map((p) => p.item_slug));
   const earned = new Set((progress ?? []).filter((p) => p.kind === "certification").map((p) => p.item_slug));
   const d = act.data;
-  const s = learnSummary(read, passed, d, earned.size);
+  const s = learnSummary(passed, d, earned.size);
   const holder = org?.legal_name || org?.name || "Tu negocio";
   const certInfo = new Map<string, { serial: string; date: string }>();
   for (const p of (progress ?? []).filter((p) => p.kind === "certification")) {
@@ -60,10 +58,10 @@ export default async function AcademyProfilePage() {
 
       {/* Estadísticas */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Stat label="Guías leídas" value={`${s.guidesRead}/${s.guidesTotal}`} />
-        <Stat label="Desafíos aprobados" value={`${s.scenariosPassed}/${s.scenariosTotal}`} />
-        <Stat label="Acciones reales" value={`${s.actionsDone}/${s.actionsTotal}`} sub="hechas en tu negocio" />
+        <Stat label="Desafíos aprobados" value={`${s.scenariosPassed}/${s.scenariosTotal}`} sub="comprensión" />
+        <Stat label="Acciones reales" value={`${s.actionsDone}/${s.actionsTotal}`} sub="aplicadas en tu negocio" />
         <Stat label="Rutas completadas" value={`${s.routesComplete}/${s.routesTotal}`} />
+        <Stat label="Credenciales" value={`${earned.size}/${CERTIFICATIONS.length}`} />
       </div>
 
       {/* Logros — vitrina */}
@@ -90,8 +88,8 @@ export default async function AcademyProfilePage() {
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Rutas de aprendizaje</h2>
         <div className="mt-2 space-y-2">
           {ROUTES.map((r) => {
-            const st = routeStats(routeLessons(r), read, passed, d);
-            const complete = routeComplete(r, read, passed, d);
+            const st = routeStats(routeLessons(r), passed, d);
+            const complete = routeComplete(r, passed, d);
             return (
               <Link key={r.slug} href="/academy" className="block rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-300">
                 <div className="flex items-center justify-between">
@@ -115,7 +113,7 @@ export default async function AcademyProfilePage() {
           {CERTIFICATIONS.map((c) => {
             const isEarned = earned.has(c.slug);
             const info = certInfo.get(c.slug);
-            const { eligible } = certRequirements(c, read, passed, d, earned);
+            const { eligible } = certRequirements(c, passed, d, earned);
             return (
               <Link key={c.slug} href={`/academy/certificacion/${c.slug}`} className="group block transition hover:-translate-y-0.5">
                 <Credential title={c.title} holder={holder} level={c.level} category={c.category}

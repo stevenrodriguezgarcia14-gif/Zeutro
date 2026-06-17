@@ -156,6 +156,18 @@ export const LESSONS: Lesson[] = [
       "## En Zentro",
       "La mercancía para revender va en Compras. Lo operativo (renta, servicios, sueldos) va en Gastos. No los mezcles y tu Rentabilidad será confiable.",
     ],
+    challenges: [
+      {
+        id: "costo-1", type: "scenario", difficulty: "basico",
+        prompt: "Pagas la renta de tu local. ¿Es costo o gasto?",
+        options: [
+          { text: "Gasto: lo pagas vendas o no", correct: true, feedback: "Correcto. La renta es fija y no depende de cuánto vendas: es gasto operativo." },
+          { text: "Costo: también sale dinero", correct: false, feedback: "Sale dinero, sí, pero 'costo' es lo que pagas por aquello que vendes. La renta no se convierte en producto." },
+          { text: "Depende del mes", correct: false, feedback: "Su naturaleza no cambia: la renta es un gasto fijo." },
+        ],
+        explanation: "Costo = lo que pagas por lo que vendes (sube si vendes más). Gasto = lo que pagas para operar (renta, luz, sueldos).",
+      },
+    ],
   },
   {
     slug: "comprar-sin-perder", category: "precios", emoji: "🛒", minutes: 4,
@@ -203,6 +215,18 @@ export const LESSONS: Lesson[] = [
       "## En Zentro",
       "El módulo Ventas (Embudo) te muestra el valor probable de tu pipeline y alimenta tu Flujo de caja con las ventas que esperas cerrar. Así proyectas ingresos, no solo deseos.",
     ],
+    challenges: [
+      {
+        id: "ventas-1", type: "scenario", difficulty: "basico",
+        prompt: "Un cliente 'lo está pensando' desde hace 3 semanas y no lo has contactado. ¿Qué pasa con esa venta?",
+        options: [
+          { text: "Se enfría; hay que darle seguimiento", correct: true, feedback: "Correcto. Sin seguimiento, la mayoría de estas ventas se pierden." },
+          { text: "Llegará sola cuando esté listo", correct: false, feedback: "Rara vez. El silencio casi nunca termina en compra." },
+          { text: "Mejor olvidarla", correct: false, feedback: "Es una oportunidad real; merece al menos un recordatorio." },
+        ],
+        explanation: "Las oportunidades sin seguimiento se enfrían. El embudo existe para recordarte mover cada una a tiempo.",
+      },
+    ],
   },
   {
     slug: "cotizar-para-cerrar", category: "ventas", emoji: "📝", minutes: 3,
@@ -217,6 +241,18 @@ export const LESSONS: Lesson[] = [
       "## El paso clave",
       "Cuando el cliente acepta, conviértela en factura con un clic en Zentro. No vuelvas a capturar todo: evitas errores y ahorras tiempo.",
       "Las cotizaciones enviadas sin respuesta aparecen como pendientes en tu Centro de Orientación para que no se te escapen.",
+    ],
+    challenges: [
+      {
+        id: "cotiza-1", type: "scenario", difficulty: "basico",
+        prompt: "El cliente aceptó tu cotización. ¿Qué haces en Zentro?",
+        options: [
+          { text: "Convertirla en factura con un clic", correct: true, feedback: "Correcto. Evitas recapturar y la cotización queda ligada a su factura." },
+          { text: "Capturar todo otra vez como factura nueva", correct: false, feedback: "Doble trabajo y riesgo de errores. Mejor convertir." },
+          { text: "Borrar la cotización", correct: false, feedback: "Perderías el historial. Conviértela, no la borres." },
+        ],
+        explanation: "Convertir la cotización aceptada en factura ahorra tiempo, evita errores y mantiene la trazabilidad.",
+      },
     ],
   },
   {
@@ -266,6 +302,18 @@ export const LESSONS: Lesson[] = [
       "- Si se vence, un segundo recordatorio firme pero cordial.",
       "## En Zentro",
       "Cobranzas te ordena a quién cobrar por urgencia y te deja enviar recordatorios con un clic. Atender lo vencido cada semana mejora tu flujo más que cualquier venta nueva.",
+    ],
+    challenges: [
+      {
+        id: "cobranza-1", type: "scenario", difficulty: "basico",
+        prompt: "Tienes 3 facturas vencidas y poco tiempo. ¿Por cuál empiezas?",
+        options: [
+          { text: "Por la más vencida y de mayor monto", correct: true, feedback: "Correcto. Prioriza por urgencia e impacto en tu caja." },
+          { text: "Por la del cliente más simpático", correct: false, feedback: "La simpatía no paga tus cuentas; prioriza por impacto." },
+          { text: "Espero a que paguen solos", correct: false, feedback: "Lo vencido rara vez se cobra solo; hay que perseguirlo." },
+        ],
+        explanation: "Cobra primero lo más vencido y de mayor monto. Cobranzas ya te ordena la lista por urgencia.",
+      },
     ],
   },
   {
@@ -320,6 +368,18 @@ export const LESSONS: Lesson[] = [
       "- Atiende lo que el Centro de Orientación te sugiera.",
       "Sigue el checklist de tu Centro de Orientación: cuando llegue al 100%, ya dominas lo esencial.",
     ],
+    challenges: [
+      {
+        id: "primeros-1", type: "scenario", difficulty: "basico",
+        prompt: "Acabas de entrar a Zentro. ¿Cuál es el primer paso más útil?",
+        options: [
+          { text: "Elegir tu tipo de negocio y registrar tu caja con su saldo", correct: true, feedback: "Correcto. Eso personaliza Zentro y te da una foto real de tu dinero desde el día uno." },
+          { text: "Explorar todos los módulos al azar", correct: false, feedback: "Te abruma y no avanzas. Mejor sigue tu ruta personalizada." },
+          { text: "Esperar a tener más datos", correct: false, feedback: "Empieza con lo básico hoy; el valor llega usándolo, no esperando." },
+        ],
+        explanation: "Configurar tu perfil y tu dinero base da valor inmediato; el Centro de Orientación te guía el resto paso a paso.",
+      },
+    ],
   },
 ];
 
@@ -340,23 +400,24 @@ export const ROUTES: Route[] = [
 ];
 
 export type LearnSummary = {
-  guidesRead: number; guidesTotal: number;
   scenariosPassed: number; scenariosTotal: number;
   actionsDone: number; actionsTotal: number;
   routesComplete: number; routesTotal: number;
   certsEarned: number;
 };
 
+// Logros basados en COMPRENSIÓN (desafíos aprobados) y APLICACIÓN (acciones reales),
+// nunca en lectura. Leer no desbloquea nada.
 export type Achievement = { slug: string; title: string; desc: string; tier: Tier; glyph: GlyphKey; unlocked: (s: LearnSummary) => boolean };
 export const ACHIEVEMENTS: Achievement[] = [
-  { slug: "primera-guia", title: "Primeros pasos", desc: "Leíste tu primera guía", tier: "bronce", glyph: "guide", unlocked: (s) => s.guidesRead >= 1 },
-  { slug: "lector", title: "Lector aplicado", desc: "Leíste 5 guías", tier: "plata", glyph: "stack", unlocked: (s) => s.guidesRead >= 5 },
   { slug: "primer-reto", title: "Mente analítica", desc: "Aprobaste tu primer desafío", tier: "bronce", glyph: "analysis", unlocked: (s) => s.scenariosPassed >= 1 },
-  { slug: "estratega", title: "Estratega", desc: "Aprobaste 5 desafíos", tier: "oro", glyph: "target", unlocked: (s) => s.scenariosPassed >= 5 },
-  { slug: "manos-obra", title: "Manos a la obra", desc: "Hiciste una acción real en tu negocio", tier: "plata", glyph: "spark", unlocked: (s) => s.actionsDone >= 1 },
-  { slug: "ruta-1", title: "Camino recorrido", desc: "Completaste una ruta entera", tier: "oro", glyph: "route", unlocked: (s) => s.routesComplete >= 1 },
+  { slug: "pensador", title: "Pensador", desc: "Aprobaste 5 desafíos", tier: "plata", glyph: "stack", unlocked: (s) => s.scenariosPassed >= 5 },
+  { slug: "estratega", title: "Estratega", desc: "Aprobaste 10 desafíos", tier: "oro", glyph: "target", unlocked: (s) => s.scenariosPassed >= 10 },
+  { slug: "manos-obra", title: "Manos a la obra", desc: "Hiciste tu primera acción real en tu negocio", tier: "plata", glyph: "spark", unlocked: (s) => s.actionsDone >= 1 },
+  { slug: "aplicado", title: "Aplicado", desc: "Aplicaste 3 cosas en tu negocio", tier: "oro", glyph: "guide", unlocked: (s) => s.actionsDone >= 3 },
+  { slug: "ruta-1", title: "Camino recorrido", desc: "Completaste una ruta (comprensión + aplicación)", tier: "oro", glyph: "route", unlocked: (s) => s.routesComplete >= 1 },
   { slug: "erudito", title: "Erudito Zentro", desc: "Completaste todas las rutas", tier: "platino", glyph: "crown", unlocked: (s) => s.routesTotal > 0 && s.routesComplete >= s.routesTotal },
-  { slug: "certificado", title: "Certificado", desc: "Obtuviste tu primera certificación", tier: "platino", glyph: "shield", unlocked: (s) => s.certsEarned >= 1 },
+  { slug: "certificado", title: "Certificado", desc: "Obtuviste tu primera credencial", tier: "platino", glyph: "shield", unlocked: (s) => s.certsEarned >= 1 },
 ];
 
 export type Certification = {
@@ -404,28 +465,29 @@ function challengeDone(c: Challenge, passed: Set<string>, d: ActivationData): bo
   return c.type === "scenario" ? passed.has(c.id) : !!c.check?.(d);
 }
 
-function lessonDone(l: Lesson, read: Set<string>, passed: Set<string>, d: ActivationData): boolean {
-  if (!read.has(l.slug)) return false;
-  return (l.challenges ?? []).every((c) => challengeDone(c, passed, d));
+// Una lección está dominada cuando se resolvieron TODOS sus desafíos
+// (comprensión + aplicación). Leerla no cuenta.
+export function lessonDone(l: Lesson, passed: Set<string>, d: ActivationData): boolean {
+  const ch = l.challenges ?? [];
+  if (ch.length === 0) return false; // sin desafío no hay forma de demostrar comprensión
+  return ch.every((c) => challengeDone(c, passed, d));
 }
 
-export function routeComplete(route: Route, read: Set<string>, passed: Set<string>, d: ActivationData): boolean {
-  return routeLessons(route).every((l) => lessonDone(l, read, passed, d));
+export function routeComplete(route: Route, passed: Set<string>, d: ActivationData): boolean {
+  return routeLessons(route).every((l) => lessonDone(l, passed, d));
 }
 
 export function allScenarios(): Challenge[] { return LESSONS.flatMap((l) => (l.challenges ?? []).filter((c) => c.type === "scenario")); }
 export function allActions(): Challenge[] { return LESSONS.flatMap((l) => (l.challenges ?? []).filter((c) => c.type === "action")); }
 
-export function learnSummary(read: Set<string>, passed: Set<string>, d: ActivationData, certsEarned: number): LearnSummary {
+export function learnSummary(passed: Set<string>, d: ActivationData, certsEarned: number): LearnSummary {
   const scen = allScenarios(); const act = allActions();
   return {
-    guidesRead: LESSONS.filter((l) => read.has(l.slug)).length,
-    guidesTotal: LESSONS.length,
     scenariosPassed: scen.filter((c) => passed.has(c.id)).length,
     scenariosTotal: scen.length,
     actionsDone: act.filter((c) => !!c.check?.(d)).length,
     actionsTotal: act.length,
-    routesComplete: ROUTES.filter((r) => routeComplete(r, read, passed, d)).length,
+    routesComplete: ROUTES.filter((r) => routeComplete(r, passed, d)).length,
     routesTotal: ROUTES.length,
     certsEarned,
   };
@@ -436,11 +498,14 @@ function certScenarios(cert: Certification): Challenge[] {
   return LESSONS.filter((l) => cats.has(l.category)).flatMap((l) => (l.challenges ?? []).filter((c) => c.type === "scenario"));
 }
 
-export function certRequirements(cert: Certification, read: Set<string>, passed: Set<string>, d: ActivationData, earnedCerts: Set<string> = new Set()) {
+// Requisitos de una credencial: prerrequisitos + comprensión (todos los escenarios
+// de sus rutas aprobados) + aplicación (acciones reales). La lectura NO es requisito.
+export function certRequirements(cert: Certification, passed: Set<string>, d: ActivationData, earnedCerts: Set<string> = new Set()) {
   const routes = cert.routeSlugs.map((s) => ROUTES.find((r) => r.slug === s)).filter((r): r is Route => !!r);
-  const allRead = routes.every((r) => routeLessons(r).every((l) => read.has(l.slug)));
   const scen = certScenarios(cert);
-  const scorePct = scen.length ? Math.round((scen.filter((c) => passed.has(c.id)).length / scen.length) * 100) : 0;
+  const scenPassed = scen.filter((c) => passed.has(c.id)).length;
+  const scorePct = scen.length ? Math.round((scenPassed / scen.length) * 100) : 100;
+  const allScen = scen.every((c) => passed.has(c.id));
   const acts = allActions();
   const actsOk = cert.requiredActionIds.every((id) => { const c = acts.find((a) => a.id === id); return c ? !!c.check?.(d) : false; });
 
@@ -449,9 +514,26 @@ export function certRequirements(cert: Certification, read: Set<string>, passed:
     const t = CERTIFICATIONS.find((c) => c.slug === pre)?.title ?? pre;
     reqs.push({ label: `Obtén primero: ${t}`, met: earnedCerts.has(pre) });
   }
-  reqs.push({ label: routes.length > 1 ? "Lee las guías de las 4 rutas" : "Lee las guías de la ruta", met: allRead });
-  if (scen.length > 0) reqs.push({ label: `Aprueba ≥ ${cert.minScorePct}% de los desafíos (vas ${scorePct}%)`, met: scorePct >= cert.minScorePct });
-  if (cert.requiredActionIds.length > 0) reqs.push({ label: "Completa las acciones clave en tu negocio", met: actsOk });
+  if (scen.length > 0) reqs.push({ label: routes.length > 1 ? "Aprueba los desafíos de las 4 rutas" : "Aprueba los desafíos de la ruta", met: allScen });
+  if (cert.requiredActionIds.length > 0) reqs.push({ label: "Aplica las acciones clave en tu negocio", met: actsOk });
 
   return { reqs, eligible: reqs.every((r) => r.met), scorePct };
+}
+
+// Validación de escenarios en el SERVIDOR (no se envía la respuesta correcta al
+// navegador hasta que el usuario contesta).
+export function findScenario(id: string): Challenge | undefined {
+  return LESSONS.flatMap((l) => l.challenges ?? []).find((c) => c.id === id && c.type === "scenario");
+}
+export function gradeScenario(id: string, optionIndex: number) {
+  const c = findScenario(id);
+  if (!c || !c.options) return null;
+  const correctIndex = c.options.findIndex((o) => o.correct);
+  const opt = c.options[optionIndex];
+  return {
+    correct: !!opt?.correct,
+    correctIndex,
+    feedback: opt?.feedback ?? "",
+    explanation: c.explanation ?? "",
+  };
 }
