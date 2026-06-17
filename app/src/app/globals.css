@@ -70,13 +70,61 @@ html {
   animation: zentro-fade-up 0.7s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
+/* ── Academia: logros (medallones) y certificaciones (credenciales) ──── */
+@keyframes zentro-emblem-in {
+  from { opacity: 0; transform: scale(0.82) rotate(-7deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0); }
+}
+.zentro-emblem-in { animation: zentro-emblem-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@keyframes zentro-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+.zentro-float { animation: zentro-float 5s ease-in-out infinite; }
+
+/* Brillo (sheen) que cruza al pasar el cursor */
+.zentro-sheen-host .zentro-sheen {
+  transform: translateX(-130%) skewX(-18deg);
+  opacity: 0;
+}
+.zentro-sheen-host:hover .zentro-sheen {
+  animation: zentro-sheen 0.9s ease;
+}
+@keyframes zentro-sheen {
+  0%   { transform: translateX(-130%) skewX(-18deg); opacity: 0; }
+  35%  { opacity: 0.85; }
+  100% { transform: translateX(130%) skewX(-18deg); opacity: 0; }
+}
+
+/* Credencial */
+@keyframes zentro-credential-in {
+  from { opacity: 0; transform: perspective(1100px) rotateX(10deg) translateY(24px) scale(0.95); }
+  to   { opacity: 1; transform: perspective(1100px) rotateX(0) translateY(0) scale(1); }
+}
+.zentro-credential-in { animation: zentro-credential-in 0.85s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@keyframes zentro-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.zentro-foil {
+  background-image: linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.55) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: zentro-shimmer 3.2s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
   .zentro-reveal,
   .zentro-reveal[data-show="true"],
-  .zentro-hero-in {
+  .zentro-hero-in,
+  .zentro-emblem-in,
+  .zentro-float,
+  .zentro-credential-in,
+  .zentro-foil {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;

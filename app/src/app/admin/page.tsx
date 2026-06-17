@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { setOrgStatus, setOrgPlan, deleteOrg } from "./actions";
 
@@ -45,7 +46,12 @@ export default async function AdminDashboard({
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Dashboard de la plataforma</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Dashboard de la plataforma</h1>
+        <Link href="/admin/academy" className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800">
+          Previsualizar Academia →
+        </Link>
+      </div>
       <p className="mt-1 text-sm text-slate-400">Métricas y gestión global de Zentro (solo administradores).</p>
 
       {ok && <p className="mt-4 rounded-lg bg-green-500/15 p-3 text-sm text-green-300">Acción aplicada.</p>}

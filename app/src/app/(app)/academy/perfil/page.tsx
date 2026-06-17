@@ -6,6 +6,7 @@ import {
   ROUTES, ACHIEVEMENTS, CERTIFICATIONS, learnSummary, routeLessons, routeComplete, certRequirements,
 } from "@/lib/academia";
 import type { ActivationData } from "@/lib/guide";
+import { Emblem, TIER_LABEL } from "@/components/academy/Emblem";
 
 function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -56,21 +57,19 @@ export default async function AcademyProfilePage() {
         <Stat label="Rutas completadas" value={`${s.routesComplete}/${s.routesTotal}`} />
       </div>
 
-      {/* Logros */}
+      {/* Logros — vitrina */}
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Logros ({ACHIEVEMENTS.filter((a) => a.unlocked(s)).length}/{ACHIEVEMENTS.length})</h2>
-        <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Vitrina de logros ({ACHIEVEMENTS.filter((a) => a.unlocked(s)).length}/{ACHIEVEMENTS.length})</h2>
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {ACHIEVEMENTS.map((a) => {
             const on = a.unlocked(s);
             return (
               <div key={a.slug}
-                className={`rounded-2xl border p-4 transition ${on ? "border-emerald-300 bg-white shadow-sm hover:scale-[1.02]" : "border-slate-200 bg-slate-50 opacity-60"}`}>
-                <div className={`text-3xl ${on ? "" : "grayscale"}`}>{a.icon}</div>
-                <p className="mt-1 text-sm font-semibold text-slate-900">{a.title}</p>
-                <p className="text-xs text-slate-500">{a.desc}</p>
-                {on
-                  ? <p className="mt-1 text-xs font-medium text-emerald-600">Desbloqueado ✓</p>
-                  : <p className="mt-1 text-xs text-slate-400">Bloqueado</p>}
+                className={`group flex flex-col items-center rounded-2xl border p-5 text-center transition ${on ? "border-slate-200 bg-white shadow-sm" : "border-slate-200/70 bg-slate-50"}`}>
+                <Emblem tier={a.tier} glyph={a.glyph} unlocked={on} size={76} />
+                <p className={`mt-3 text-sm font-semibold ${on ? "text-slate-900" : "text-slate-400"}`}>{a.title}</p>
+                <p className={`text-[11px] font-medium uppercase tracking-wide ${on ? "text-slate-400" : "text-slate-300"}`}>{TIER_LABEL(a.tier)}</p>
+                <p className={`mt-1 text-xs ${on ? "text-slate-500" : "text-slate-400"}`}>{a.desc}</p>
               </div>
             );
           })}
@@ -108,15 +107,19 @@ export default async function AcademyProfilePage() {
             const { eligible } = certRequirements(c, read, passed, d);
             return (
               <Link key={c.slug} href={`/academy/certificacion/${c.slug}`}
-                className={`block rounded-2xl border p-4 hover:shadow-sm ${isEarned ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-slate-900">🎓 {c.title}</p>
-                    <p className="text-xs text-slate-500">{c.desc}</p>
+                className={`group relative block overflow-hidden rounded-2xl p-[1.5px] transition hover:shadow-md`}
+                style={{ background: isEarned ? "linear-gradient(135deg,#caa84a,#fff1bd,#b8860b)" : "linear-gradient(135deg,#e2e8f0,#cbd5e1)" }}>
+                <div className="relative rounded-[14px] bg-gradient-to-br from-[#0c1219] to-[#080b10] p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-200/70">{c.level} · {c.category}</p>
+                      <p className="mt-1 font-display text-lg font-bold text-white">{c.title}</p>
+                      <p className="mt-0.5 text-xs text-slate-400">{c.desc}</p>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${isEarned ? "bg-amber-400/15 text-amber-200" : eligible ? "bg-emerald-400/15 text-emerald-300" : "bg-white/5 text-slate-400"}`}>
+                      {isEarned ? "Obtenida" : eligible ? "Lista para obtener" : "En progreso"}
+                    </span>
                   </div>
-                  <span className={`shrink-0 text-xs font-medium ${isEarned ? "text-amber-700" : eligible ? "text-emerald-600" : "text-slate-400"}`}>
-                    {isEarned ? "Obtenida ✓" : eligible ? "¡Lista para obtener!" : "En progreso"}
-                  </span>
                 </div>
               </Link>
             );

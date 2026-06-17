@@ -6,6 +6,7 @@
 // =====================================================================
 
 import type { ModuleSlug, ActivationData } from "@/lib/guide";
+import type { Tier, GlyphKey } from "@/components/academy/Emblem";
 
 export type Category = { slug: string; title: string; emoji: string; desc: string };
 
@@ -319,23 +320,24 @@ export type LearnSummary = {
   certsEarned: number;
 };
 
-export type Achievement = { slug: string; title: string; desc: string; icon: string; unlocked: (s: LearnSummary) => boolean };
+export type Achievement = { slug: string; title: string; desc: string; tier: Tier; glyph: GlyphKey; unlocked: (s: LearnSummary) => boolean };
 export const ACHIEVEMENTS: Achievement[] = [
-  { slug: "primera-guia", title: "Primeros pasos", desc: "Leíste tu primera guía", icon: "📖", unlocked: (s) => s.guidesRead >= 1 },
-  { slug: "lector", title: "Lector aplicado", desc: "Leíste 5 guías", icon: "📚", unlocked: (s) => s.guidesRead >= 5 },
-  { slug: "primer-reto", title: "Mente analítica", desc: "Aprobaste tu primer desafío", icon: "🧠", unlocked: (s) => s.scenariosPassed >= 1 },
-  { slug: "estratega", title: "Estratega", desc: "Aprobaste 5 desafíos", icon: "🎯", unlocked: (s) => s.scenariosPassed >= 5 },
-  { slug: "manos-obra", title: "Manos a la obra", desc: "Hiciste una acción real en tu negocio", icon: "🛠️", unlocked: (s) => s.actionsDone >= 1 },
-  { slug: "ruta-1", title: "Camino recorrido", desc: "Completaste una ruta entera", icon: "🏅", unlocked: (s) => s.routesComplete >= 1 },
-  { slug: "erudito", title: "Erudito Zentro", desc: "Completaste todas las rutas", icon: "👑", unlocked: (s) => s.routesTotal > 0 && s.routesComplete >= s.routesTotal },
-  { slug: "certificado", title: "Certificado", desc: "Obtuviste tu primera certificación", icon: "🎓", unlocked: (s) => s.certsEarned >= 1 },
+  { slug: "primera-guia", title: "Primeros pasos", desc: "Leíste tu primera guía", tier: "bronce", glyph: "guide", unlocked: (s) => s.guidesRead >= 1 },
+  { slug: "lector", title: "Lector aplicado", desc: "Leíste 5 guías", tier: "plata", glyph: "stack", unlocked: (s) => s.guidesRead >= 5 },
+  { slug: "primer-reto", title: "Mente analítica", desc: "Aprobaste tu primer desafío", tier: "bronce", glyph: "analysis", unlocked: (s) => s.scenariosPassed >= 1 },
+  { slug: "estratega", title: "Estratega", desc: "Aprobaste 5 desafíos", tier: "oro", glyph: "target", unlocked: (s) => s.scenariosPassed >= 5 },
+  { slug: "manos-obra", title: "Manos a la obra", desc: "Hiciste una acción real en tu negocio", tier: "plata", glyph: "spark", unlocked: (s) => s.actionsDone >= 1 },
+  { slug: "ruta-1", title: "Camino recorrido", desc: "Completaste una ruta entera", tier: "oro", glyph: "route", unlocked: (s) => s.routesComplete >= 1 },
+  { slug: "erudito", title: "Erudito Zentro", desc: "Completaste todas las rutas", tier: "platino", glyph: "crown", unlocked: (s) => s.routesTotal > 0 && s.routesComplete >= s.routesTotal },
+  { slug: "certificado", title: "Certificado", desc: "Obtuviste tu primera certificación", tier: "platino", glyph: "shield", unlocked: (s) => s.certsEarned >= 1 },
 ];
 
-export type Certification = { slug: string; title: string; desc: string; routeSlugs: string[]; minScorePct: number; requiredActionIds: string[] };
+export type Certification = { slug: string; title: string; desc: string; level: string; category: string; routeSlugs: string[]; minScorePct: number; requiredActionIds: string[] };
 export const CERTIFICATIONS: Certification[] = [
   {
     slug: "fundamentos", title: "Fundamentos de Negocio",
     desc: "Domina lo esencial: rentabilidad, costos, flujo de caja y organización.",
+    level: "Fundamental", category: "Gestión de negocio",
     routeSlugs: ["rentabilidad", "precios", "caja", "organizacion"],
     minScorePct: 80,
     requiredActionIds: ["renta-accion-precio", "compra-accion", "caja-accion"],
