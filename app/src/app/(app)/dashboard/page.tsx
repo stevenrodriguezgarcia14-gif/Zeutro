@@ -5,6 +5,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { getPurchasesOverview } from "@/lib/purchasesOverview";
 import { getActivation } from "@/lib/activation";
+import { learnSummary } from "@/lib/academia";
 import { dismissActivation } from "../org-actions";
 
 function Card({
@@ -63,11 +64,17 @@ export default async function DashboardPage() {
   const expenseMonth = (expenses ?? []).reduce((s, e) => s + (e.amount_minor ?? 0), 0);
   const profitMonth = incomeMonth - expenseMonth;
   const cashTotal = (accounts ?? []).reduce((s, a) => s + (a.current_balance_minor ?? 0), 0);
-  const [compras, activation] = await Promise.all([
+  const [compras, activation, { data: acadProgress }] = await Promise.all([
     getPurchasesOverview(),
     getActivation(org?.business_type),
+    supabase.from("academy_progress").select("kind, item_slug"),
   ]);
   const hideActivation = (await cookies()).get("zentro_hide_activation")?.value === "1";
+
+  const acadPassed = new Set((acadProgress ?? []).filter((p) => p.kind === "challenge").map((p) => p.item_slug));
+  const acadCerts = (acadProgress ?? []).filter((p) => p.kind === "certification").length;
+  const learn = learnSummary(acadPassed, activation.data, acadCerts);
+  const learnPct = learn.scenariosTotal ? Math.round((learn.scenariosPassed / learn.scenariosTotal) * 100) : 0;
 
   // Operación de hoy
   const taskList = (tasks ?? []) as { due_date: string | null; status: string }[];
@@ -165,6 +172,21 @@ export default async function DashboardPage() {
           <p className="mt-1 text-xs text-slate-400">Ver calendario</p>
         </a>
       </div>
+
+      {/* Tu aprendizaje (Academia) */}
+      <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">Tu aprendizaje</h2>
+      <a href="/academy" className="mt-2 block rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-medium text-slate-900">Academia Zentro</p>
+            <p className="text-xs text-slate-500">{learn.scenariosPassed}/{learn.scenariosTotal} desafíos · {learn.routesComplete}/{learn.routesTotal} rutas · {learn.certsEarned} credencial(es)</p>
+          </div>
+          <span className="shrink-0 text-sm font-medium text-emerald-600">{learnPct}%</span>
+        </div>
+        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <div className="h-full rounded-full bg-emerald-500" style={{ width: `${learnPct}%` }} />
+        </div>
+      </a>
 
       <div className="mt-8 flex flex-wrap gap-3 text-sm">
         <a href="/priorities" className="rounded-lg bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-800">

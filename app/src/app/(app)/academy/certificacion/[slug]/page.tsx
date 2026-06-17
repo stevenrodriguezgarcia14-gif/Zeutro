@@ -4,8 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { getActivation } from "@/lib/activation";
 import { CERTIFICATIONS, certRequirements } from "@/lib/academia";
-import { Confetti } from "@/components/Confetti";
 import { Credential } from "@/components/academy/Credential";
+import { OnceConfetti } from "@/components/academy/OnceConfetti";
+import { ChallengeBlock, type ClientChallenge } from "@/components/ChallengeBlock";
 import { earnCertification } from "../../actions";
 
 export default async function CertificationPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -22,18 +23,25 @@ export default async function CertificationPage({ params }: { params: Promise<{ 
   ]);
   const passed = new Set((progress ?? []).filter((p) => p.kind === "challenge").map((p) => p.item_slug));
   const earnedCerts = new Set((progress ?? []).filter((p) => p.kind === "certification").map((p) => p.item_slug));
+  const celebrated = new Set((progress ?? []).filter((p) => p.kind === "celebrated").map((p) => p.item_slug));
   const { reqs, eligible } = certRequirements(cert, passed, act.data, earnedCerts);
 
   const earned = !!record;
   const serial = record ? String(record.id).replace(/-/g, "").slice(0, 10).toUpperCase() : undefined;
   const date = record ? new Date(record.created_at).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" }) : undefined;
   const holder = org?.legal_name || org?.name || "Tu negocio";
+  const confToken = `cc:${slug}`;
+
+  const capstoneClient: ClientChallenge[] = (cert.capstone ?? []).map((c) => ({
+    id: c.id, type: "scenario", difficulty: c.difficulty, prompt: c.prompt,
+    optionsText: (c.options ?? []).map((o) => o.text), done: passed.has(c.id),
+  }));
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <Link href="/academy/perfil" className="text-sm text-slate-500 hover:text-slate-800">← Mi aprendizaje</Link>
 
-      {earned && <Confetti />}
+      {earned && !celebrated.has(confToken) && <OnceConfetti token={confToken} />}
 
       <Credential
         title={cert.title} holder={holder} level={cert.level} category={cert.category}
@@ -42,7 +50,7 @@ export default async function CertificationPage({ params }: { params: Promise<{ 
 
       {earned ? (
         <p className="rounded-2xl bg-emerald-50 p-4 text-center text-sm text-emerald-800">
-          Felicidades. Dominas los fundamentos para que tu negocio gane de verdad — esta credencial lo respalda.
+          Felicidades. Esta credencial respalda que dominas {cert.category.toLowerCase()} y lo aplicas en tu negocio.
         </p>
       ) : (
         <>
@@ -58,6 +66,14 @@ export default async function CertificationPage({ params }: { params: Promise<{ 
               ))}
             </ul>
           </div>
+
+          {capstoneClient.length > 0 && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-5">
+              <p className="text-sm font-semibold text-slate-900">Examen final</p>
+              <p className="text-xs text-slate-500">Responde bien todas las preguntas para certificar. Puedes reintentar y aprender de cada una.</p>
+              <ChallengeBlock challenges={capstoneClient} />
+            </div>
+          )}
 
           {eligible ? (
             <form action={earnCertification.bind(null, slug)}>

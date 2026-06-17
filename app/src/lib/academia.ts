@@ -425,6 +425,7 @@ export type Certification = {
   tier: Tier; accent: string;
   routeSlugs: string[]; minScorePct: number; requiredActionIds: string[];
   requiresCerts?: string[];
+  capstone?: Challenge[]; // examen final (escenarios) que se debe aprobar para certificar
 };
 
 const ALL_ROUTES = ["rentabilidad", "precios", "caja", "organizacion"];
@@ -448,15 +449,93 @@ export const CERTIFICATIONS: Certification[] = [
   // --- 3 niveles generales ascendentes ---
   { slug: "fundamentos", title: "Fundamentos de Negocio", desc: "Dominas lo esencial de las 4 áreas clave.",
     level: "Fundamental", category: "Gestión de negocio", tier: "oro", accent: "#e9c45a",
-    routeSlugs: ALL_ROUTES, minScorePct: 80, requiredActionIds: ALL_ACTIONS },
+    routeSlugs: ALL_ROUTES, minScorePct: 80, requiredActionIds: ALL_ACTIONS,
+    capstone: [
+      { id: "cap-fund-1", type: "scenario", difficulty: "intermedio",
+        prompt: "Vendiste $1,000 de un producto que te costó $700 y pagaste $200 de gastos del mes. ¿Cuál fue tu ganancia?",
+        options: [
+          { text: "$100", correct: true, feedback: "Correcto: 1,000 − 700 (costo) − 200 (gastos) = $100." },
+          { text: "$300", correct: false, feedback: "Olvidaste restar los gastos del mes." },
+          { text: "$1,000", correct: false, feedback: "Eso es la venta, no la ganancia." },
+        ],
+        explanation: "Ganancia = ventas − costo de lo vendido − gastos." },
+      { id: "cap-fund-2", type: "scenario", difficulty: "intermedio",
+        prompt: "Tienes utilidad este mes, pero tu cuenta está casi vacía. ¿Qué lo explica mejor?",
+        options: [
+          { text: "Te deben (por cobrar) o invertiste en inventario", correct: true, feedback: "Correcto. Utilidad no es lo mismo que efectivo disponible." },
+          { text: "Es imposible tener utilidad sin efectivo", correct: false, feedback: "Sí es posible: el dinero puede estar por cobrar o en mercancía." },
+          { text: "Estás en quiebra", correct: false, feedback: "No necesariamente; es un tema de caja, no de rentabilidad." },
+        ],
+        explanation: "Rentabilidad y caja son distintas: puedes ganar y aun así no tener efectivo a la mano." },
+      { id: "cap-fund-3", type: "scenario", difficulty: "basico",
+        prompt: "Para fijar el precio de un producto, ¿qué necesitas conocer primero?",
+        options: [
+          { text: "Su costo real (incluyendo gastos asociados)", correct: true, feedback: "Correcto. Sin costo no sabes si ganas o pierdes." },
+          { text: "Solo lo que cobra el vecino", correct: false, feedback: "El mercado importa, pero sin tu costo puedes vender perdiendo." },
+          { text: "Tu estado de ánimo", correct: false, feedback: "El precio se calcula, no se adivina." },
+        ],
+        explanation: "Precio parte del costo real; luego ajustas por margen y mercado." },
+    ] },
   { slug: "profesional", title: "Gestión Profesional", desc: "Aprobaste todas las áreas con excelencia.",
     level: "Profesional", category: "Gestión integral", tier: "platino", accent: "#38bdf8",
     routeSlugs: ALL_ROUTES, minScorePct: 100, requiredActionIds: [],
-    requiresCerts: ["esp-rentabilidad", "esp-precios", "esp-caja", "esp-organizacion"] },
+    requiresCerts: ["esp-rentabilidad", "esp-precios", "esp-caja", "esp-organizacion"],
+    capstone: [
+      { id: "cap-pro-1", type: "scenario", difficulty: "avanzado",
+        prompt: "Producto A: 50% de margen, vendes pocos. Producto B: 10% de margen, vendes muchísimo. ¿Cómo decides en qué enfocarte?",
+        options: [
+          { text: "Miro la ganancia TOTAL que deja cada uno, no solo margen ni volumen", correct: true, feedback: "Correcto. Margen alto con pocas ventas puede dejar menos que margen bajo con mucho volumen (o al revés)." },
+          { text: "Siempre el de mayor margen", correct: false, feedback: "El margen alto no sirve si casi no vendes." },
+          { text: "Siempre el que más se vende", correct: false, feedback: "Vender mucho con margen mínimo puede dejar casi nada." },
+        ],
+        explanation: "Decide por ganancia total (margen × volumen), no por una sola métrica." },
+      { id: "cap-pro-2", type: "scenario", difficulty: "avanzado",
+        prompt: "Tu flujo de caja proyecta un hueco en 30 días y tienes una compra grande de inventario planeada. ¿Qué haces?",
+        options: [
+          { text: "Pospongo o reduzco la compra hasta asegurar la caja", correct: true, feedback: "Correcto. Primero proteges la liquidez; el inventario puede esperar." },
+          { text: "Compro igual, ya se resolverá", correct: false, feedback: "Así te quedas sin efectivo para lo esencial." },
+          { text: "Cancelo el negocio", correct: false, feedback: "Exagerado: es un ajuste de tiempos, no el fin." },
+        ],
+        explanation: "Ante un hueco de caja, prioriza liquidez y reprograma compras grandes." },
+      { id: "cap-pro-3", type: "scenario", difficulty: "avanzado",
+        prompt: "El costo de tu insumo principal sube 20%. ¿Qué haces?",
+        options: [
+          { text: "Recalculo el costo y ajusto precios para mantener el margen", correct: true, feedback: "Correcto. Si no ajustas, regalas margen en cada venta." },
+          { text: "No hago nada y absorbo la pérdida indefinidamente", correct: false, feedback: "Eso erosiona tu ganancia mes a mes." },
+          { text: "Bajo el precio para vender más", correct: false, feedback: "Empeora el problema: vendes más perdiendo más." },
+        ],
+        explanation: "Cuando sube el costo, recalcula y ajusta precio para proteger el margen." },
+    ] },
   { slug: "maestro", title: "Maestría Zentro", desc: "El máximo reconocimiento: dominio total y aplicado.",
     level: "Maestro", category: "Maestría", tier: "platino", accent: "#d4af37",
     routeSlugs: ALL_ROUTES, minScorePct: 100, requiredActionIds: ALL_ACTIONS,
-    requiresCerts: ["profesional", "fundamentos"] },
+    requiresCerts: ["profesional", "fundamentos"],
+    capstone: [
+      { id: "cap-mae-1", type: "scenario", difficulty: "avanzado",
+        prompt: "Quieres crecer 50% el próximo trimestre. ¿Qué miras primero para que sea sostenible?",
+        options: [
+          { text: "Si tu caja y tu margen aguantan ese crecimiento", correct: true, feedback: "Correcto. Crecer sin caja ni margen suficiente quiebra negocios rentables." },
+          { text: "Solo si puedo vender más", correct: false, feedback: "Vender más sin caja para sostenerlo es peligroso." },
+          { text: "El crecimiento siempre es bueno", correct: false, feedback: "El crecimiento mal financiado es una causa típica de quiebra." },
+        ],
+        explanation: "Crecer exige que caja y margen lo soporten; si no, el crecimiento te ahoga." },
+      { id: "cap-mae-2", type: "scenario", difficulty: "avanzado",
+        prompt: "Un cliente grande (30% de tus ventas) pide 60 días de crédito. ¿Cuál es el riesgo principal?",
+        options: [
+          { text: "Concentración + presión de caja si se atrasa", correct: true, feedback: "Correcto. Depender tanto de un cliente a crédito es doble riesgo." },
+          { text: "Ninguno, es una gran venta", correct: false, feedback: "Una gran venta a crédito puede hundir tu caja si no paga a tiempo." },
+          { text: "Que te compre demasiado", correct: false, feedback: "El problema no es el volumen, es la concentración y el plazo." },
+        ],
+        explanation: "Concentrar ventas en un cliente a crédito largo es riesgo de caja y dependencia." },
+      { id: "cap-mae-3", type: "scenario", difficulty: "avanzado",
+        prompt: "Tu negocio es rentable, pero al crecer la caja sufre cada mes. ¿Qué es lo más probable?",
+        options: [
+          { text: "Creces más rápido de lo que cobras: hay que gestionar el capital de trabajo", correct: true, feedback: "Correcto. Más ventas a crédito + más inventario consumen caja aunque ganes." },
+          { text: "Estás perdiendo dinero", correct: false, feedback: "No: eres rentable; el problema es de caja, no de pérdidas." },
+          { text: "Debes dejar de vender", correct: false, feedback: "La solución es gestionar cobros e inventario, no frenar el negocio." },
+        ],
+        explanation: "Crecer consume caja (inventario y cuentas por cobrar): es capital de trabajo, no pérdida." },
+    ] },
 ];
 
 export function routeLessons(route: Route): Lesson[] { return lessonsByCategory(route.category); }
@@ -516,6 +595,10 @@ export function certRequirements(cert: Certification, passed: Set<string>, d: Ac
   }
   if (scen.length > 0) reqs.push({ label: routes.length > 1 ? "Aprueba los desafíos de las 4 rutas" : "Aprueba los desafíos de la ruta", met: allScen });
   if (cert.requiredActionIds.length > 0) reqs.push({ label: "Aplica las acciones clave en tu negocio", met: actsOk });
+  if (cert.capstone && cert.capstone.length > 0) {
+    const capOk = cert.capstone.every((c) => passed.has(c.id));
+    reqs.push({ label: `Aprueba el examen final (${cert.capstone.length} preguntas)`, met: capOk });
+  }
 
   return { reqs, eligible: reqs.every((r) => r.met), scorePct };
 }
@@ -523,7 +606,9 @@ export function certRequirements(cert: Certification, passed: Set<string>, d: Ac
 // Validación de escenarios en el SERVIDOR (no se envía la respuesta correcta al
 // navegador hasta que el usuario contesta).
 export function findScenario(id: string): Challenge | undefined {
-  return LESSONS.flatMap((l) => l.challenges ?? []).find((c) => c.id === id && c.type === "scenario");
+  const fromLessons = LESSONS.flatMap((l) => l.challenges ?? []);
+  const fromCapstones = CERTIFICATIONS.flatMap((c) => c.capstone ?? []);
+  return [...fromLessons, ...fromCapstones].find((c) => c.id === id && c.type === "scenario");
 }
 export function gradeScenario(id: string, optionIndex: number) {
   const c = findScenario(id);

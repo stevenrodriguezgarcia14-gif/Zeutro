@@ -2,10 +2,11 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { getActivation } from "@/lib/activation";
-import { CATEGORIES, lessonsByCategory, lessonDone, type Lesson, type Challenge } from "@/lib/academia";
+import { CATEGORIES, lessonsByCategory, lessonDone, ACHIEVEMENTS, learnSummary, type Lesson, type Challenge } from "@/lib/academia";
 import { MODULES } from "@/lib/guide";
 import type { ActivationData } from "@/lib/guide";
 import { ChallengeBlock, type ClientChallenge } from "@/components/ChallengeBlock";
+import { AcademyNotifier } from "@/components/academy/AcademyNotifier";
 
 function renderBody(body: string[]) {
   const out: React.ReactNode[] = [];
@@ -64,6 +65,13 @@ export default async function AcademyPage() {
   const passed = new Set((progress ?? []).filter((p) => p.kind === "challenge").map((p) => p.item_slug));
   const d = act.data;
 
+  // Logros recién desbloqueados (aún no celebrados) → animación de desbloqueo.
+  const earnedCount = (progress ?? []).filter((p) => p.kind === "certification").length;
+  const celebrated = new Set((progress ?? []).filter((p) => p.kind === "celebrated").map((p) => p.item_slug));
+  const summary = learnSummary(passed, d, earnedCount);
+  const newUnlocks = ACHIEVEMENTS.filter((a) => a.unlocked(summary) && !celebrated.has(a.slug))
+    .map((a) => ({ slug: a.slug, title: a.title, desc: a.desc, tier: a.tier, glyph: a.glyph }));
+
   let gTotal = 0, gDone = 0;
   for (const cat of CATEGORIES) for (const l of lessonsByCategory(cat.slug)) {
     const p = lessonProgress(l, passed, d); gTotal += p.total; gDone += p.done;
@@ -71,6 +79,7 @@ export default async function AcademyPage() {
 
   return (
     <div className="space-y-8">
+      <AcademyNotifier unlocks={newUnlocks} />
       <div>
         <div className="flex items-start justify-between gap-3">
           <div>

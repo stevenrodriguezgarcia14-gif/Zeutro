@@ -25,6 +25,16 @@ export async function submitScenario(id: string, optionIndex: number) {
   return grade;
 }
 
+/** Marca logros/eventos como ya celebrados, para no repetir la animación. */
+export async function markCelebrated(slugs: string[]): Promise<void> {
+  if (!slugs || slugs.length === 0) return;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  const rows = slugs.map((s) => ({ user_id: user.id, kind: "celebrated", item_slug: s, status: "seen" }));
+  await supabase.from("academy_progress").upsert(rows, { onConflict: "user_id,kind,item_slug" });
+}
+
 /** Otorga una certificación SOLO si el usuario cumple los requisitos (verificado en servidor). */
 export async function earnCertification(slug: string): Promise<void> {
   const supabase = await createClient();

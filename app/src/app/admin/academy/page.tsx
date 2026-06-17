@@ -5,11 +5,15 @@ import Link from "next/link";
 import { ACHIEVEMENTS, CERTIFICATIONS } from "@/lib/academia";
 import { Emblem, TIER_LABEL } from "@/components/academy/Emblem";
 import { Credential } from "@/components/academy/Credential";
+import { UnlockCelebration, type UnlockItem } from "@/components/academy/UnlockCelebration";
 
 export default function AdminAcademyPreview() {
   const [key, setKey] = useState(0);
   const [unlocked, setUnlocked] = useState(true);
   const [earned, setEarned] = useState(true);
+  const [demo, setDemo] = useState<UnlockItem[] | null>(null);
+
+  const toItem = (a: typeof ACHIEVEMENTS[number]): UnlockItem => ({ slug: a.slug, title: a.title, desc: a.desc, tier: a.tier, glyph: a.glyph });
 
   return (
     <div className="space-y-8">
@@ -30,7 +34,12 @@ export default function AdminAcademyPreview() {
         <button onClick={() => setEarned((v) => !v)} className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800">
           Credencial: {earned ? "obtenida" : "vista previa"}
         </button>
+        <button onClick={() => setDemo([toItem(ACHIEVEMENTS[1]), toItem(ACHIEVEMENTS[6])])} className="rounded-lg bg-amber-500 px-3 py-2 text-sm font-medium text-white hover:bg-amber-600">
+          ▶ Simular desbloqueo
+        </button>
       </div>
+
+      {demo && <UnlockCelebration items={demo} onDone={() => setDemo(null)} />}
 
       {/* Logros */}
       <section>

@@ -8,6 +8,7 @@ import {
 import type { ActivationData } from "@/lib/guide";
 import { Emblem, TIER_LABEL } from "@/components/academy/Emblem";
 import { Credential } from "@/components/academy/Credential";
+import { AcademyNotifier } from "@/components/academy/AcademyNotifier";
 
 function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -39,6 +40,9 @@ export default async function AcademyProfilePage() {
   const earned = new Set((progress ?? []).filter((p) => p.kind === "certification").map((p) => p.item_slug));
   const d = act.data;
   const s = learnSummary(passed, d, earned.size);
+  const celebrated = new Set((progress ?? []).filter((p) => p.kind === "celebrated").map((p) => p.item_slug));
+  const newUnlocks = ACHIEVEMENTS.filter((a) => a.unlocked(s) && !celebrated.has(a.slug))
+    .map((a) => ({ slug: a.slug, title: a.title, desc: a.desc, tier: a.tier, glyph: a.glyph }));
   const holder = org?.legal_name || org?.name || "Tu negocio";
   const certInfo = new Map<string, { serial: string; date: string }>();
   for (const p of (progress ?? []).filter((p) => p.kind === "certification")) {
@@ -50,6 +54,7 @@ export default async function AcademyProfilePage() {
 
   return (
     <div className="space-y-8">
+      <AcademyNotifier unlocks={newUnlocks} />
       <div>
         <Link href="/academy" className="text-sm text-slate-500 hover:text-slate-800">← Academia</Link>
         <h1 className="mt-1 text-2xl font-bold text-slate-900">Mi aprendizaje</h1>
@@ -73,7 +78,7 @@ export default async function AcademyProfilePage() {
             return (
               <div key={a.slug}
                 className={`group flex flex-col items-center rounded-2xl border p-5 text-center transition ${on ? "border-slate-200 bg-white shadow-sm" : "border-slate-200/70 bg-slate-50"}`}>
-                <Emblem tier={a.tier} glyph={a.glyph} unlocked={on} size={76} />
+                <Emblem tier={a.tier} glyph={a.glyph} unlocked={on} size={76} animateIn={on} />
                 <p className={`mt-3 text-sm font-semibold ${on ? "text-slate-900" : "text-slate-400"}`}>{a.title}</p>
                 <p className={`text-[11px] font-medium uppercase tracking-wide ${on ? "text-slate-400" : "text-slate-300"}`}>{TIER_LABEL(a.tier)}</p>
                 <p className={`mt-1 text-xs ${on ? "text-slate-500" : "text-slate-400"}`}>{a.desc}</p>
