@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Environment, Lightformer } from "@react-three/drei";
 import * as THREE from "three";
@@ -55,7 +55,7 @@ function Coin({ tier, glyph }: { tier: Tier; glyph: GlyphKey }) {
   return (
     <group ref={spin} rotation={[-0.16, 0, 0]}>
       <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
-        <cylinderGeometry args={[1, 1, 0.14, 180]} />
+        <cylinderGeometry args={[1, 1, 0.14, 96]} />
         <meshPhysicalMaterial attach="material-0" color={m.color} metalness={1} roughness={m.rough} envMapIntensity={2.2} clearcoat={0.4} clearcoatRoughness={0.3} />
         <meshStandardMaterial attach="material-1" map={front} metalness={0.85} roughness={0.42} envMapIntensity={1.3} />
         <meshStandardMaterial attach="material-2" map={back} metalness={0.85} roughness={0.42} envMapIntensity={1.3} />
@@ -65,14 +65,24 @@ function Coin({ tier, glyph }: { tier: Tier; glyph: GlyphKey }) {
 }
 
 export function Coin3DGL({ tier, glyph, size = 220 }: { tier: Tier; glyph: GlyphKey; size?: number }) {
+  // Difiere el montaje del lienzo: deja que el modal/animación pinten primero
+  // y monta WebGL un instante después, para no congelar la entrada.
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), 140);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (!ready) return <div style={{ width: size, height: size }} className="rounded-full bg-white/5" />;
+
   return (
     <div style={{ width: size, height: size }}>
-      <Canvas dpr={[1, 2]} camera={{ position: [0, 0, 3], fov: 32 }} gl={{ antialias: true, alpha: true }} style={{ background: "transparent" }}>
-        <ambientLight intensity={0.5} />
+      <Canvas dpr={[1, 1.5]} camera={{ position: [0, 0, 3], fov: 32 }} gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }} style={{ background: "transparent" }}>
+        <ambientLight intensity={0.55} />
         <directionalLight position={[3, 4, 5]} intensity={1.3} />
         <directionalLight position={[-4, -2, 2]} intensity={0.5} color="#bcd3ff" />
         <Coin tier={tier} glyph={glyph} />
-        <Environment resolution={128} frames={1}>
+        <Environment resolution={64} frames={1}>
           <Lightformer form="rect" intensity={3} position={[2, 3, 3]} scale={[5, 5, 1]} />
           <Lightformer form="rect" intensity={1.4} position={[-3, 1, 3]} scale={[4, 4, 1]} color="#cfe0ff" />
           <Lightformer form="ring" intensity={2.4} position={[0, -1, 5]} scale={3.5} />
