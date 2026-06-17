@@ -60,8 +60,12 @@ export default async function ProfitabilityPage() {
     })
     .sort((a, b) => b.profit - a.profit);
 
-  const incomeTotal = pays.reduce((s, p) => s + (p.amount_minor ?? 0), 0);
-  const expenseTotal = exps.reduce((s, e) => s + (e.amount_minor ?? 0), 0);
+  // Compras para reventa es su propio centro de ganancia (se vende registrando
+  // unidades vendidas, no por factura), así que lo integramos al total sin doble
+  // conteo: + ingreso recuperado y + costo de la mercancía vendida.
+  const comprasCostoVendido = Math.max(0, compras.recuperado - compras.ganancia);
+  const incomeTotal = pays.reduce((s, p) => s + (p.amount_minor ?? 0), 0) + compras.recuperado;
+  const expenseTotal = exps.reduce((s, e) => s + (e.amount_minor ?? 0), 0) + comprasCostoVendido;
   const netTotal = incomeTotal - expenseTotal;
 
   const incomeMonth = pays.filter((p) => p.paid_at >= monthStart).reduce((s, p) => s + (p.amount_minor ?? 0), 0);
@@ -86,9 +90,9 @@ export default async function ProfitabilityPage() {
       {/* Acumulado (todo el tiempo) */}
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-400">Desde el inicio</h2>
       <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card title="Ingresos (cobrado)" value={formatMoney(incomeTotal, currency)} tone="good" hint="Todo lo que has cobrado" />
-        <Card title="Invertido / gastado" value={formatMoney(expenseTotal, currency)} tone="bad" hint="Todo lo que ha salido (incluye compras y equipo registrados como gasto)" />
-        <Card title="Ganancia neta" value={formatMoney(netTotal, currency)} tone={netTotal >= 0 ? "good" : "bad"} hint="Ingresos − gastos" />
+        <Card title="Ingresos (cobrado)" value={formatMoney(incomeTotal, currency)} tone="good" hint="Cobrado en facturas + reventa de compras" />
+        <Card title="Invertido / gastado" value={formatMoney(expenseTotal, currency)} tone="bad" hint="Gastos + costo de la mercancía vendida" />
+        <Card title="Ganancia neta" value={formatMoney(netTotal, currency)} tone={netTotal >= 0 ? "good" : "bad"} hint="Ingresos − gastos (incluye reventa)" />
       </div>
 
       {/* Estado de recuperación */}
