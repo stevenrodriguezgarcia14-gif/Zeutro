@@ -3,6 +3,7 @@ import { createOrganization } from "./actions";
 import { getCurrentOrg } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { OrgLocaleFields } from "@/components/OrgLocaleFields";
+import { BusinessTypePicker } from "@/components/BusinessTypePicker";
 
 export default async function OnboardingPage({
   searchParams,
@@ -21,7 +22,7 @@ export default async function OnboardingPage({
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
+      <div className="w-full max-w-2xl rounded-2xl bg-white p-8 shadow-sm">
         <h1 className="text-2xl font-bold text-slate-900">Crea tu negocio</h1>
         <p className="mt-1 text-sm text-slate-500">
           Configura lo mínimo para empezar. Podrás cambiarlo después.
@@ -45,6 +46,11 @@ export default async function OnboardingPage({
             />
           </div>
           <OrgLocaleFields defaultCountry="MX" />
+          <div>
+            <label className="block text-sm font-medium text-slate-700">¿Qué tipo de negocio tienes?</label>
+            <p className="mb-2 text-xs text-slate-500">Con esto Zentro te muestra primero lo que más te sirve. Podrás cambiarlo después.</p>
+            <BusinessTypePicker />
+          </div>
           <button
             type="submit"
             className="w-full rounded-lg bg-slate-900 py-2.5 font-medium text-white hover:bg-slate-800"

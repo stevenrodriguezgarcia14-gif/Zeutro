@@ -30,6 +30,17 @@ export async function updateOrganization(formData: FormData) {
   redirect("/settings?ok=1");
 }
 
+export async function updateBusinessType(formData: FormData) {
+  const id = String(formData.get("org_id") ?? "");
+  const business_type = String(formData.get("business_type") ?? "").trim() || null;
+  const supabase = await createClient();
+  const { error } = await supabase.from("organizations").update({ business_type }).eq("id", id);
+  if (error) redirect(`/settings?error=${encodeURIComponent(error.message)}`);
+  revalidatePath("/", "layout");
+  revalidatePath("/guide");
+  redirect("/settings?ok=1");
+}
+
 export async function saveLogo(orgId: string, url: string) {
   const supabase = await createClient();
   await supabase.from("organizations").update({ logo_url: url }).eq("id", orgId);

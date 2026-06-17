@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { getPurchasesOverview } from "@/lib/purchasesOverview";
+import { getActivation } from "@/lib/activation";
 
 function Card({
   title,
@@ -57,7 +59,10 @@ export default async function DashboardPage() {
   const expenseMonth = (expenses ?? []).reduce((s, e) => s + (e.amount_minor ?? 0), 0);
   const profitMonth = incomeMonth - expenseMonth;
   const cashTotal = (accounts ?? []).reduce((s, a) => s + (a.current_balance_minor ?? 0), 0);
-  const compras = await getPurchasesOverview();
+  const [compras, activation] = await Promise.all([
+    getPurchasesOverview(),
+    getActivation(org?.business_type),
+  ]);
 
   // Operación de hoy
   const taskList = (tasks ?? []) as { due_date: string | null; status: string }[];
@@ -71,6 +76,33 @@ export default async function DashboardPage() {
     <div>
       <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
       <p className="mt-1 text-sm text-slate-500">¿Qué está pasando en tu negocio, {org?.name}?</p>
+
+      {/* Activación: guía de primeros pasos (desaparece al completar) */}
+      {activation.pct < 100 && (
+        <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="font-semibold text-slate-900">Pon a punto tu Zentro</p>
+              <p className="text-sm text-slate-600">Vas {activation.pct}% — {activation.doneCount} de {activation.total} pasos para arrancar.</p>
+            </div>
+            <Link href="/guide" className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+              Centro de Orientación →
+            </Link>
+          </div>
+          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white">
+            <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${activation.pct}%` }} />
+          </div>
+          {activation.suggestions[0] && (
+            <Link href={activation.suggestions[0].href} className="mt-3 flex items-center justify-between rounded-xl border border-emerald-200 bg-white p-3 hover:shadow-sm">
+              <span>
+                <span className="text-xs font-medium uppercase tracking-wide text-emerald-600">Tu siguiente paso</span>
+                <span className="block text-sm font-medium text-slate-900">{activation.suggestions[0].title}</span>
+              </span>
+              <span className="ml-3 shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white">{activation.suggestions[0].cta}</span>
+            </Link>
+          )}
+        </div>
+      )}
 
       {/* Dinero del mes: ¿gano o pierdo? */}
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-400">

@@ -3,8 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { OrgLocaleFields } from "@/components/OrgLocaleFields";
 import { LogoUploader } from "@/components/LogoUploader";
+import { BusinessTypePicker } from "@/components/BusinessTypePicker";
 import {
   updateOrganization,
+  updateBusinessType,
   deleteOrganization,
   inviteUser,
   cancelInvitation,
@@ -75,6 +77,21 @@ export default async function SettingsPage({
         <h2 className="font-semibold text-slate-900">Logo</h2>
         <p className="mb-4 text-sm text-slate-500">Aparecerá en tu negocio y (próximamente) en tus facturas.</p>
         <LogoUploader orgId={org.id} currentUrl={org.logo_url ?? null} />
+      </section>
+
+      {/* Tipo de negocio (Centro de Orientación) */}
+      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
+        <h2 className="font-semibold text-slate-900">Tipo de negocio</h2>
+        <p className="mb-4 text-sm text-slate-500">
+          Define qué módulos te muestra Zentro primero y tu ruta en el Centro de Orientación.
+        </p>
+        <form action={updateBusinessType} className="space-y-4">
+          <input type="hidden" name="org_id" value={org.id} />
+          <BusinessTypePicker defaultValue={org.business_type} />
+          <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+            Guardar tipo de negocio
+          </button>
+        </form>
       </section>
 
       {/* Datos del negocio */}

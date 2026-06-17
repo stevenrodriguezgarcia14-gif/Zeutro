@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { getOrgContext } from "@/lib/org";
+import { getProfile, MODULES } from "@/lib/guide";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AppLayout({
@@ -35,8 +36,11 @@ export default async function AppLayout({
     );
   }
 
+  const profile = getProfile(org.business_type);
+  const priorityHrefs = profile.priority.map((slug) => MODULES[slug].href);
+
   return (
-    <AppShell orgName={org.name} orgs={orgs} activeId={org.id} isPlatformAdmin={!!isPlatformAdmin}>
+    <AppShell orgName={org.name} orgs={orgs} activeId={org.id} isPlatformAdmin={!!isPlatformAdmin} priorityHrefs={priorityHrefs}>
       {children}
     </AppShell>
   );

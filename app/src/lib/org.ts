@@ -11,6 +11,7 @@ export type Organization = {
   legal_name: string | null;
   tax_id: string | null;
   status: string;
+  business_type: string | null;
 };
 
 const ACTIVE_COOKIE = "zentro_active_org";

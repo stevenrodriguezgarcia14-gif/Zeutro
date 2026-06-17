@@ -11,6 +11,7 @@ const groups: { label: string; items: { href: string; name: string }[] }[] = [
     label: "Inicio",
     items: [
       { href: "/dashboard", name: "Dashboard" },
+      { href: "/guide", name: "Centro de Orientación" },
       { href: "/priorities", name: "Centro de Prioridades" },
       { href: "/alerts", name: "Alertas" },
     ],
@@ -54,12 +55,14 @@ export function AppShell({
   orgs,
   activeId,
   isPlatformAdmin,
+  priorityHrefs = [],
   children,
 }: {
   orgName: string;
   orgs: { id: string; name: string }[];
   activeId: string;
   isPlatformAdmin?: boolean;
+  priorityHrefs?: string[];
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -136,16 +139,18 @@ export function AppShell({
                 <p className="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">{g.label}</p>
                 {g.items.map((it) => {
                   const active = pathname === it.href || pathname.startsWith(it.href + "/");
+                  const isPriority = priorityHrefs.includes(it.href);
                   return (
                     <Link
                       key={it.href}
                       href={it.href}
                       onClick={close}
-                      className={`block rounded-lg px-2 py-2 text-sm ${
+                      className={`flex items-center justify-between rounded-lg px-2 py-2 text-sm ${
                         active ? "bg-slate-900 font-medium text-white" : "text-slate-700 hover:bg-slate-100"
                       }`}
                     >
-                      {it.name}
+                      <span>{it.name}</span>
+                      {isPriority && !active && <span className="text-amber-500" title="Clave para tu negocio">★</span>}
                     </Link>
                   );
                 })}

@@ -8,6 +8,7 @@ export async function createOrganization(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const country = String(formData.get("country") ?? "MX");
   const base_currency = String(formData.get("base_currency") ?? "MXN");
+  const business_type = String(formData.get("business_type") ?? "").trim() || null;
 
   if (!name) {
     redirect(`/onboarding?error=${encodeURIComponent("El nombre del negocio es obligatorio.")}`);
@@ -26,6 +27,7 @@ export async function createOrganization(formData: FormData) {
     p_name: name,
     p_country: country,
     p_currency: base_currency,
+    p_business_type: business_type,
   });
 
   if (rpcError) {
