@@ -1,18 +1,29 @@
 "use client";
 
-import { useId } from "react";
-
 export type Tier = "bronce" | "plata" | "oro" | "platino";
 export type GlyphKey = "guide" | "stack" | "analysis" | "target" | "spark" | "route" | "crown" | "shield";
 
-const TIERS: Record<Tier, { a: string; b: string; label: string; glow: string }> = {
-  bronce: { a: "#8c5a2b", b: "#e0a060", label: "Bronce", glow: "rgba(224,160,96,0.5)" },
-  plata: { a: "#8a929c", b: "#eef2f6", label: "Plata", glow: "rgba(226,232,240,0.55)" },
-  oro: { a: "#b8860b", b: "#ffd86b", label: "Oro", glow: "rgba(255,216,107,0.55)" },
-  platino: { a: "#7c93a8", b: "#f4f9ff", label: "Platino", glow: "rgba(125,211,252,0.55)" },
+type TierCfg = { conic: string; glyph: string; glow: string; label: string };
+const TIERS: Record<Tier, TierCfg> = {
+  bronce: {
+    conic: "conic-gradient(from -50deg, #f3cfa6, #8c5a2b, #e6ab78, #6e4420, #edb98a, #8c5a2b, #f3cfa6)",
+    glyph: "#f2c79e", glow: "rgba(214,142,86,0.55)", label: "Bronce",
+  },
+  plata: {
+    conic: "conic-gradient(from -50deg, #ffffff, #9aa3ad, #eef3f7, #6b7280, #e2e8ee, #9aa3ad, #ffffff)",
+    glyph: "#eef3f7", glow: "rgba(214,224,234,0.5)", label: "Plata",
+  },
+  oro: {
+    conic: "conic-gradient(from -50deg, #fff3c0, #c9971f, #ffe9a8, #8a6508, #ffd86b, #b8860b, #fff3c0)",
+    glyph: "#ffe9ad", glow: "rgba(255,200,80,0.6)", label: "Oro",
+  },
+  platino: {
+    conic: "conic-gradient(from -50deg, #ffffff, #a9b8c8, #f4f9ff, #81979b, #e8f1fb, #a9b8c8, #ffffff)",
+    glyph: "#eaf2fb", glow: "rgba(150,200,250,0.6)", label: "Platino",
+  },
 };
+const LOCKED_CONIC = "conic-gradient(from -50deg, #d7dee6, #94a3b8, #e2e8ee, #7f8a99, #cbd5e1, #94a3b8, #d7dee6)";
 
-// Glifos monolínea propios (sin emojis). viewBox 0 0 24 24, trazo.
 const GLYPHS: Record<GlyphKey, string> = {
   guide: "M12 6.5c-1.6-1-4.2-1.5-6-1.1v11c1.8-.4 4.4.1 6 1.1 1.6-1 4.2-1.5 6-1.1v-11c-1.8-.4-4.4.1-6 1.1zM12 6.5V18",
   stack: "M12 4l8 4-8 4-8-4 8-4zM4 12l8 4 8-4M4 16l8 4 8-4",
@@ -27,71 +38,62 @@ const GLYPHS: Record<GlyphKey, string> = {
 export function Emblem({
   tier, glyph, unlocked, size = 84, animateIn = false,
 }: { tier: Tier; glyph: GlyphKey; unlocked: boolean; size?: number; animateIn?: boolean }) {
-  const uid = useId().replace(/:/g, "");
   const t = TIERS[tier];
-  const rim = `rim-${uid}`, face = `face-${uid}`, ring = `ring-${uid}`;
+  const rimPad = Math.round(size * 0.09);
+  const glyphSize = Math.round(size * 0.44);
+  const faceBg = unlocked
+    ? "radial-gradient(circle at 38% 30%, #2b313a 0%, #141a21 46%, #070b10 100%)"
+    : "radial-gradient(circle at 38% 30%, #f1f5f9 0%, #d7dee6 100%)";
+  const glyphColor = unlocked ? t.glyph : "#94a3b8";
 
   return (
     <div
-      className={`zentro-sheen-host relative inline-flex ${animateIn ? "zentro-emblem-in" : ""} ${unlocked ? "zentro-float" : ""}`}
+      className={`relative inline-flex ${animateIn ? "zentro-emblem-in" : ""} ${unlocked ? "zentro-float" : ""}`}
       style={{ width: size, height: size }}
     >
-      <svg viewBox="0 0 100 100" width={size} height={size} style={{ filter: unlocked ? `drop-shadow(0 6px 14px ${t.glow})` : "drop-shadow(0 3px 6px rgba(15,23,42,0.18))" }}>
-        <defs>
-          <linearGradient id={rim} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor={unlocked ? t.b : "#cbd5e1"} />
-            <stop offset="45%" stopColor={unlocked ? t.a : "#94a3b8"} />
-            <stop offset="100%" stopColor={unlocked ? t.b : "#cbd5e1"} />
-          </linearGradient>
-          <radialGradient id={face} cx="38%" cy="32%" r="80%">
-            {unlocked ? (
-              <>
-                <stop offset="0%" stopColor="#20242b" />
-                <stop offset="60%" stopColor="#0e1116" />
-                <stop offset="100%" stopColor="#05070a" />
-              </>
-            ) : (
-              <>
-                <stop offset="0%" stopColor="#f1f5f9" />
-                <stop offset="100%" stopColor="#dbe2ea" />
-              </>
-            )}
-          </radialGradient>
-          <linearGradient id={ring} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgba(255,255,255,0.5)" />
-            <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-          </linearGradient>
-          <clipPath id={`clip-${uid}`}><circle cx="50" cy="50" r="40" /></clipPath>
-        </defs>
-
-        {/* Aro metálico */}
-        <circle cx="50" cy="50" r="47" fill={`url(#${rim})`} />
-        {/* Acuñado (knurling) */}
-        <circle cx="50" cy="50" r="43.5" fill="none" stroke={unlocked ? t.a : "#94a3b8"} strokeWidth="1.4" strokeDasharray="1.4 2.4" opacity="0.6" />
-        {/* Cara */}
-        <circle cx="50" cy="50" r="40" fill={`url(#${face})`} />
-        {/* Luz pulida que gira (solo desbloqueado) */}
-        {unlocked && (
-          <g clipPath={`url(#clip-${uid})`}>
-            <g className="zentro-spin">
-              <polygon points="50,50 6,18 26,2" fill={t.b} opacity="0.16" />
-              <polygon points="50,50 94,82 74,98" fill={t.b} opacity="0.10" />
-            </g>
-          </g>
-        )}
-        {/* Aro interior biselado */}
-        <circle cx="50" cy="50" r="38.5" fill="none" stroke={unlocked ? t.b : "#cbd5e1"} strokeWidth="0.8" opacity="0.25" />
-        {/* Reflejo superior */}
-        <ellipse cx="50" cy="30" rx="30" ry="14" fill={`url(#${ring})`} opacity={unlocked ? 0.18 : 0.35} />
-        {/* Glifo */}
-        <g transform="translate(26 26) scale(2)">
-          <path d={GLYPHS[glyph]} fill="none" stroke={unlocked ? t.b : "#94a3b8"} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-        </g>
-      </svg>
-
-      {/* Sheen */}
-      <span className="zentro-sheen pointer-events-none absolute inset-0 rounded-full"
-        style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent)", borderRadius: "9999px" }} />
+      {/* Aro metálico (canto que atrapa la luz) */}
+      <div
+        style={{
+          width: size, height: size, borderRadius: "9999px",
+          background: unlocked ? t.conic : LOCKED_CONIC,
+          padding: rimPad,
+          boxShadow: unlocked
+            ? `0 10px 24px ${t.glow}, 0 2px 4px rgba(0,0,0,0.35), inset 0 2px 3px rgba(255,255,255,0.55), inset 0 -4px 7px rgba(0,0,0,0.45)`
+            : "0 4px 10px rgba(15,23,42,0.18), inset 0 2px 3px rgba(255,255,255,0.6), inset 0 -3px 5px rgba(0,0,0,0.18)",
+        }}
+      >
+        {/* Cara abombada */}
+        <div
+          className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full"
+          style={{
+            background: faceBg,
+            boxShadow: unlocked
+              ? "inset 0 3px 8px rgba(0,0,0,0.75), inset 0 -2px 3px rgba(255,255,255,0.07)"
+              : "inset 0 2px 6px rgba(0,0,0,0.12)",
+          }}
+        >
+          {/* Luz especular que gira */}
+          {unlocked && (
+            <div
+              className="zentro-spin pointer-events-none absolute inset-0"
+              style={{
+                background: "conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.38) 38deg, transparent 92deg, transparent 230deg, rgba(255,255,255,0.14) 268deg, transparent 320deg)",
+                mixBlendMode: "screen",
+              }}
+            />
+          )}
+          {/* Brillo superior fijo */}
+          <div className="pointer-events-none absolute inset-0"
+            style={{ background: "radial-gradient(ellipse 60% 38% at 42% 24%, rgba(255,255,255,0.22), transparent 70%)" }} />
+          {/* Glifo grabado */}
+          <svg width={glyphSize} height={glyphSize} viewBox="0 0 24 24" fill="none"
+            stroke={glyphColor} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
+            className="relative"
+            style={{ filter: unlocked ? "drop-shadow(0 1px 0 rgba(0,0,0,0.6)) drop-shadow(0 -0.5px 0 rgba(255,255,255,0.18))" : "none" }}>
+            <path d={GLYPHS[glyph]} />
+          </svg>
+        </div>
+      </div>
 
       {/* Candado si está bloqueado */}
       {!unlocked && (

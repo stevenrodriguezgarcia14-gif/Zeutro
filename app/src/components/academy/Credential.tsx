@@ -45,9 +45,18 @@ function Seal({ earned, tier, accent }: { earned: boolean; tier: Tier; accent: s
 function Guilloche({ accent }: { accent: string }) {
   return (
     <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden preserveAspectRatio="none" viewBox="0 0 400 240">
-      <g stroke={accent} strokeWidth="0.4" fill="none" opacity="0.10">
-        {Array.from({ length: 14 }).map((_, i) => <circle key={i} cx="200" cy="120" r={14 + i * 13} />)}
-        {Array.from({ length: 14 }).map((_, i) => <circle key={`b${i}`} cx="70" cy="120" r={8 + i * 9} />)}
+      <g stroke={accent} fill="none">
+        {/* familias de círculos finos (efecto torno/seguridad) */}
+        <g strokeWidth="0.35" opacity="0.12">
+          {Array.from({ length: 26 }).map((_, i) => <circle key={i} cx="320" cy="120" r={6 + i * 7.5} />)}
+        </g>
+        <g strokeWidth="0.3" opacity="0.09">
+          {Array.from({ length: 30 }).map((_, i) => <circle key={`b${i}`} cx="70" cy="120" r={5 + i * 6.5} />)}
+        </g>
+        {/* ondas entrelazadas */}
+        <g strokeWidth="0.3" opacity="0.07">
+          {Array.from({ length: 16 }).map((_, i) => <ellipse key={`e${i}`} cx="200" cy="120" rx={40 + i * 11} ry={18 + i * 6} />)}
+        </g>
       </g>
     </svg>
   );

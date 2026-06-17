@@ -22,8 +22,10 @@ export function CredentialReveal({
         ✦ Credencial obtenida ✦
       </p>
       <div className="relative w-full max-w-lg">
+        <div className="zentro-spin pointer-events-none absolute left-1/2 top-1/2 h-[140%] w-[140%] -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{ background: "repeating-conic-gradient(from 0deg, rgba(255,255,255,0.08) 0deg 6deg, transparent 6deg 16deg)", WebkitMaskImage: "radial-gradient(closest-side, #000 30%, transparent 70%)", maskImage: "radial-gradient(closest-side, #000 30%, transparent 70%)" }} />
         <div className="zentro-halo pointer-events-none absolute -inset-8 rounded-[2rem]"
-          style={{ background: `radial-gradient(closest-side, ${accent}55, transparent 70%)` }} />
+          style={{ background: `radial-gradient(closest-side, ${accent}66, transparent 70%)` }} />
         <div className="zentro-cred-grand relative">
           <Credential title={title} holder={holder} level={level} category={category}
             date={date} serial={serial} earned tier={tier} accent={accent} />
