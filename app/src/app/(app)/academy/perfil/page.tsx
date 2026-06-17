@@ -118,13 +118,14 @@ export default async function AcademyProfilePage() {
           {CERTIFICATIONS.map((c) => {
             const isEarned = earned.has(c.slug);
             const info = certInfo.get(c.slug);
-            const { eligible } = certRequirements(c, passed, d, earned);
+            const { reqs, eligible } = certRequirements(c, passed, d, earned);
+            const reqMet = reqs.filter((r) => r.met).length;
             return (
               <Link key={c.slug} href={`/academy/certificacion/${c.slug}`} className="group block transition hover:-translate-y-0.5">
                 <Credential title={c.title} holder={holder} level={c.level} category={c.category}
                   date={info?.date} serial={info?.serial} earned={isEarned} tier={c.tier} accent={c.accent} />
                 <p className={`mt-1.5 text-center text-xs font-medium ${isEarned ? "text-amber-600" : eligible ? "text-emerald-600" : "text-slate-400"}`}>
-                  {isEarned ? "Obtenida ✓" : eligible ? "¡Lista para obtener! →" : "En progreso →"}
+                  {isEarned ? "Obtenida ✓" : eligible ? "¡Lista para obtener! →" : `Cómo obtenerla: ${reqMet}/${reqs.length} requisitos →`}
                 </p>
               </Link>
             );

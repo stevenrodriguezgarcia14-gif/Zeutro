@@ -61,6 +61,7 @@ export function Emblem({
             <stop offset="0%" stopColor="rgba(255,255,255,0.5)" />
             <stop offset="100%" stopColor="rgba(255,255,255,0)" />
           </linearGradient>
+          <clipPath id={`clip-${uid}`}><circle cx="50" cy="50" r="40" /></clipPath>
         </defs>
 
         {/* Aro metálico */}
@@ -69,6 +70,17 @@ export function Emblem({
         <circle cx="50" cy="50" r="43.5" fill="none" stroke={unlocked ? t.a : "#94a3b8"} strokeWidth="1.4" strokeDasharray="1.4 2.4" opacity="0.6" />
         {/* Cara */}
         <circle cx="50" cy="50" r="40" fill={`url(#${face})`} />
+        {/* Luz pulida que gira (solo desbloqueado) */}
+        {unlocked && (
+          <g clipPath={`url(#clip-${uid})`}>
+            <g className="zentro-spin">
+              <polygon points="50,50 6,18 26,2" fill={t.b} opacity="0.16" />
+              <polygon points="50,50 94,82 74,98" fill={t.b} opacity="0.10" />
+            </g>
+          </g>
+        )}
+        {/* Aro interior biselado */}
+        <circle cx="50" cy="50" r="38.5" fill="none" stroke={unlocked ? t.b : "#cbd5e1"} strokeWidth="0.8" opacity="0.25" />
         {/* Reflejo superior */}
         <ellipse cx="50" cy="30" rx="30" ry="14" fill={`url(#${ring})`} opacity={unlocked ? 0.18 : 0.35} />
         {/* Glifo */}

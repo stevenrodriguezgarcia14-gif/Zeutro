@@ -6,12 +6,14 @@ import { ACHIEVEMENTS, CERTIFICATIONS } from "@/lib/academia";
 import { Emblem, TIER_LABEL } from "@/components/academy/Emblem";
 import { Credential } from "@/components/academy/Credential";
 import { UnlockCelebration, type UnlockItem } from "@/components/academy/UnlockCelebration";
+import { CredentialReveal } from "@/components/academy/CredentialReveal";
 
 export default function AdminAcademyPreview() {
   const [key, setKey] = useState(0);
   const [unlocked, setUnlocked] = useState(true);
   const [earned, setEarned] = useState(true);
   const [demo, setDemo] = useState<UnlockItem[] | null>(null);
+  const [revealIdx, setRevealIdx] = useState<number | null>(null);
 
   const toItem = (a: typeof ACHIEVEMENTS[number]): UnlockItem => ({ slug: a.slug, title: a.title, desc: a.desc, tier: a.tier, glyph: a.glyph });
 
@@ -35,11 +37,22 @@ export default function AdminAcademyPreview() {
           Credencial: {earned ? "obtenida" : "vista previa"}
         </button>
         <button onClick={() => setDemo([toItem(ACHIEVEMENTS[1]), toItem(ACHIEVEMENTS[6])])} className="rounded-lg bg-amber-500 px-3 py-2 text-sm font-medium text-white hover:bg-amber-600">
-          ▶ Simular desbloqueo
+          ▶ Simular logro
+        </button>
+        <button onClick={() => setRevealIdx(4)} className="rounded-lg bg-amber-500 px-3 py-2 text-sm font-medium text-white hover:bg-amber-600">
+          ▶ Simular obtención de credencial
         </button>
       </div>
 
       {demo && <UnlockCelebration items={demo} onDone={() => setDemo(null)} />}
+      {revealIdx !== null && CERTIFICATIONS[revealIdx] && (
+        <CredentialReveal
+          title={CERTIFICATIONS[revealIdx].title} holder="Mi Negocio S.A."
+          level={CERTIFICATIONS[revealIdx].level} category={CERTIFICATIONS[revealIdx].category}
+          date="17 de junio de 2026" serial="A1B2C3D4E5"
+          tier={CERTIFICATIONS[revealIdx].tier} accent={CERTIFICATIONS[revealIdx].accent}
+          onClose={() => setRevealIdx(null)} />
+      )}
 
       {/* Logros */}
       <section>

@@ -114,6 +114,37 @@ html {
   animation: zentro-shimmer 3.2s linear infinite;
 }
 
+/* Giro lento de luz pulida (medallones premium) */
+@keyframes zentro-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.zentro-spin { transform-origin: 50% 50%; animation: zentro-spin 7s linear infinite; }
+
+/* Reveal cinemático de credencial (al obtenerla) */
+@keyframes zentro-cred-grand {
+  0%   { opacity: 0; transform: perspective(1200px) rotateY(35deg) scale(0.7); filter: brightness(1.6); }
+  60%  { opacity: 1; transform: perspective(1200px) rotateY(-6deg) scale(1.04); }
+  100% { opacity: 1; transform: perspective(1200px) rotateY(0) scale(1); filter: brightness(1); }
+}
+.zentro-cred-grand { animation: zentro-cred-grand 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* Sello que "se estampa" */
+@keyframes zentro-stamp {
+  0%   { opacity: 0; transform: scale(2.2) rotate(-12deg); }
+  55%  { opacity: 1; transform: scale(0.92) rotate(0deg); }
+  75%  { transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.zentro-stamp { animation: zentro-stamp 0.9s 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* Halo pulsante */
+@keyframes zentro-halo {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50%      { opacity: 0.85; transform: scale(1.08); }
+}
+.zentro-halo { animation: zentro-halo 2.6s ease-in-out infinite; }
+
+@keyframes zentro-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+.zentro-rise { animation: zentro-rise 0.6s 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -124,7 +155,12 @@ html {
   .zentro-emblem-in,
   .zentro-float,
   .zentro-credential-in,
-  .zentro-foil {
+  .zentro-foil,
+  .zentro-spin,
+  .zentro-cred-grand,
+  .zentro-stamp,
+  .zentro-halo,
+  .zentro-rise {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;

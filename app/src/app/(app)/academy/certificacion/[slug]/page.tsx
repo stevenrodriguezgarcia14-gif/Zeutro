@@ -5,7 +5,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { getActivation } from "@/lib/activation";
 import { CERTIFICATIONS, certRequirements } from "@/lib/academia";
 import { Credential } from "@/components/academy/Credential";
-import { OnceConfetti } from "@/components/academy/OnceConfetti";
+import { CertObtainReveal } from "@/components/academy/CertObtainReveal";
 import { ChallengeBlock, type ClientChallenge } from "@/components/ChallengeBlock";
 import { earnCertification } from "../../actions";
 
@@ -41,7 +41,9 @@ export default async function CertificationPage({ params }: { params: Promise<{ 
     <div className="mx-auto max-w-2xl space-y-6">
       <Link href="/academy/perfil" className="text-sm text-slate-500 hover:text-slate-800">← Mi aprendizaje</Link>
 
-      {earned && !celebrated.has(confToken) && <OnceConfetti token={confToken} />}
+      <CertObtainReveal show={earned && !celebrated.has(confToken)} token={confToken}
+        title={cert.title} holder={holder} level={cert.level} category={cert.category}
+        date={date} serial={serial} tier={cert.tier} accent={cert.accent} />
 
       <Credential
         title={cert.title} holder={holder} level={cert.level} category={cert.category}
@@ -55,8 +57,14 @@ export default async function CertificationPage({ params }: { params: Promise<{ 
       ) : (
         <>
           <div className="rounded-2xl border border-slate-200 bg-white p-5">
-            <p className="text-sm font-semibold text-slate-900">Requisitos</p>
-            <p className="text-xs text-slate-500">Esta credencial no se regala: demuestra que sabes y que lo aplicas en tu negocio.</p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-900">Cómo obtener esta credencial</p>
+              <span className="text-xs text-slate-500">{reqs.filter((r) => r.met).length}/{reqs.length}</span>
+            </div>
+            <p className="text-xs text-slate-500">No se regala: demuestra que sabes y que lo aplicas en tu negocio.</p>
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+              <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${Math.round((reqs.filter((r) => r.met).length / Math.max(1, reqs.length)) * 100)}%` }} />
+            </div>
             <ul className="mt-3 space-y-2">
               {reqs.map((r, i) => (
                 <li key={i} className="flex items-center gap-2 text-sm">
