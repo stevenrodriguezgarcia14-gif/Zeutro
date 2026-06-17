@@ -5,9 +5,29 @@
 // si empieza con "## " es subtítulo.
 // =====================================================================
 
-import type { ModuleSlug } from "@/lib/guide";
+import type { ModuleSlug, ActivationData } from "@/lib/guide";
 
 export type Category = { slug: string; title: string; emoji: string; desc: string };
+
+export type Difficulty = "basico" | "intermedio" | "avanzado";
+export type ChallengeOption = { text: string; correct: boolean; feedback: string };
+
+// Dos clases de desafío:
+//  - scenario: caso real con opciones (comprensión).
+//  - action: se cumple en el negocio real, verificado con datos (adopción).
+export type Challenge = {
+  id: string;
+  type: "scenario" | "action";
+  difficulty: Difficulty;
+  prompt: string;
+  // scenario
+  options?: ChallengeOption[];
+  explanation?: string;
+  // action
+  check?: (d: ActivationData) => boolean;
+  cta?: string;
+  href?: string;
+};
 
 export const CATEGORIES: Category[] = [
   { slug: "rentabilidad", title: "Rentabilidad", emoji: "📈", desc: "Saber si de verdad ganas." },
@@ -26,6 +46,7 @@ export type Lesson = {
   resumen: string;
   body: string[];
   related?: ModuleSlug;
+  challenges?: Challenge[];
 };
 
 export const LESSONS: Lesson[] = [
@@ -45,6 +66,23 @@ export const LESSONS: Lesson[] = [
       "Registra siempre el costo de tus productos y tus gastos. Así la pantalla de Rentabilidad te muestra la ganancia real, no solo cuánto facturaste.",
       "Regla de oro: un producto que se vende mucho pero deja poco margen puede estar quitándote tiempo y dinero. Revisa la Rentabilidad por producto.",
     ],
+    challenges: [
+      {
+        id: "renta-1", type: "scenario", difficulty: "basico",
+        prompt: "Tus ventas subieron 30% este mes, pero tu ganancia bajó. ¿Qué revisas PRIMERO?",
+        options: [
+          { text: "El costo de lo que vendes y tus gastos", correct: true, feedback: "Exacto. Más ventas con menos ganancia casi siempre es costo o gasto que subió." },
+          { text: "Vender todavía más para compensar", correct: false, feedback: "Vender más sin arreglar el margen agranda el problema, no lo resuelve." },
+          { text: "Bajar los precios para vender más", correct: false, feedback: "Bajar precios sin conocer tu costo puede hacerte perder en cada venta." },
+        ],
+        explanation: "Ganancia = ventas − costos − gastos. Si las ventas suben y la ganancia baja, el costo o el gasto creció: ahí está la fuga.",
+      },
+      {
+        id: "renta-accion-precio", type: "action", difficulty: "basico",
+        prompt: "Ponle precio de venta a al menos un producto para poder medir tu ganancia real.",
+        check: (d) => d.productsWithPrice > 0, cta: "Ir a Productos", href: "/products",
+      },
+    ],
   },
   {
     slug: "numeros-que-vigilar", category: "rentabilidad", emoji: "🔢", minutes: 4,
@@ -60,6 +98,18 @@ export const LESSONS: Lesson[] = [
       "- 5. Flujo proyectado: si te alcanzará el dinero las próximas semanas (Flujo de caja).",
       "## Cómo usarlos",
       "El Dashboard de Zentro te muestra casi todos de un vistazo. Dedica 5 minutos cada lunes a revisarlos: es el hábito que separa a los negocios que crecen de los que viven al día.",
+    ],
+    challenges: [
+      {
+        id: "numeros-1", type: "scenario", difficulty: "intermedio",
+        prompt: "Tienes $50,000 en el banco, pero tus clientes te deben $80,000 y tú debes pagar $90,000 esta semana. ¿Cuál es tu mayor riesgo?",
+        options: [
+          { text: "Quedarte sin efectivo aunque 'en papel' tengas dinero", correct: true, feedback: "Correcto. Te deben más de lo que tienes y debes pagar ya: es un problema de liquidez." },
+          { text: "Ninguno, te deben más de lo que debes", correct: false, feedback: "Que te deban no paga tus cuentas hoy. El dinero por cobrar no es dinero disponible." },
+          { text: "Estás en quiebra", correct: false, feedback: "No necesariamente; es un problema de tiempo (liquidez), no de rentabilidad. Hay que acelerar cobros." },
+        ],
+        explanation: "El dinero por cobrar no sirve para pagar hoy. Vigila tu caja y tus vencimientos, no solo cuánto te deben.",
+      },
     ],
   },
   {
@@ -77,6 +127,18 @@ export const LESSONS: Lesson[] = [
       "## 3. Usa 3 precios",
       "Zentro te sugiere un precio mínimo (no vendas por debajo), uno objetivo (tu meta) y uno alto. Así negocias con piso y techo claros.",
       "Revisa tus precios cada vez que cambie tu costo: si te subió el proveedor y no subiste el precio, estás regalando margen.",
+    ],
+    challenges: [
+      {
+        id: "precio-1", type: "scenario", difficulty: "intermedio",
+        prompt: "Un producto te cuesta $60 y quieres ganar 40% sobre el precio de venta. ¿A cuánto lo vendes?",
+        options: [
+          { text: "$100", correct: true, feedback: "Correcto: precio = costo ÷ (1 − margen) = 60 ÷ 0.6 = $100." },
+          { text: "$84 (costo + 40%)", correct: false, feedback: "Cuidado: sumar 40% al costo da 40% sobre el costo, no sobre el precio. Tu margen real sería menor (~29%)." },
+          { text: "$60 + $40 = $100 pero por otra razón", correct: false, feedback: "El resultado se parece, pero la fórmula correcta es costo ÷ (1 − margen)." },
+        ],
+        explanation: "Margen sobre precio: precio = costo ÷ (1 − margen). Sumar el % al costo (margen sobre costo) da un margen real menor.",
+      },
     ],
   },
   {
@@ -107,6 +169,23 @@ export const LESSONS: Lesson[] = [
       "El dinero invertido en mercancía que aún no vendes es 'capital en mercancía': está ahí, pero no lo puedes gastar. Vigílalo para no quedarte sin efectivo por sobre-comprar.",
       "## Mide la recuperación",
       "Registra cuántas unidades vendes. Zentro te dice cuánto recuperaste, cuánto ganaste y tu ROI. Así sabes si esa compra fue buen negocio antes de repetirla.",
+    ],
+    challenges: [
+      {
+        id: "compra-1", type: "scenario", difficulty: "basico",
+        prompt: "Compraste mercancía por $100,000 y pagaste $20,000 de envío. Recibiste 120 piezas. ¿Cuál es el costo real por pieza?",
+        options: [
+          { text: "$1,000 — sumas el envío y divides entre 120", correct: true, feedback: "Correcto: (100,000 + 20,000) ÷ 120 = $1,000. El envío es parte del costo." },
+          { text: "$833 — solo divides los $100,000 entre 120", correct: false, feedback: "Dejaste fuera el envío. Si no lo cuentas, crees que ganas más de lo real." },
+          { text: "$120,000 — ese es el costo", correct: false, feedback: "Ese es el total de la compra, no el costo por pieza." },
+        ],
+        explanation: "Costo real = (precio + todos los gastos de la compra) ÷ unidades. Zentro reparte el envío entre las piezas automáticamente (prorrateo).",
+      },
+      {
+        id: "compra-accion", type: "action", difficulty: "basico",
+        prompt: "Registra una compra para ver tu inversión, recuperación y ganancia reales.",
+        check: (d) => d.purchases > 0, cta: "Ir a Compras", href: "/purchases",
+      },
     ],
   },
   {
@@ -154,6 +233,13 @@ export const LESSONS: Lesson[] = [
       "- Si ves un hueco próximo, adelanta cobros o pospón un gasto no urgente.",
       "## En Zentro",
       "El módulo Flujo de caja te avisa si tu saldo proyectado se va a negativo. Si ves esa alerta roja, actúa antes de que pase, no después.",
+    ],
+    challenges: [
+      {
+        id: "caja-accion", type: "action", difficulty: "basico",
+        prompt: "Crea tu caja o cuenta de banco con su saldo actual para que el flujo de caja sea real.",
+        check: (d) => d.accounts > 0, cta: "Ir a Cuentas", href: "/accounts",
+      },
     ],
   },
   {
@@ -211,4 +297,100 @@ export const LESSONS: Lesson[] = [
 
 export function lessonsByCategory(cat: string): Lesson[] {
   return LESSONS.filter((l) => l.category === cat);
+}
+
+// =====================================================================
+// Fase B/C — Rutas, Logros y Certificaciones
+// =====================================================================
+
+export type Route = { slug: string; title: string; emoji: string; desc: string; category: string };
+export const ROUTES: Route[] = [
+  { slug: "rentabilidad", title: "Ruta Rentabilidad", emoji: "📈", desc: "Saber si de verdad ganas.", category: "rentabilidad" },
+  { slug: "precios", title: "Ruta Precios y Costos", emoji: "🏷️", desc: "Cobrar bien sin perder.", category: "precios" },
+  { slug: "caja", title: "Ruta Flujo de Caja", emoji: "💧", desc: "Que nunca te falte dinero.", category: "caja" },
+  { slug: "organizacion", title: "Ruta Organización", emoji: "🗂️", desc: "Orden para crecer sin caos.", category: "organizacion" },
+];
+
+export type LearnSummary = {
+  guidesRead: number; guidesTotal: number;
+  scenariosPassed: number; scenariosTotal: number;
+  actionsDone: number; actionsTotal: number;
+  routesComplete: number; routesTotal: number;
+  certsEarned: number;
+};
+
+export type Achievement = { slug: string; title: string; desc: string; icon: string; unlocked: (s: LearnSummary) => boolean };
+export const ACHIEVEMENTS: Achievement[] = [
+  { slug: "primera-guia", title: "Primeros pasos", desc: "Leíste tu primera guía", icon: "📖", unlocked: (s) => s.guidesRead >= 1 },
+  { slug: "lector", title: "Lector aplicado", desc: "Leíste 5 guías", icon: "📚", unlocked: (s) => s.guidesRead >= 5 },
+  { slug: "primer-reto", title: "Mente analítica", desc: "Aprobaste tu primer desafío", icon: "🧠", unlocked: (s) => s.scenariosPassed >= 1 },
+  { slug: "estratega", title: "Estratega", desc: "Aprobaste 5 desafíos", icon: "🎯", unlocked: (s) => s.scenariosPassed >= 5 },
+  { slug: "manos-obra", title: "Manos a la obra", desc: "Hiciste una acción real en tu negocio", icon: "🛠️", unlocked: (s) => s.actionsDone >= 1 },
+  { slug: "ruta-1", title: "Camino recorrido", desc: "Completaste una ruta entera", icon: "🏅", unlocked: (s) => s.routesComplete >= 1 },
+  { slug: "erudito", title: "Erudito Zentro", desc: "Completaste todas las rutas", icon: "👑", unlocked: (s) => s.routesTotal > 0 && s.routesComplete >= s.routesTotal },
+  { slug: "certificado", title: "Certificado", desc: "Obtuviste tu primera certificación", icon: "🎓", unlocked: (s) => s.certsEarned >= 1 },
+];
+
+export type Certification = { slug: string; title: string; desc: string; routeSlugs: string[]; minScorePct: number; requiredActionIds: string[] };
+export const CERTIFICATIONS: Certification[] = [
+  {
+    slug: "fundamentos", title: "Fundamentos de Negocio",
+    desc: "Domina lo esencial: rentabilidad, costos, flujo de caja y organización.",
+    routeSlugs: ["rentabilidad", "precios", "caja", "organizacion"],
+    minScorePct: 80,
+    requiredActionIds: ["renta-accion-precio", "compra-accion", "caja-accion"],
+  },
+];
+
+export function routeLessons(route: Route): Lesson[] { return lessonsByCategory(route.category); }
+
+function challengeDone(c: Challenge, passed: Set<string>, d: ActivationData): boolean {
+  return c.type === "scenario" ? passed.has(c.id) : !!c.check?.(d);
+}
+
+function lessonDone(l: Lesson, read: Set<string>, passed: Set<string>, d: ActivationData): boolean {
+  if (!read.has(l.slug)) return false;
+  return (l.challenges ?? []).every((c) => challengeDone(c, passed, d));
+}
+
+export function routeComplete(route: Route, read: Set<string>, passed: Set<string>, d: ActivationData): boolean {
+  return routeLessons(route).every((l) => lessonDone(l, read, passed, d));
+}
+
+export function allScenarios(): Challenge[] { return LESSONS.flatMap((l) => (l.challenges ?? []).filter((c) => c.type === "scenario")); }
+export function allActions(): Challenge[] { return LESSONS.flatMap((l) => (l.challenges ?? []).filter((c) => c.type === "action")); }
+
+export function learnSummary(read: Set<string>, passed: Set<string>, d: ActivationData, certsEarned: number): LearnSummary {
+  const scen = allScenarios(); const act = allActions();
+  return {
+    guidesRead: LESSONS.filter((l) => read.has(l.slug)).length,
+    guidesTotal: LESSONS.length,
+    scenariosPassed: scen.filter((c) => passed.has(c.id)).length,
+    scenariosTotal: scen.length,
+    actionsDone: act.filter((c) => !!c.check?.(d)).length,
+    actionsTotal: act.length,
+    routesComplete: ROUTES.filter((r) => routeComplete(r, read, passed, d)).length,
+    routesTotal: ROUTES.length,
+    certsEarned,
+  };
+}
+
+function certScenarios(cert: Certification): Challenge[] {
+  const cats = new Set(cert.routeSlugs.map((s) => ROUTES.find((r) => r.slug === s)?.category));
+  return LESSONS.filter((l) => cats.has(l.category)).flatMap((l) => (l.challenges ?? []).filter((c) => c.type === "scenario"));
+}
+
+export function certRequirements(cert: Certification, read: Set<string>, passed: Set<string>, d: ActivationData) {
+  const routes = cert.routeSlugs.map((s) => ROUTES.find((r) => r.slug === s)).filter((r): r is Route => !!r);
+  const allRead = routes.every((r) => routeLessons(r).every((l) => read.has(l.slug)));
+  const scen = certScenarios(cert);
+  const scorePct = scen.length ? Math.round((scen.filter((c) => passed.has(c.id)).length / scen.length) * 100) : 0;
+  const acts = allActions();
+  const actsOk = cert.requiredActionIds.every((id) => { const c = acts.find((a) => a.id === id); return c ? !!c.check?.(d) : false; });
+  const reqs = [
+    { label: "Lee todas las guías de las 4 rutas", met: allRead },
+    { label: `Aprueba ≥ ${cert.minScorePct}% de los desafíos (vas ${scorePct}%)`, met: scorePct >= cert.minScorePct },
+    { label: "Completa las acciones clave en tu negocio", met: actsOk },
+  ];
+  return { reqs, eligible: reqs.every((r) => r.met), scorePct };
 }
