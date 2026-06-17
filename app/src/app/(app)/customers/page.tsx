@@ -18,6 +18,12 @@ export default async function CustomersPage() {
           <p className="mt-1 text-sm text-slate-500">{rows.length} cliente(s)</p>
         </div>
         <div className="flex items-center gap-2">
+          <a
+            href="/export/customers"
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Exportar
+          </a>
           <Link
             href="/customers/import"
             className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"

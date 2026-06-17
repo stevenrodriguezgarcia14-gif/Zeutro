@@ -38,12 +38,20 @@ export default async function ExpensesPage() {
           <h1 className="text-2xl font-bold text-slate-900">Gastos</h1>
           <p className="mt-1 text-sm text-slate-500">{rows.length} gasto(s) registrado(s)</p>
         </div>
-        <Link
-          href="/expenses/new"
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-        >
-          + Nuevo gasto
-        </Link>
+        <div className="flex items-center gap-2">
+          <a
+            href="/export/expenses"
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Exportar
+          </a>
+          <Link
+            href="/expenses/new"
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+          >
+            + Nuevo gasto
+          </Link>
+        </div>
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
