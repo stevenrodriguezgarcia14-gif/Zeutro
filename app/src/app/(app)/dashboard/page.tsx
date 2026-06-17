@@ -32,16 +32,19 @@ export default async function DashboardPage() {
   const month = new Date().toISOString().slice(0, 7); // YYYY-MM
   const monthStart = `${month}-01`;
 
-  const [{ count: customersCount }, { data: invoices }, { data: payments }, { data: expenses }, { data: accounts }] =
+  const today = new Date().toISOString().slice(0, 10);
+  const [{ count: customersCount }, { data: invoices }, { data: payments }, { data: expenses }, { data: accounts }, { data: tasks }, { data: opps }, { count: projectsCount }] =
     await Promise.all([
       supabase.from("customers").select("*", { count: "exact", head: true }),
       supabase.from("invoices").select("balance_minor, status, due_date"),
       supabase.from("payments").select("amount_minor, paid_at").gte("paid_at", monthStart),
       supabase.from("expenses").select("amount_minor, expense_date").gte("expense_date", monthStart),
       supabase.from("accounts").select("current_balance_minor").eq("is_active", true),
+      supabase.from("tasks").select("due_date, status").not("status", "in", "(done,cancelled)"),
+      supabase.from("opportunities").select("amount_minor, stages(probability_bps)").eq("status", "open"),
+      supabase.from("projects").select("*", { count: "exact", head: true }).in("status", ["planning", "active", "on_hold"]),
     ]);
 
-  const today = new Date().toISOString().slice(0, 10);
   const inv = invoices ?? [];
   const outstanding = inv
     .filter((i) => i.status !== "paid" && i.status !== "void")
@@ -55,6 +58,14 @@ export default async function DashboardPage() {
   const profitMonth = incomeMonth - expenseMonth;
   const cashTotal = (accounts ?? []).reduce((s, a) => s + (a.current_balance_minor ?? 0), 0);
   const compras = await getPurchasesOverview();
+
+  // Operación de hoy
+  const taskList = (tasks ?? []) as { due_date: string | null; status: string }[];
+  const tasksOverdue = taskList.filter((t) => t.due_date && t.due_date < today).length;
+  const tasksToday = taskList.filter((t) => t.due_date === today).length;
+  const tasksPending = taskList.length;
+  const oppList = (opps ?? []) as unknown as { amount_minor: number; stages: { probability_bps: number } | null }[];
+  const pipelineValue = oppList.reduce((s, o) => s + Math.round((o.amount_minor * (o.stages?.probability_bps ?? 0)) / 10000), 0);
 
   return (
     <div>
@@ -86,6 +97,31 @@ export default async function DashboardPage() {
           <Card title="Capital en mercancía" value={formatMoney(compras.capitalEnMercancia, currency)} hint="Compras por recuperar" />
         )}
         <Card title="Clientes" value={String(customersCount ?? 0)} />
+      </div>
+
+      {/* Operación de hoy */}
+      <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">Operación de hoy</h2>
+      <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <a href="/tasks" className="block rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300">
+          <p className="text-sm text-slate-500">Tareas vencidas</p>
+          <p className={`mt-2 text-2xl font-bold ${tasksOverdue > 0 ? "text-red-600" : "text-slate-900"}`}>{tasksOverdue}</p>
+          <p className="mt-1 text-xs text-slate-400">{tasksToday} para hoy · {tasksPending} pendientes</p>
+        </a>
+        <a href="/sales" className="block rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300">
+          <p className="text-sm text-slate-500">Ventas en proceso</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{oppList.length}</p>
+          <p className="mt-1 text-xs text-slate-400">≈ {formatMoney(pipelineValue, currency)} probable</p>
+        </a>
+        <a href="/projects" className="block rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300">
+          <p className="text-sm text-slate-500">Proyectos activos</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{projectsCount ?? 0}</p>
+          <p className="mt-1 text-xs text-slate-400">En curso o planeación</p>
+        </a>
+        <a href="/calendar" className="block rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300">
+          <p className="text-sm text-slate-500">Agenda</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">📅</p>
+          <p className="mt-1 text-xs text-slate-400">Ver calendario</p>
+        </a>
       </div>
 
       <div className="mt-8 flex flex-wrap gap-3 text-sm">
