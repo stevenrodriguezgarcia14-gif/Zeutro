@@ -5,7 +5,7 @@
 
 export type ModuleSlug =
   | "customers" | "sales" | "quotations" | "products" | "purchases" | "inventory"
-  | "invoices" | "collections" | "expenses" | "accounts" | "cashflow" | "profitability"
+  | "invoices" | "quicksale" | "collections" | "expenses" | "accounts" | "cashflow" | "profitability"
   | "tasks" | "projects" | "calendar" | "documents";
 
 // Datos reales del negocio para calcular activación y siguiente paso.
@@ -17,6 +17,7 @@ export type ActivationData = {
   purchaseItems: number;          // productos dentro de compras
   purchaseItemsWithPrice: number; // con precio de venta puesto
   resaleSales: number;            // artículos de compra con unidades vendidas
+  quickSales: number;             // ventas rápidas registradas
   quotations: number;
   invoices: number;
   payments: number;
@@ -42,8 +43,8 @@ const PLAYBOOKS: Record<string, Step[]> = {
     { key: "compra", label: "Registra tu primera compra", href: "/purchases/new", cta: "Registrar compra", done: (d) => d.purchases > 0 },
     { key: "productos", label: "Agrega tus productos", href: "/purchases", cta: "Agregar productos", done: (d) => d.products > 0 || d.purchaseItems > 0 },
     { key: "precios", label: "Configura precios de venta", href: "/purchases", cta: "Poner precios", done: (d) => d.productsWithPrice > 0 || d.purchaseItemsWithPrice > 0 },
-    { key: "venta", label: "Registra tu primera venta", href: "/purchases", cta: "Registrar venta", done: (d) => d.invoices > 0 || d.payments > 0 || d.resaleSales > 0 },
-    { key: "rentabilidad", label: "Revisa tu rentabilidad", href: "/profitability", cta: "Ver rentabilidad", done: (d) => d.purchases > 0 && (d.payments > 0 || d.resaleSales > 0) },
+    { key: "venta", label: "Registra tu primera venta", href: "/purchases", cta: "Registrar venta", done: (d) => d.invoices > 0 || d.payments > 0 || d.resaleSales > 0 || d.quickSales > 0 },
+    { key: "rentabilidad", label: "Revisa tu rentabilidad", href: "/profitability", cta: "Ver rentabilidad", done: (d) => d.purchases > 0 && (d.payments > 0 || d.resaleSales > 0 || d.quickSales > 0) },
   ],
   services: [
     { key: "cliente", label: "Crea tu primer cliente", href: "/customers/new", cta: "Crear cliente", done: (d) => d.customers > 0 },
@@ -56,22 +57,22 @@ const PLAYBOOKS: Record<string, Step[]> = {
     { key: "cuenta", label: "Crea tu caja o banco", href: "/accounts/new", cta: "Crear cuenta", done: (d) => d.accounts > 0 },
     { key: "gastos", label: "Registra tus gastos", href: "/expenses/new", cta: "Registrar gasto", done: (d) => d.expenses > 0 },
     { key: "compras", label: "Registra tus compras", href: "/purchases/new", cta: "Registrar compra", done: (d) => d.purchases > 0 },
-    { key: "ventas", label: "Registra tus ventas", href: "/invoices/new", cta: "Registrar venta", done: (d) => d.invoices > 0 || d.payments > 0 },
+    { key: "ventas", label: "Registra tus ventas", href: "/quick-sale", cta: "Venta rápida", done: (d) => d.invoices > 0 || d.payments > 0 || d.quickSales > 0 },
     { key: "flujo", label: "Revisa tu flujo de caja", href: "/cashflow", cta: "Ver flujo", done: (d) => d.accounts > 0 && d.expenses > 0 },
   ],
   maker: [
     { key: "productos", label: "Crea tus productos (lo que fabricas)", href: "/products/new", cta: "Crear producto", done: (d) => d.products > 0 },
     { key: "precios", label: "Pon su costo y precio de venta", href: "/products", cta: "Costo y precio", done: (d) => d.productsWithPrice > 0 },
     { key: "insumos", label: "Registra tus insumos o gastos", href: "/expenses/new", cta: "Registrar gasto", done: (d) => d.expenses > 0 || d.purchases > 0 },
-    { key: "venta", label: "Registra tu primera venta", href: "/invoices/new", cta: "Registrar venta", done: (d) => d.invoices > 0 || d.payments > 0 },
-    { key: "rentabilidad", label: "Revisa tu rentabilidad", href: "/profitability", cta: "Ver rentabilidad", done: (d) => d.payments > 0 },
+    { key: "venta", label: "Registra tu primera venta", href: "/quick-sale", cta: "Venta rápida", done: (d) => d.invoices > 0 || d.payments > 0 || d.quickSales > 0 },
+    { key: "rentabilidad", label: "Revisa tu rentabilidad", href: "/profitability", cta: "Ver rentabilidad", done: (d) => d.payments > 0 || d.quickSales > 0 },
   ],
   general: [
     { key: "cliente", label: "Crea tu primer cliente", href: "/customers/new", cta: "Crear cliente", done: (d) => d.customers > 0 },
     { key: "producto", label: "Agrega un producto o servicio", href: "/products/new", cta: "Agregar", done: (d) => d.products > 0 },
     { key: "factura", label: "Emite tu primera factura", href: "/invoices/new", cta: "Facturar", done: (d) => d.invoices > 0 },
-    { key: "cobro", label: "Registra un cobro", href: "/collections", cta: "Cobrar", done: (d) => d.payments > 0 },
-    { key: "rentabilidad", label: "Revisa tu rentabilidad", href: "/profitability", cta: "Ver rentabilidad", done: (d) => d.payments > 0 },
+    { key: "cobro", label: "Registra un cobro", href: "/collections", cta: "Cobrar", done: (d) => d.payments > 0 || d.quickSales > 0 },
+    { key: "rentabilidad", label: "Revisa tu rentabilidad", href: "/profitability", cta: "Ver rentabilidad", done: (d) => d.payments > 0 || d.quickSales > 0 },
   ],
 };
 
@@ -178,6 +179,12 @@ export const MODULES: Record<ModuleSlug, ModuleInfo> = {
     cuandoNo: "Para una venta que aún no cierras (usa Cotización).",
     errores: "Dejar facturas en borrador y olvidarlas; un borrador no cobra ni descuenta stock.",
     relacion: "Genera Cobranzas, mueve Cuentas al pagarse y descuenta Inventario al emitirse." },
+  quicksale: { slug: "quicksale", name: "Venta rápida", href: "/quick-sale", emoji: "⚡",
+    queEs: "Registro de una venta de contado en segundos, sin factura ni cliente.",
+    cuando: "Ventas de mostrador: alguien te paga al instante (efectivo o tarjeta) y no necesitas factura.",
+    cuandoNo: "Cuando vendes a crédito o el cliente necesita factura/cotización (usa Facturas).",
+    errores: "Registrar la misma venta como Venta rápida y también como Factura (la cuentas doble).",
+    relacion: "Suma a tus Ingresos en Rentabilidad y Dashboard; si eliges cuenta, sube su saldo." },
   collections: { slug: "collections", name: "Cobranzas", href: "/collections", emoji: "📬",
     queEs: "La bandeja priorizada de lo que te deben, con recordatorios.",
     cuando: "Cuando tienes facturas a crédito por cobrar.",

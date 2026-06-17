@@ -31,6 +31,7 @@ const groups: { label: string; items: { href: string; name: string }[] }[] = [
   {
     label: "Dinero",
     items: [
+      { href: "/quick-sale", name: "Venta rápida" },
       { href: "/invoices", name: "Facturas" },
       { href: "/collections", name: "Cobranzas" },
       { href: "/expenses", name: "Gastos" },

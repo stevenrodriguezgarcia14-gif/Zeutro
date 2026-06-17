@@ -21,11 +21,12 @@ export default async function ProfitabilityPage() {
   const supabase = await createClient();
   const monthStart = new Date().toISOString().slice(0, 7) + "-01";
 
-  const [{ data: payments }, { data: expenses }, { data: items }, { data: products }] = await Promise.all([
+  const [{ data: payments }, { data: expenses }, { data: items }, { data: products }, { data: quickSales }] = await Promise.all([
     supabase.from("payments").select("amount_minor, paid_at"),
     supabase.from("expenses").select("amount_minor, expense_date, category"),
     supabase.from("invoice_items").select("product_id, quantity, unit_price_minor, invoices!inner(status)"),
     supabase.from("products").select("id, name, cost_price_minor"),
+    supabase.from("quick_sales").select("amount_minor, sold_at"),
   ]);
 
   const compras = await getPurchasesOverview();
@@ -64,12 +65,16 @@ export default async function ProfitabilityPage() {
   // Compras para reventa es su propio centro de ganancia (se vende registrando
   // unidades vendidas, no por factura), así que lo integramos al total sin doble
   // conteo: + ingreso recuperado y + costo de la mercancía vendida.
+  const qs = quickSales ?? [];
+  const qsTotal = qs.reduce((s, v) => s + (v.amount_minor ?? 0), 0);
+  const qsMonth = qs.filter((v) => v.sold_at >= monthStart).reduce((s, v) => s + (v.amount_minor ?? 0), 0);
+
   const comprasCostoVendido = Math.max(0, compras.recuperado - compras.ganancia);
-  const incomeTotal = pays.reduce((s, p) => s + (p.amount_minor ?? 0), 0) + compras.recuperado;
+  const incomeTotal = pays.reduce((s, p) => s + (p.amount_minor ?? 0), 0) + compras.recuperado + qsTotal;
   const expenseTotal = exps.reduce((s, e) => s + (e.amount_minor ?? 0), 0) + comprasCostoVendido;
   const netTotal = incomeTotal - expenseTotal;
 
-  const incomeMonth = pays.filter((p) => p.paid_at >= monthStart).reduce((s, p) => s + (p.amount_minor ?? 0), 0);
+  const incomeMonth = pays.filter((p) => p.paid_at >= monthStart).reduce((s, p) => s + (p.amount_minor ?? 0), 0) + qsMonth;
   const expenseMonth = exps.filter((e) => e.expense_date >= monthStart).reduce((s, e) => s + (e.amount_minor ?? 0), 0);
   const netMonth = incomeMonth - expenseMonth;
 

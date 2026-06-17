@@ -37,7 +37,7 @@ export default async function DashboardPage() {
   const monthStart = `${month}-01`;
 
   const today = new Date().toISOString().slice(0, 10);
-  const [{ count: customersCount }, { data: invoices }, { data: payments }, { data: expenses }, { data: accounts }, { data: tasks }, { data: opps }, { count: projectsCount }] =
+  const [{ count: customersCount }, { data: invoices }, { data: payments }, { data: expenses }, { data: accounts }, { data: tasks }, { data: opps }, { count: projectsCount }, { data: qsRows }] =
     await Promise.all([
       supabase.from("customers").select("*", { count: "exact", head: true }),
       supabase.from("invoices").select("balance_minor, status, due_date"),
@@ -47,6 +47,7 @@ export default async function DashboardPage() {
       supabase.from("tasks").select("due_date, status").not("status", "in", "(done,cancelled)"),
       supabase.from("opportunities").select("amount_minor, stages(probability_bps)").eq("status", "open"),
       supabase.from("projects").select("*", { count: "exact", head: true }).in("status", ["planning", "active", "on_hold"]),
+      supabase.from("quick_sales").select("amount_minor").gte("sold_at", monthStart),
     ]);
 
   const inv = invoices ?? [];
@@ -57,7 +58,8 @@ export default async function DashboardPage() {
     (i) => i.balance_minor > 0 && i.due_date < today && i.status !== "paid" && i.status !== "void",
   ).length;
 
-  const incomeMonth = (payments ?? []).reduce((s, p) => s + (p.amount_minor ?? 0), 0);
+  const incomeMonth = (payments ?? []).reduce((s, p) => s + (p.amount_minor ?? 0), 0)
+    + (qsRows ?? []).reduce((s, v) => s + (v.amount_minor ?? 0), 0);
   const expenseMonth = (expenses ?? []).reduce((s, e) => s + (e.amount_minor ?? 0), 0);
   const profitMonth = incomeMonth - expenseMonth;
   const cashTotal = (accounts ?? []).reduce((s, a) => s + (a.current_balance_minor ?? 0), 0);
