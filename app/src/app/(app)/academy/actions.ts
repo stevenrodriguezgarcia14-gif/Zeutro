@@ -41,8 +41,9 @@ export async function earnCertification(slug: string): Promise<void> {
   ]);
   const read = new Set((progress ?? []).filter((p) => p.kind === "guide").map((p) => p.item_slug));
   const passed = new Set((progress ?? []).filter((p) => p.kind === "challenge").map((p) => p.item_slug));
+  const earnedCerts = new Set((progress ?? []).filter((p) => p.kind === "certification").map((p) => p.item_slug));
 
-  const { eligible } = certRequirements(cert, read, passed, act.data);
+  const { eligible } = certRequirements(cert, read, passed, act.data, earnedCerts);
   if (!eligible) return; // no se regala
 
   await supabase

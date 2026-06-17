@@ -237,6 +237,16 @@ export const LESSONS: Lesson[] = [
     ],
     challenges: [
       {
+        id: "caja-1", type: "scenario", difficulty: "intermedio",
+        prompt: "Tu proyección de flujo de caja se pone en rojo en 3 semanas. ¿Qué haces HOY?",
+        options: [
+          { text: "Acelero cobros y pospongo un pago no urgente", correct: true, feedback: "Correcto. Mueves las fechas para que no se crucen: cobras antes, pagas después." },
+          { text: "Espero a ver si se arregla solo", correct: false, feedback: "El problema de caja avisa con tiempo justo para actuar; esperar lo vuelve crisis." },
+          { text: "Pido un préstamo de inmediato", correct: false, feedback: "Endeudarte es el último recurso, no el primero. Primero ajusta cobros y pagos." },
+        ],
+        explanation: "El flujo de caja te avisa ANTES. Tienes margen para acelerar cobros y reprogramar pagos sin endeudarte.",
+      },
+      {
         id: "caja-accion", type: "action", difficulty: "basico",
         prompt: "Crea tu caja o cuenta de banco con su saldo actual para que el flujo de caja sea real.",
         check: (d) => d.accounts > 0, cta: "Ir a Cuentas", href: "/accounts",
@@ -271,6 +281,23 @@ export const LESSONS: Lesson[] = [
       "## El truco de la fecha",
       "Una tarea sin fecha no entra a tus prioridades. Si algo importa, ponle fecha. Y si se repite (pagar renta cada mes), márcala como recurrente: Zentro crea la siguiente sola.",
       "Dedica 5 minutos en la mañana a mirar tus tareas de hoy. Es el hábito de organización más rentable que existe.",
+    ],
+    challenges: [
+      {
+        id: "org-1", type: "scenario", difficulty: "basico",
+        prompt: "Tienes 10 pendientes y poco tiempo. ¿Cómo decides qué hacer primero?",
+        options: [
+          { text: "Lo urgente + lo que trae o cuida dinero (cobrar, entregar)", correct: true, feedback: "Correcto. Prioriza por impacto en el negocio, no por lo que es más fácil o agradable." },
+          { text: "Lo más rápido y fácil, para avanzar en número", correct: false, feedback: "Tachar tareas fáciles se siente bien pero no mueve tu negocio." },
+          { text: "En el orden en que llegaron", correct: false, feedback: "El orden de llegada no dice nada de la importancia." },
+        ],
+        explanation: "Prioriza por impacto (dinero/compromisos) y urgencia. Es la base del Centro de Prioridades de Zentro.",
+      },
+      {
+        id: "org-accion", type: "action", difficulty: "basico",
+        prompt: "Organiza tu trabajo: registra al menos un cliente o un proyecto.",
+        check: (d) => d.customers > 0 || d.projects > 0, cta: "Ir a Clientes", href: "/customers",
+      },
     ],
   },
   {
@@ -332,16 +359,43 @@ export const ACHIEVEMENTS: Achievement[] = [
   { slug: "certificado", title: "Certificado", desc: "Obtuviste tu primera certificación", tier: "platino", glyph: "shield", unlocked: (s) => s.certsEarned >= 1 },
 ];
 
-export type Certification = { slug: string; title: string; desc: string; level: string; category: string; routeSlugs: string[]; minScorePct: number; requiredActionIds: string[] };
+export type Certification = {
+  slug: string; title: string; desc: string; level: string; category: string;
+  tier: Tier; accent: string;
+  routeSlugs: string[]; minScorePct: number; requiredActionIds: string[];
+  requiresCerts?: string[];
+};
+
+const ALL_ROUTES = ["rentabilidad", "precios", "caja", "organizacion"];
+const ALL_ACTIONS = ["renta-accion-precio", "compra-accion", "caja-accion", "org-accion"];
+
 export const CERTIFICATIONS: Certification[] = [
-  {
-    slug: "fundamentos", title: "Fundamentos de Negocio",
-    desc: "Domina lo esencial: rentabilidad, costos, flujo de caja y organización.",
-    level: "Fundamental", category: "Gestión de negocio",
-    routeSlugs: ["rentabilidad", "precios", "caja", "organizacion"],
-    minScorePct: 80,
-    requiredActionIds: ["renta-accion-precio", "compra-accion", "caja-accion"],
-  },
+  // --- 4 especializaciones por área (Plata) ---
+  { slug: "esp-rentabilidad", title: "Especialista en Rentabilidad", desc: "Sabes si tu negocio gana de verdad y por qué.",
+    level: "Especialista", category: "Rentabilidad", tier: "plata", accent: "#00c781",
+    routeSlugs: ["rentabilidad"], minScorePct: 80, requiredActionIds: ["renta-accion-precio"] },
+  { slug: "esp-precios", title: "Especialista en Precios y Costos", desc: "Pones precios que dejan ganancia, sin adivinar.",
+    level: "Especialista", category: "Precios y Costos", tier: "plata", accent: "#f5a623",
+    routeSlugs: ["precios"], minScorePct: 80, requiredActionIds: ["compra-accion"] },
+  { slug: "esp-caja", title: "Especialista en Flujo de Caja", desc: "Te aseguras de que nunca falte dinero.",
+    level: "Especialista", category: "Flujo de Caja", tier: "plata", accent: "#2e90fa",
+    routeSlugs: ["caja"], minScorePct: 80, requiredActionIds: ["caja-accion"] },
+  { slug: "esp-organizacion", title: "Especialista en Organización", desc: "Ordenas tu trabajo para crecer sin caos.",
+    level: "Especialista", category: "Organización", tier: "plata", accent: "#8b5cf6",
+    routeSlugs: ["organizacion"], minScorePct: 80, requiredActionIds: ["org-accion"] },
+
+  // --- 3 niveles generales ascendentes ---
+  { slug: "fundamentos", title: "Fundamentos de Negocio", desc: "Dominas lo esencial de las 4 áreas clave.",
+    level: "Fundamental", category: "Gestión de negocio", tier: "oro", accent: "#e9c45a",
+    routeSlugs: ALL_ROUTES, minScorePct: 80, requiredActionIds: ALL_ACTIONS },
+  { slug: "profesional", title: "Gestión Profesional", desc: "Aprobaste todas las áreas con excelencia.",
+    level: "Profesional", category: "Gestión integral", tier: "platino", accent: "#38bdf8",
+    routeSlugs: ALL_ROUTES, minScorePct: 100, requiredActionIds: [],
+    requiresCerts: ["esp-rentabilidad", "esp-precios", "esp-caja", "esp-organizacion"] },
+  { slug: "maestro", title: "Maestría Zentro", desc: "El máximo reconocimiento: dominio total y aplicado.",
+    level: "Maestro", category: "Maestría", tier: "platino", accent: "#d4af37",
+    routeSlugs: ALL_ROUTES, minScorePct: 100, requiredActionIds: ALL_ACTIONS,
+    requiresCerts: ["profesional", "fundamentos"] },
 ];
 
 export function routeLessons(route: Route): Lesson[] { return lessonsByCategory(route.category); }
@@ -382,17 +436,22 @@ function certScenarios(cert: Certification): Challenge[] {
   return LESSONS.filter((l) => cats.has(l.category)).flatMap((l) => (l.challenges ?? []).filter((c) => c.type === "scenario"));
 }
 
-export function certRequirements(cert: Certification, read: Set<string>, passed: Set<string>, d: ActivationData) {
+export function certRequirements(cert: Certification, read: Set<string>, passed: Set<string>, d: ActivationData, earnedCerts: Set<string> = new Set()) {
   const routes = cert.routeSlugs.map((s) => ROUTES.find((r) => r.slug === s)).filter((r): r is Route => !!r);
   const allRead = routes.every((r) => routeLessons(r).every((l) => read.has(l.slug)));
   const scen = certScenarios(cert);
   const scorePct = scen.length ? Math.round((scen.filter((c) => passed.has(c.id)).length / scen.length) * 100) : 0;
   const acts = allActions();
   const actsOk = cert.requiredActionIds.every((id) => { const c = acts.find((a) => a.id === id); return c ? !!c.check?.(d) : false; });
-  const reqs = [
-    { label: "Lee todas las guías de las 4 rutas", met: allRead },
-    { label: `Aprueba ≥ ${cert.minScorePct}% de los desafíos (vas ${scorePct}%)`, met: scorePct >= cert.minScorePct },
-    { label: "Completa las acciones clave en tu negocio", met: actsOk },
-  ];
+
+  const reqs: { label: string; met: boolean }[] = [];
+  for (const pre of cert.requiresCerts ?? []) {
+    const t = CERTIFICATIONS.find((c) => c.slug === pre)?.title ?? pre;
+    reqs.push({ label: `Obtén primero: ${t}`, met: earnedCerts.has(pre) });
+  }
+  reqs.push({ label: routes.length > 1 ? "Lee las guías de las 4 rutas" : "Lee las guías de la ruta", met: allRead });
+  if (scen.length > 0) reqs.push({ label: `Aprueba ≥ ${cert.minScorePct}% de los desafíos (vas ${scorePct}%)`, met: scorePct >= cert.minScorePct });
+  if (cert.requiredActionIds.length > 0) reqs.push({ label: "Completa las acciones clave en tu negocio", met: actsOk });
+
   return { reqs, eligible: reqs.every((r) => r.met), scorePct };
 }

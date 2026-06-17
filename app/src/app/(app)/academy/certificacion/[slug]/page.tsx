@@ -22,7 +22,8 @@ export default async function CertificationPage({ params }: { params: Promise<{ 
   ]);
   const read = new Set((progress ?? []).filter((p) => p.kind === "guide").map((p) => p.item_slug));
   const passed = new Set((progress ?? []).filter((p) => p.kind === "challenge").map((p) => p.item_slug));
-  const { reqs, eligible } = certRequirements(cert, read, passed, act.data);
+  const earnedCerts = new Set((progress ?? []).filter((p) => p.kind === "certification").map((p) => p.item_slug));
+  const { reqs, eligible } = certRequirements(cert, read, passed, act.data, earnedCerts);
 
   const earned = !!record;
   const serial = record ? String(record.id).replace(/-/g, "").slice(0, 10).toUpperCase() : undefined;
@@ -37,7 +38,7 @@ export default async function CertificationPage({ params }: { params: Promise<{ 
 
       <Credential
         title={cert.title} holder={holder} level={cert.level} category={cert.category}
-        date={date} serial={serial} earned={earned} animate
+        date={date} serial={serial} earned={earned} animate tier={cert.tier} accent={cert.accent}
       />
 
       {earned ? (

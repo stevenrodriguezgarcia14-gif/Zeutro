@@ -7,6 +7,7 @@ import {
 } from "@/lib/academia";
 import type { ActivationData } from "@/lib/guide";
 import { Emblem, TIER_LABEL } from "@/components/academy/Emblem";
+import { Credential } from "@/components/academy/Credential";
 
 function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -32,7 +33,7 @@ export default async function AcademyProfilePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const [{ data: progress }, act] = await Promise.all([
-    supabase.from("academy_progress").select("kind, item_slug"),
+    supabase.from("academy_progress").select("kind, item_slug, id, created_at"),
     getActivation(org?.business_type),
   ]);
   const read = new Set((progress ?? []).filter((p) => p.kind === "guide").map((p) => p.item_slug));
@@ -40,6 +41,14 @@ export default async function AcademyProfilePage() {
   const earned = new Set((progress ?? []).filter((p) => p.kind === "certification").map((p) => p.item_slug));
   const d = act.data;
   const s = learnSummary(read, passed, d, earned.size);
+  const holder = org?.legal_name || org?.name || "Tu negocio";
+  const certInfo = new Map<string, { serial: string; date: string }>();
+  for (const p of (progress ?? []).filter((p) => p.kind === "certification")) {
+    certInfo.set(p.item_slug, {
+      serial: String(p.id).replace(/-/g, "").slice(0, 10).toUpperCase(),
+      date: new Date(p.created_at as string).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" }),
+    });
+  }
 
   return (
     <div className="space-y-8">
@@ -98,29 +107,22 @@ export default async function AcademyProfilePage() {
         </div>
       </section>
 
-      {/* Certificaciones */}
+      {/* Credenciales — vitrina aparte (formato diploma) */}
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Certificaciones</h2>
-        <div className="mt-2 space-y-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Credenciales ({earned.size}/{CERTIFICATIONS.length})</h2>
+        <p className="mt-1 text-xs text-slate-400">Tus credenciales profesionales. Cada una se gana demostrando que sabes y que lo aplicas.</p>
+        <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
           {CERTIFICATIONS.map((c) => {
             const isEarned = earned.has(c.slug);
-            const { eligible } = certRequirements(c, read, passed, d);
+            const info = certInfo.get(c.slug);
+            const { eligible } = certRequirements(c, read, passed, d, earned);
             return (
-              <Link key={c.slug} href={`/academy/certificacion/${c.slug}`}
-                className={`group relative block overflow-hidden rounded-2xl p-[1.5px] transition hover:shadow-md`}
-                style={{ background: isEarned ? "linear-gradient(135deg,#caa84a,#fff1bd,#b8860b)" : "linear-gradient(135deg,#e2e8f0,#cbd5e1)" }}>
-                <div className="relative rounded-[14px] bg-gradient-to-br from-[#0c1219] to-[#080b10] p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-200/70">{c.level} · {c.category}</p>
-                      <p className="mt-1 font-display text-lg font-bold text-white">{c.title}</p>
-                      <p className="mt-0.5 text-xs text-slate-400">{c.desc}</p>
-                    </div>
-                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${isEarned ? "bg-amber-400/15 text-amber-200" : eligible ? "bg-emerald-400/15 text-emerald-300" : "bg-white/5 text-slate-400"}`}>
-                      {isEarned ? "Obtenida" : eligible ? "Lista para obtener" : "En progreso"}
-                    </span>
-                  </div>
-                </div>
+              <Link key={c.slug} href={`/academy/certificacion/${c.slug}`} className="group block transition hover:-translate-y-0.5">
+                <Credential title={c.title} holder={holder} level={c.level} category={c.category}
+                  date={info?.date} serial={info?.serial} earned={isEarned} tier={c.tier} accent={c.accent} />
+                <p className={`mt-1.5 text-center text-xs font-medium ${isEarned ? "text-amber-600" : eligible ? "text-emerald-600" : "text-slate-400"}`}>
+                  {isEarned ? "Obtenida ✓" : eligible ? "¡Lista para obtener! →" : "En progreso →"}
+                </p>
               </Link>
             );
           })}

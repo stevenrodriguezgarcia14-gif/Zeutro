@@ -10,7 +10,6 @@ export default function AdminAcademyPreview() {
   const [key, setKey] = useState(0);
   const [unlocked, setUnlocked] = useState(true);
   const [earned, setEarned] = useState(true);
-  const cert = CERTIFICATIONS[0];
 
   return (
     <div className="space-y-8">
@@ -61,12 +60,15 @@ export default function AdminAcademyPreview() {
         </div>
       </section>
 
-      {/* Credencial */}
+      {/* Credenciales */}
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Credencial</h2>
-        <div className="mt-3">
-          <Credential key={`cred-${key}-${earned}`} title={cert.title} holder="Mi Negocio S.A." level={cert.level} category={cert.category}
-            date="16 de junio de 2026" serial="A1B2C3D4E5" earned={earned} animate />
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Credenciales ({CERTIFICATIONS.length})</h2>
+        <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {CERTIFICATIONS.map((cert) => (
+            <Credential key={`cred-${cert.slug}-${key}-${earned}`} title={cert.title} holder="Mi Negocio S.A."
+              level={cert.level} category={cert.category} date="16 de junio de 2026" serial="A1B2C3D4E5"
+              earned={earned} animate tier={cert.tier} accent={cert.accent} />
+          ))}
         </div>
       </section>
     </div>
