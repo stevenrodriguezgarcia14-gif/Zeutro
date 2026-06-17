@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentOrg } from "@/lib/org";
 import { getActivation } from "@/lib/activation";
 import { MODULES, type ModuleInfo } from "@/lib/guide";
+import { CATEGORIES } from "@/lib/academia";
 
 function ModuleCard({ m, badge }: { m: ModuleInfo; badge?: string }) {
   return (
@@ -26,14 +27,6 @@ function ModuleCard({ m, badge }: { m: ModuleInfo; badge?: string }) {
     </details>
   );
 }
-
-const ACADEMIA = [
-  { emoji: "📈", t: "Rentabilidad", d: "Cómo saber si de verdad ganas." },
-  { emoji: "🛒", t: "Compras y costos", d: "Costear bien para no perder." },
-  { emoji: "💬", t: "Ventas y clientes", d: "Vender y dar seguimiento." },
-  { emoji: "💧", t: "Flujo de caja", d: "Que nunca te falte dinero." },
-  { emoji: "🗂️", t: "Organización", d: "Orden para crecer sin caos." },
-];
 
 export default async function GuidePage() {
   const org = await getCurrentOrg();
@@ -131,17 +124,20 @@ export default async function GuidePage() {
         </details>
       </section>
 
-      {/* Academia (próximamente) */}
+      {/* Academia */}
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Academia Zentro</h2>
-        <p className="mt-1 text-xs text-slate-400">Guías cortas para aprender a manejar tu negocio. Próximamente.</p>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Academia Zentro</h2>
+          <Link href="/academy" className="text-xs font-medium text-slate-500 hover:text-slate-800">Ver todas →</Link>
+        </div>
+        <p className="mt-1 text-xs text-slate-400">Guías cortas para aprender a manejar tu negocio. Léelas en minutos.</p>
         <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {ACADEMIA.map((a) => (
-            <div key={a.t} className="rounded-2xl border border-slate-200 bg-white p-4 opacity-80">
+          {CATEGORIES.map((a) => (
+            <Link key={a.slug} href="/academy" className="rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-300 hover:shadow-sm">
               <p className="text-2xl">{a.emoji}</p>
-              <p className="mt-1 text-sm font-medium text-slate-800">{a.t}</p>
-              <p className="mt-0.5 text-xs text-slate-500">{a.d}</p>
-            </div>
+              <p className="mt-1 text-sm font-medium text-slate-800">{a.title}</p>
+              <p className="mt-0.5 text-xs text-slate-500">{a.desc}</p>
+            </Link>
           ))}
         </div>
       </section>

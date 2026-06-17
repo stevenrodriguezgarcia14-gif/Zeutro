@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { computePurchase, type PItem } from "@/lib/purchases";
+import { ModuleHelp } from "@/components/ModuleHelp";
 
 export default async function PurchasesPage() {
   const org = await getCurrentOrg();
@@ -46,6 +47,7 @@ export default async function PurchasesPage() {
         </div>
         <Link href="/purchases/new" className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">+ Nueva compra</Link>
       </div>
+      <div className="mt-4"><ModuleHelp slug="purchases" /></div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-slate-200 bg-white p-5">

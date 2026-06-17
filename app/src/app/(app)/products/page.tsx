@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
+import { ModuleHelp } from "@/components/ModuleHelp";
 
 export default async function ProductsPage() {
   const org = await getCurrentOrg();
@@ -28,6 +29,7 @@ export default async function ProductsPage() {
           + Nuevo
         </Link>
       </div>
+      <div className="mt-4"><ModuleHelp slug="products" /></div>
 
       {rows.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">

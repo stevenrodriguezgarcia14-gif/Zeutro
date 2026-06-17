@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { moveOpportunity, deleteOpportunity } from "./actions";
+import { ModuleHelp } from "@/components/ModuleHelp";
 
 type Stage = { id: string; name: string; position: number; probability_bps: number; is_won: boolean; is_lost: boolean };
 type Opp = {
@@ -52,6 +53,7 @@ export default async function SalesPage() {
           + Nueva oportunidad
         </Link>
       </div>
+      <div className="mt-4"><ModuleHelp slug="sales" /></div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-slate-200 bg-white p-5">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
+import { ModuleHelp } from "@/components/ModuleHelp";
 
 type Row = {
   id: string;
@@ -48,6 +49,7 @@ export default async function CollectionsPage() {
     <div>
       <h1 className="text-2xl font-bold text-slate-900">Cobranzas</h1>
       <p className="mt-1 text-sm text-slate-500">A quién cobrar, ordenado por urgencia. Envía recordatorios con un clic.</p>
+      <div className="mt-4"><ModuleHelp slug="collections" /></div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-slate-200 bg-white p-5">

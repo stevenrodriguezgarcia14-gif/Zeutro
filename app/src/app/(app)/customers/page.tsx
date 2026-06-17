@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { ModuleHelp } from "@/components/ModuleHelp";
 
 export default async function CustomersPage() {
   const supabase = await createClient();
@@ -38,6 +39,7 @@ export default async function CustomersPage() {
           </Link>
         </div>
       </div>
+      <div className="mt-4"><ModuleHelp slug="customers" /></div>
 
       {rows.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { adjustStock } from "./actions";
+import { ModuleHelp } from "@/components/ModuleHelp";
 
 type Prod = {
   id: string;
@@ -37,6 +38,7 @@ export default async function InventoryPage({
     <div>
       <h1 className="text-2xl font-bold text-slate-900">Inventario</h1>
       <p className="mt-1 text-sm text-slate-500">Existencias de tus productos. El stock entra desde Compras o ajustes.</p>
+      <div className="mt-4"><ModuleHelp slug="inventory" /></div>
 
       {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 

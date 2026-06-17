@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { DocUploader } from "@/components/DocUploader";
 import { deleteDocument } from "./actions";
+import { ModuleHelp } from "@/components/ModuleHelp";
 
 function fmtSize(b: number | null) {
   if (!b) return "";
@@ -34,6 +35,7 @@ export default async function DocumentsPage() {
         </div>
         {org && <DocUploader orgId={org.id} />}
       </div>
+      <div className="mt-4"><ModuleHelp slug="documents" /></div>
 
       {rows.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-600">

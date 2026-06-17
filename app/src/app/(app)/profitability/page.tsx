@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { getPurchasesOverview } from "@/lib/purchasesOverview";
+import { ModuleHelp } from "@/components/ModuleHelp";
 
 function Card({ title, value, tone = "default", hint }: { title: string; value: string; tone?: "default" | "good" | "bad"; hint?: string }) {
   const cls = tone === "good" ? "text-green-600" : tone === "bad" ? "text-red-600" : "text-slate-900";
@@ -86,6 +87,7 @@ export default async function ProfitabilityPage() {
     <div>
       <h1 className="text-2xl font-bold text-slate-900">Rentabilidad</h1>
       <p className="mt-1 text-sm text-slate-500">Tu inversión, lo recuperado y tu ganancia real.</p>
+      <div className="mt-4"><ModuleHelp slug="profitability" /></div>
 
       {/* Acumulado (todo el tiempo) */}
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-400">Desde el inicio</h2>

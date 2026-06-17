@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { transfer } from "./actions";
+import { ModuleHelp } from "@/components/ModuleHelp";
 
 const TYPE_LABEL: Record<string, string> = {
   bank: "Banco",
@@ -52,6 +53,7 @@ export default async function AccountsPage({
           + Nueva cuenta
         </Link>
       </div>
+      <div className="mt-4"><ModuleHelp slug="accounts" /></div>
 
       {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 

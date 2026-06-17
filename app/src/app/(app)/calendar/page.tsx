@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
+import { ModuleHelp } from "@/components/ModuleHelp";
 
 type Ev = { date: string; kind: string; label: string; title: string; href: string; cls: string };
 
@@ -52,6 +53,7 @@ export default async function CalendarPage() {
     <div>
       <h1 className="text-2xl font-bold text-slate-900">Calendario</h1>
       <p className="mt-1 text-sm text-slate-500">Todo lo que tiene fecha: tareas, cobros, cotizaciones y cierres de venta (próximos 60 días).</p>
+      <div className="mt-4"><ModuleHelp slug="calendar" /></div>
 
       {dates.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-600">

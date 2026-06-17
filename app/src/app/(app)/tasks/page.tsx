@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createTask, toggleTask, deleteTask } from "./actions";
+import { ModuleHelp } from "@/components/ModuleHelp";
 
 const PRIO: Record<string, { label: string; cls: string }> = {
   urgent: { label: "Urgente", cls: "bg-red-100 text-red-700" },
@@ -80,6 +81,7 @@ export default async function TasksPage() {
     <div>
       <h1 className="text-2xl font-bold text-slate-900">Tareas</h1>
       <p className="mt-1 text-sm text-slate-500">{pend.length} pendiente(s)</p>
+      <div className="mt-4"><ModuleHelp slug="tasks" /></div>
 
       <form action={createTask} className="mt-4 flex flex-wrap items-end gap-2 rounded-2xl border border-slate-200 bg-white p-4">
         <input type="hidden" name="redirect_to" value="/tasks" />

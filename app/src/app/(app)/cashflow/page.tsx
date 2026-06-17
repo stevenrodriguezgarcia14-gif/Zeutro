@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { getPurchasesOverview } from "@/lib/purchasesOverview";
+import { ModuleHelp } from "@/components/ModuleHelp";
 
 export default async function CashflowPage() {
   const org = await getCurrentOrg();
@@ -55,6 +56,7 @@ export default async function CashflowPage() {
     <div>
       <h1 className="text-2xl font-bold text-slate-900">Flujo de caja</h1>
       <p className="mt-1 text-sm text-slate-500">Cuánto dinero tendrás, sumando cobros esperados y restando pagos pendientes.</p>
+      <div className="mt-4"><ModuleHelp slug="cashflow" /></div>
 
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-400">Saldo proyectado</h2>
       <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-4">
