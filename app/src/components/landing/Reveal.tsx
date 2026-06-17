@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ElementType, type ReactNode } from "react";
+import { createElement, useEffect, useRef, useState, type ElementType, type ReactNode } from "react";
 
 /**
  * Anima el contenido con un fade-up cuando entra en el viewport (una sola vez).
@@ -36,14 +36,9 @@ export function Reveal({
     return () => io.disconnect();
   }, []);
 
-  return (
-    <Tag
-      ref={ref}
-      data-show={show}
-      className={`zentro-reveal ${className}`}
-      style={{ animationDelay: `${delay}ms` }}
-    >
-      {children}
-    </Tag>
+  return createElement(
+    Tag,
+    { ref, "data-show": show, className: `zentro-reveal ${className}`, style: { animationDelay: `${delay}ms` } },
+    children,
   );
 }
