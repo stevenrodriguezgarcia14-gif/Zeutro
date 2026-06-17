@@ -77,7 +77,7 @@ export function Coin3DGL({ tier, glyph, size = 220 }: { tier: Tier; glyph: Glyph
 
   return (
     <div style={{ width: size, height: size }}>
-      <Canvas dpr={[1, 1.5]} camera={{ position: [0, 0, 3], fov: 32 }} gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }} style={{ background: "transparent" }}>
+      <Canvas dpr={[1, 1.5]} camera={{ position: [0, 0, 4.8], fov: 30 }} gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }} style={{ background: "transparent" }}>
         <ambientLight intensity={0.55} />
         <directionalLight position={[3, 4, 5]} intensity={1.3} />
         <directionalLight position={[-4, -2, 2]} intensity={0.5} color="#bcd3ff" />
