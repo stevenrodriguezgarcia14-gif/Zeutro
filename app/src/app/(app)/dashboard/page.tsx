@@ -42,7 +42,11 @@ export default async function DashboardPage() {
     await Promise.all([
       supabase.from("customers").select("*", { count: "exact", head: true }),
       supabase.from("invoices").select("balance_minor, status, due_date"),
-      supabase.from("payments").select("amount_minor, paid_at").gte("paid_at", monthStart),
+      // Cobrado del mes NETO de IVA: asignaciones de pago proporcionales al subtotal de su factura.
+      supabase
+        .from("payment_allocations")
+        .select("amount_minor, payments!inner(paid_at), invoices(subtotal_minor, total_minor)")
+        .gte("payments.paid_at", monthStart),
       supabase.from("expenses").select("amount_minor, expense_date").gte("expense_date", monthStart),
       supabase.from("accounts").select("current_balance_minor").eq("is_active", true),
       supabase.from("tasks").select("due_date, status").not("status", "in", "(done,cancelled)"),
@@ -59,8 +63,16 @@ export default async function DashboardPage() {
     (i) => i.balance_minor > 0 && i.due_date < today && i.status !== "paid" && i.status !== "void",
   ).length;
 
-  const incomeMonth = (payments ?? []).reduce((s, p) => s + (p.amount_minor ?? 0), 0)
-    + (qsRows ?? []).reduce((s, v) => s + (v.amount_minor ?? 0), 0);
+  const monthAllocs = (payments ?? []) as unknown as {
+    amount_minor: number;
+    invoices: { subtotal_minor: number; total_minor: number } | null;
+  }[];
+  const invoiceNetMonth = monthAllocs.reduce((s, a) => {
+    const inv = a.invoices;
+    const ratio = inv && inv.total_minor > 0 ? inv.subtotal_minor / inv.total_minor : 1;
+    return s + Math.round((a.amount_minor ?? 0) * ratio);
+  }, 0);
+  const incomeMonth = invoiceNetMonth + (qsRows ?? []).reduce((s, v) => s + (v.amount_minor ?? 0), 0);
   const expenseMonth = (expenses ?? []).reduce((s, e) => s + (e.amount_minor ?? 0), 0);
   const profitMonth = incomeMonth - expenseMonth;
   const cashTotal = (accounts ?? []).reduce((s, a) => s + (a.current_balance_minor ?? 0), 0);
@@ -83,6 +95,11 @@ export default async function DashboardPage() {
   const tasksPending = taskList.length;
   const oppList = (opps ?? []) as unknown as { amount_minor: number; stages: { probability_bps: number } | null }[];
   const pipelineValue = oppList.reduce((s, o) => s + Math.round((o.amount_minor * (o.stages?.probability_bps ?? 0)) / 10000), 0);
+
+  // Organización recién creada y sin datos: evitar abrumar con tarjetas en cero.
+  const isNewOrg =
+    (customersCount ?? 0) === 0 && inv.length === 0 && incomeMonth === 0 && expenseMonth === 0 &&
+    cashTotal === 0 && taskList.length === 0 && oppList.length === 0 && (projectsCount ?? 0) === 0;
 
   return (
     <div>
@@ -121,12 +138,26 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      {isNewOrg && (
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-8 text-center">
+          <p className="text-lg font-semibold text-slate-900">¡Bienvenido a Zentro, {org?.name}!</p>
+          <p className="mt-1 text-sm text-slate-500">
+            Aquí verás el dinero, las ventas y los pendientes de tu negocio. Por ahora está vacío: da tu primer paso y los números aparecerán solos.
+          </p>
+          <Link href="/guide" className="mt-4 inline-block rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800">
+            Empezar en el Centro de Orientación →
+          </Link>
+        </div>
+      )}
+
       {/* Dinero del mes: ¿gano o pierdo? */}
+      {!isNewOrg && (
+      <>
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-400">
         Este mes (cobrado vs. gastado)
       </h2>
       <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card title="Ingresos cobrados" value={formatMoney(incomeMonth, currency)} tone="good" hint="Pagos recibidos este mes" />
+        <Card title="Ingresos cobrados" value={formatMoney(incomeMonth, currency)} tone="good" hint="Cobrado este mes, sin IVA" />
         <Card title="Gastos" value={formatMoney(expenseMonth, currency)} tone="bad" hint="Salidas registradas este mes" />
         <Card
           title="Utilidad del mes"
@@ -172,6 +203,9 @@ export default async function DashboardPage() {
           <p className="mt-1 text-xs text-slate-400">Ver calendario</p>
         </a>
       </div>
+
+      </>
+      )}
 
       {/* Tu aprendizaje (Academia) */}
       <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">Tu aprendizaje</h2>

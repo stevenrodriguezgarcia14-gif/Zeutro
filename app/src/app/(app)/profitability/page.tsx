@@ -21,8 +21,11 @@ export default async function ProfitabilityPage() {
   const supabase = await createClient();
   const monthStart = new Date().toISOString().slice(0, 7) + "-01";
 
-  const [{ data: payments }, { data: expenses }, { data: items }, { data: products }, { data: quickSales }] = await Promise.all([
-    supabase.from("payments").select("amount_minor, paid_at"),
+  const [{ data: allocations }, { data: expenses }, { data: items }, { data: products }, { data: quickSales }] = await Promise.all([
+    // Ingreso cobrado NETO de IVA: cada asignación de pago, proporcional al subtotal de su factura.
+    supabase
+      .from("payment_allocations")
+      .select("amount_minor, payments(paid_at), invoices(subtotal_minor, total_minor)"),
     supabase.from("expenses").select("amount_minor, expense_date, category"),
     supabase.from("invoice_items").select("product_id, quantity, unit_price_minor, invoices!inner(status)"),
     supabase.from("products").select("id, name, cost_price_minor"),
@@ -30,8 +33,24 @@ export default async function ProfitabilityPage() {
   ]);
 
   const compras = await getPurchasesOverview();
-  const pays = payments ?? [];
+  const allocs = (allocations ?? []) as unknown as {
+    amount_minor: number;
+    payments: { paid_at: string } | null;
+    invoices: { subtotal_minor: number; total_minor: number } | null;
+  }[];
   const exps = expenses ?? [];
+
+  // Separar lo cobrado en parte NETA (ingreso real del negocio) e IVA (no es tu dinero).
+  let invoiceNetTotal = 0, invoiceNetMonth = 0, taxCollectedTotal = 0;
+  for (const a of allocs) {
+    const inv = a.invoices;
+    const ratio = inv && inv.total_minor > 0 ? inv.subtotal_minor / inv.total_minor : 1;
+    const net = Math.round((a.amount_minor ?? 0) * ratio);
+    const tax = (a.amount_minor ?? 0) - net;
+    invoiceNetTotal += net;
+    taxCollectedTotal += tax;
+    if ((a.payments?.paid_at ?? "") >= monthStart) invoiceNetMonth += net;
+  }
 
   // Rentabilidad por producto: ventas (facturas no borrador/anuladas) × costo del producto
   type ProdRow = { id: string; name: string; cost: number; units: number; revenue: number };
@@ -70,11 +89,12 @@ export default async function ProfitabilityPage() {
   const qsMonth = qs.filter((v) => v.sold_at >= monthStart).reduce((s, v) => s + (v.amount_minor ?? 0), 0);
 
   const comprasCostoVendido = Math.max(0, compras.recuperado - compras.ganancia);
-  const incomeTotal = pays.reduce((s, p) => s + (p.amount_minor ?? 0), 0) + compras.recuperado + qsTotal;
+  // Ingreso = lo cobrado SIN IVA + reventa + ventas rápidas. El IVA cobrado NO es ganancia (se le debe al fisco).
+  const incomeTotal = invoiceNetTotal + compras.recuperado + qsTotal;
   const expenseTotal = exps.reduce((s, e) => s + (e.amount_minor ?? 0), 0) + comprasCostoVendido;
   const netTotal = incomeTotal - expenseTotal;
 
-  const incomeMonth = pays.filter((p) => p.paid_at >= monthStart).reduce((s, p) => s + (p.amount_minor ?? 0), 0) + qsMonth;
+  const incomeMonth = invoiceNetMonth + qsMonth;
   const expenseMonth = exps.filter((e) => e.expense_date >= monthStart).reduce((s, e) => s + (e.amount_minor ?? 0), 0);
   const netMonth = incomeMonth - expenseMonth;
 
@@ -97,10 +117,15 @@ export default async function ProfitabilityPage() {
       {/* Acumulado (todo el tiempo) */}
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-400">Desde el inicio</h2>
       <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card title="Ingresos (cobrado)" value={formatMoney(incomeTotal, currency)} tone="good" hint="Cobrado en facturas + reventa de compras" />
+        <Card title="Ingresos (sin IVA)" value={formatMoney(incomeTotal, currency)} tone="good" hint="Cobrado sin IVA + reventa + ventas rápidas" />
         <Card title="Invertido / gastado" value={formatMoney(expenseTotal, currency)} tone="bad" hint="Gastos + costo de la mercancía vendida" />
         <Card title="Ganancia neta" value={formatMoney(netTotal, currency)} tone={netTotal >= 0 ? "good" : "bad"} hint="Ingresos − gastos (incluye reventa)" />
       </div>
+      {taxCollectedTotal > 0 && (
+        <p className="mt-2 text-xs text-slate-400">
+          IVA cobrado (no es tu ganancia, se le debe al fisco): <b>{formatMoney(taxCollectedTotal, currency)}</b>. Por eso no se cuenta como ingreso.
+        </p>
+      )}
 
       {/* Estado de recuperación */}
       <div className={`mt-4 rounded-2xl border p-5 ${recovered ? "border-green-300 bg-green-50" : "border-amber-300 bg-amber-50"}`}>

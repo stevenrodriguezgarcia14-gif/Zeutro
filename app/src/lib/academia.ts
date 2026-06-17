@@ -584,7 +584,9 @@ export function certRequirements(cert: Certification, passed: Set<string>, d: Ac
   const scen = certScenarios(cert);
   const scenPassed = scen.filter((c) => passed.has(c.id)).length;
   const scorePct = scen.length ? Math.round((scenPassed / scen.length) * 100) : 100;
-  const allScen = scen.every((c) => passed.has(c.id));
+  // Umbral real de comprensión: hay que alcanzar el minScorePct declarado de la
+  // credencial (antes se exigía el 100% siempre; el minScorePct era lógica muerta).
+  const scoreOk = scorePct >= cert.minScorePct;
   const acts = allActions();
   const actsOk = cert.requiredActionIds.every((id) => { const c = acts.find((a) => a.id === id); return c ? !!c.check?.(d) : false; });
 
@@ -593,7 +595,12 @@ export function certRequirements(cert: Certification, passed: Set<string>, d: Ac
     const t = CERTIFICATIONS.find((c) => c.slug === pre)?.title ?? pre;
     reqs.push({ label: `Obtén primero: ${t}`, met: earnedCerts.has(pre) });
   }
-  if (scen.length > 0) reqs.push({ label: routes.length > 1 ? "Aprueba los desafíos de las 4 rutas" : "Aprueba los desafíos de la ruta", met: allScen });
+  if (scen.length > 0) reqs.push({
+    label: cert.minScorePct >= 100
+      ? (routes.length > 1 ? "Aprueba todos los desafíos de las 4 rutas" : "Aprueba todos los desafíos de la ruta")
+      : `Aprueba al menos ${cert.minScorePct}% de los desafíos (${scenPassed}/${scen.length})`,
+    met: scoreOk,
+  });
   if (cert.requiredActionIds.length > 0) reqs.push({ label: "Aplica las acciones clave en tu negocio", met: actsOk });
   if (cert.capstone && cert.capstone.length > 0) {
     const capOk = cert.capstone.every((c) => passed.has(c.id));

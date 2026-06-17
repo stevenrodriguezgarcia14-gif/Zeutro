@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
+import { toWhatsappNumber } from "@/lib/phone";
 import { ModuleHelp } from "@/components/ModuleHelp";
 
 type Row = {
@@ -76,7 +77,7 @@ export default async function CollectionsPage() {
             const d = daysBetween(r.due_date, today);
             const isOverdue = d > 0;
             const msg = reminderMessage(r);
-            const phone = (r.customers?.whatsapp || r.customers?.phone || "").replace(/[^0-9]/g, "");
+            const phone = toWhatsappNumber(r.customers?.whatsapp || r.customers?.phone, org?.country);
             const wa = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}` : null;
             const mail = r.customers?.email
               ? `mailto:${r.customers.email}?subject=${encodeURIComponent("Recordatorio factura " + r.number)}&body=${encodeURIComponent(msg)}`

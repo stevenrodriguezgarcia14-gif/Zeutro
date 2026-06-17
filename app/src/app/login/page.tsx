@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { login } from "@/app/auth/actions";
+import { login, resendConfirmation } from "@/app/auth/actions";
 import { PasswordInput } from "@/components/PasswordInput";
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; info?: string }>;
+  searchParams: Promise<{ error?: string; info?: string; resend?: string }>;
 }) {
-  const { error, info } = await searchParams;
+  const { error, info, resend } = await searchParams;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
@@ -23,6 +23,15 @@ export default async function LoginPage({
         {error && (
           <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>
         )}
+        {resend && (
+          <form action={resendConfirmation} className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+            <input type="hidden" name="email" value={resend} />
+            <p className="text-slate-600">¿No te llegó el correo de confirmación?</p>
+            <button className="mt-2 w-full rounded-lg border border-slate-300 bg-white py-2 font-medium text-slate-700 hover:bg-slate-100">
+              Reenviar correo a {resend}
+            </button>
+          </form>
+        )}
 
         <form action={login} className="mt-6 space-y-4">
           <div>
@@ -36,7 +45,7 @@ export default async function LoginPage({
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700">Contraseña</label>
-            <PasswordInput name="password" minLength={1} />
+            <PasswordInput name="password" minLength={8} />
           </div>
           <button
             type="submit"

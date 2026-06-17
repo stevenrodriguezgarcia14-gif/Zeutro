@@ -12,43 +12,47 @@ export async function createQuickSale(formData: FormData) {
   const method = String(formData.get("method") ?? "cash");
   const account_id = String(formData.get("account_id") ?? "") || null;
   const sold_at = String(formData.get("sold_at") ?? "") || new Date().toISOString().slice(0, 10);
+  const product_id = String(formData.get("product_id") ?? "") || null;
+  const qtyRaw = String(formData.get("qty") ?? "").trim();
+  const qty = product_id && qtyRaw ? Number(qtyRaw) : null;
 
   if (amount <= 0) redirect(`/quick-sale?error=${encodeURIComponent("Escribe un monto mayor a 0.")}`);
 
   const org = await getCurrentOrg();
   if (!org) redirect("/onboarding");
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
 
-  const { error } = await supabase.from("quick_sales").insert({
-    organization_id: org.id, description, amount_minor: amount, currency: org.base_currency,
-    method, account_id, sold_at, created_by: user?.id,
+  // Atómico: inserta la venta, mueve la cuenta y descuenta stock en una sola transacción (RPC).
+  const { error } = await supabase.rpc("create_quick_sale", {
+    p_org: org.id,
+    p_amount_minor: amount,
+    p_description: description,
+    p_method: method,
+    p_account_id: account_id,
+    p_sold_at: sold_at,
+    p_product_id: product_id,
+    p_qty: qty,
   });
   if (error) redirect(`/quick-sale?error=${encodeURIComponent(error.message)}`);
-
-  // Si eligió una cuenta, sube su saldo (entra dinero).
-  if (account_id) {
-    await supabase.rpc("record_account_movement", {
-      p_account_id: account_id,
-      p_direction: "in",
-      p_amount_minor: amount,
-      p_date: sold_at,
-      p_description: description ?? "Venta rápida",
-    });
-  }
 
   revalidatePath("/quick-sale");
   revalidatePath("/dashboard");
   revalidatePath("/profitability");
+  revalidatePath("/accounts");
+  revalidatePath("/inventory");
   redirect("/quick-sale?ok=1");
 }
 
 export async function deleteQuickSale(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const supabase = await createClient();
-  await supabase.from("quick_sales").delete().eq("id", id);
+  // Atómico: revierte el movimiento de cuenta y repone stock antes de borrar.
+  const { error } = await supabase.rpc("delete_quick_sale", { p_id: id });
+  if (error) redirect(`/quick-sale?error=${encodeURIComponent(error.message)}`);
   revalidatePath("/quick-sale");
   revalidatePath("/dashboard");
   revalidatePath("/profitability");
+  revalidatePath("/accounts");
+  revalidatePath("/inventory");
   redirect("/quick-sale?ok=del");
 }

@@ -7,12 +7,22 @@ import { getCurrentOrg } from "@/lib/org";
 
 const RECURRENCES = new Set(["none", "daily", "weekly", "monthly"]);
 
-/** Avanza una fecha (YYYY-MM-DD) según el periodo de recurrencia. */
+/**
+ * Avanza una fecha (YYYY-MM-DD) según el periodo de recurrencia, repitiendo
+ * hasta superar HOY. Así una tarea recurrente vencida no nace ya vencida.
+ */
 function advanceDate(base: string | null, recurrence: string): string {
   const d = base ? new Date(base + "T00:00:00") : new Date();
-  if (recurrence === "daily") d.setDate(d.getDate() + 1);
-  else if (recurrence === "weekly") d.setDate(d.getDate() + 7);
-  else if (recurrence === "monthly") d.setMonth(d.getMonth() + 1);
+  const today = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00");
+  const step = () => {
+    if (recurrence === "daily") d.setDate(d.getDate() + 1);
+    else if (recurrence === "weekly") d.setDate(d.getDate() + 7);
+    else if (recurrence === "monthly") d.setMonth(d.getMonth() + 1);
+  };
+  // Al menos un paso; y seguir hasta que la siguiente ocurrencia sea futura.
+  do {
+    step();
+  } while (d <= today);
   return d.toISOString().slice(0, 10);
 }
 

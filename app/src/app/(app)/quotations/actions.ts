@@ -45,7 +45,10 @@ export async function createQuotation(formData: FormData) {
 
   const { subtotal, tax, total, items } = computeTotals(lines);
   const { count } = await supabase.from("quotations").select("*", { count: "exact", head: true });
-  const number = "C-" + String((count ?? 0) + 1).padStart(4, "0");
+  const { data: number, error: numErr } = await supabase.rpc("next_doc_number", {
+    p_org: org.id, p_type: "quotation", p_prefix: "C-", p_seed: count ?? 0,
+  });
+  if (numErr || !number) redirect(`/quotations/new?error=${encodeURIComponent(numErr?.message ?? "No se pudo generar el folio.")}`);
 
   const { data: quotation, error } = await supabase
     .from("quotations")
@@ -89,7 +92,10 @@ export async function convertToInvoice(formData: FormData) {
   const { data: qItems } = await supabase.from("quotation_items").select("*").eq("quotation_id", id);
 
   const { count } = await supabase.from("invoices").select("*", { count: "exact", head: true });
-  const number = "F-" + String((count ?? 0) + 1).padStart(4, "0");
+  const { data: number, error: numErr } = await supabase.rpc("next_doc_number", {
+    p_org: org.id, p_type: "invoice", p_prefix: "F-", p_seed: count ?? 0,
+  });
+  if (numErr || !number) redirect(`/quotations/${id}?error=${encodeURIComponent(numErr?.message ?? "No se pudo generar el folio.")}`);
   const due = new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10);
 
   const { data: invoice, error } = await supabase

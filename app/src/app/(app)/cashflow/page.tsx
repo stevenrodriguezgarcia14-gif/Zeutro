@@ -78,13 +78,22 @@ export default async function CashflowPage() {
         <div className="flex justify-between"><span className="text-slate-600">+ Por cobrar (facturas)</span><b className="text-green-700">{formatMoney(porCobrar, currency)}</b></div>
         <div className="flex justify-between"><span className="text-slate-600">+ Ventas probables (embudo ponderado)</span><b className="text-green-700">{formatMoney(pipelinePond, currency)}</b></div>
         <div className="flex justify-between"><span className="text-slate-600">− Por pagar (gastos pendientes)</span><b className="text-red-700">{formatMoney(porPagar, currency)}</b></div>
-        {compras.count > 0 && (
-          <div className="flex justify-between border-t border-slate-100 pt-2"><span className="text-slate-600">+ Inventario de compras por vender (potencial)</span><b className="text-green-700">{formatMoney(compras.valorPorVender, currency)}</b></div>
-        )}
       </div>
+      {compras.count > 0 && (
+        <div className="mt-2 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm">
+          <div className="flex justify-between">
+            <span className="text-slate-600">Inventario de compras por vender (potencial)</span>
+            <b className="text-slate-500">{formatMoney(compras.valorPorVender, currency)}</b>
+          </div>
+          <p className="mt-1 text-xs text-slate-400">
+            Informativo: es dinero potencial si vendes toda tu mercancía. <b>No</b> está incluido en la proyección de arriba porque no tiene fecha de venta.
+          </p>
+        </div>
+      )}
       <p className="mt-3 text-xs text-slate-400">
         Nota: asumimos que cada factura se cobra en su fecha de vencimiento y que las ventas del embudo entran en su fecha de
-        cierre estimada, ajustadas por la probabilidad de cada etapa.
+        cierre estimada, ajustadas por la probabilidad de cada etapa. Si una venta del embudo ya la facturaste, ciérrala como
+        ganada para no contarla dos veces.
       </p>
     </div>
   );

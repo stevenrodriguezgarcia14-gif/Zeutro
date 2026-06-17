@@ -68,9 +68,12 @@ export async function createInvoice(formData: FormData) {
 
   const { subtotal, tax, total, items } = computeTotals(lines);
 
-  // Número de factura secuencial por organización (MVP).
+  // Folio atómico por organización (sin condición de carrera ni reutilización tras borrado).
   const { count } = await supabase.from("invoices").select("*", { count: "exact", head: true });
-  const number = "F-" + String((count ?? 0) + 1).padStart(4, "0");
+  const { data: number, error: numErr } = await supabase.rpc("next_doc_number", {
+    p_org: org.id, p_type: "invoice", p_prefix: "F-", p_seed: count ?? 0,
+  });
+  if (numErr || !number) redirect(`/invoices/new?error=${encodeURIComponent(numErr?.message ?? "No se pudo generar el folio.")}`);
 
   const { data: invoice, error } = await supabase
     .from("invoices")
@@ -121,6 +124,19 @@ export async function issueInvoice(formData: FormData) {
   revalidatePath(`/invoices/${id}`);
   revalidatePath("/inventory");
   redirect(`/invoices/${id}`);
+}
+
+export async function voidInvoice(formData: FormData) {
+  const id = String(formData.get("invoice_id") ?? "");
+  const supabase = await createClient();
+  // Anula la factura y repone el stock de sus líneas (atómico en la RPC).
+  const { error } = await supabase.rpc("void_invoice", { p_id: id });
+  if (error) redirect(`/invoices/${id}?error=${encodeURIComponent(error.message)}`);
+  revalidatePath(`/invoices/${id}`);
+  revalidatePath("/invoices");
+  revalidatePath("/inventory");
+  revalidatePath("/collections");
+  redirect(`/invoices/${id}?ok=void`);
 }
 
 export async function setPaymentLink(formData: FormData) {

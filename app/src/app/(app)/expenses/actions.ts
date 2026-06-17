@@ -29,42 +29,55 @@ export async function createExpense(formData: FormData) {
   if (!org) redirect("/onboarding");
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  const { error } = await supabase.from("expenses").insert({
-    organization_id: org.id,
-    description,
-    category,
-    vendor,
-    amount_minor,
-    tax_minor: tax ? toMinor(tax) : 0,
-    currency: org.base_currency,
-    expense_date,
-    payment_status,
-    account_id,
-    is_deductible,
-    created_by: user?.id,
+  // Atómico: inserta el gasto y (si está pagado y tiene cuenta) mueve el saldo en una sola transacción.
+  const { error } = await supabase.rpc("create_expense", {
+    p_org: org.id,
+    p_description: description,
+    p_amount_minor: amount_minor,
+    p_category: category,
+    p_vendor: vendor,
+    p_tax_minor: tax ? toMinor(tax) : 0,
+    p_expense_date: expense_date,
+    p_payment_status: payment_status,
+    p_account_id: account_id,
+    p_is_deductible: is_deductible,
   });
 
   if (error) {
     redirect(`/expenses/new?error=${encodeURIComponent(error.message)}`);
   }
 
-  // Si el gasto se pagó desde una cuenta, registra la salida de dinero real.
-  if (payment_status === "paid" && account_id) {
-    await supabase.rpc("record_account_movement", {
-      p_account_id: account_id,
-      p_direction: "out",
-      p_amount_minor: amount_minor,
-      p_date: expense_date,
-      p_description: `Gasto: ${description}`,
-    });
-  }
-
   revalidatePath("/expenses");
   revalidatePath("/accounts");
   revalidatePath("/dashboard");
   redirect("/expenses");
+}
+
+export async function markExpensePaid(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const account_id = String(formData.get("account_id") ?? "") || null;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_expense_paid", {
+    p_id: id,
+    p_account_id: account_id,
+    p_paid_date: new Date().toISOString().slice(0, 10),
+  });
+  if (error) redirect(`/expenses?error=${encodeURIComponent(error.message)}`);
+  revalidatePath("/expenses");
+  revalidatePath("/accounts");
+  revalidatePath("/dashboard");
+  redirect("/expenses?ok=paid");
+}
+
+export async function deleteExpense(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const supabase = await createClient();
+  // Atómico: si estaba pagado desde una cuenta, devuelve el dinero antes de borrar.
+  const { error } = await supabase.rpc("delete_expense", { p_id: id });
+  if (error) redirect(`/expenses?error=${encodeURIComponent(error.message)}`);
+  revalidatePath("/expenses");
+  revalidatePath("/accounts");
+  revalidatePath("/dashboard");
+  redirect("/expenses?ok=del");
 }

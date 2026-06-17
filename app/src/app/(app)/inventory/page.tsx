@@ -12,6 +12,7 @@ type Prod = {
   stock_qty: number;
   min_stock: number | null;
   sale_price_minor: number;
+  cost_price_minor: number | null;
   track_inventory: boolean;
 };
 
@@ -26,13 +27,15 @@ export default async function InventoryPage({
   const supabase = await createClient();
   const { data } = await supabase
     .from("products")
-    .select("id, name, sku, stock_qty, min_stock, sale_price_minor, track_inventory")
+    .select("id, name, sku, stock_qty, min_stock, sale_price_minor, cost_price_minor, track_inventory")
     .eq("type", "product")
     .order("name");
 
   const rows = (data ?? []) as Prod[];
   const lowStock = rows.filter((p) => p.min_stock != null && p.stock_qty <= p.min_stock);
-  const stockValue = rows.reduce((s, p) => s + Math.round((p.stock_qty || 0) * (p.sale_price_minor || 0)), 0);
+  // Valor del inventario a COSTO (lo que invertiste), que es la valuación contable correcta.
+  const stockValueCost = rows.reduce((s, p) => s + Math.round((p.stock_qty || 0) * (p.cost_price_minor || 0)), 0);
+  const stockValueSale = rows.reduce((s, p) => s + Math.round((p.stock_qty || 0) * (p.sale_price_minor || 0)), 0);
 
   return (
     <div>
@@ -44,7 +47,7 @@ export default async function InventoryPage({
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-slate-200 bg-white p-5"><p className="text-sm text-slate-500">Productos</p><p className="mt-2 text-2xl font-bold text-slate-900">{rows.length}</p></div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5"><p className="text-sm text-slate-500">Valor del inventario (a precio venta)</p><p className="mt-2 text-2xl font-bold text-slate-900">{formatMoney(stockValue, currency)}</p></div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5"><p className="text-sm text-slate-500">Valor del inventario (a costo)</p><p className="mt-2 text-2xl font-bold text-slate-900">{formatMoney(stockValueCost, currency)}</p><p className="mt-1 text-xs text-slate-400">A precio de venta: {formatMoney(stockValueSale, currency)}</p></div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5"><p className="text-sm text-slate-500">Bajo stock</p><p className="mt-2 text-2xl font-bold text-amber-600">{lowStock.length}</p></div>
       </div>
 

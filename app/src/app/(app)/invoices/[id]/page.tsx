@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney, fromMinor } from "@/lib/money";
-import { issueInvoice, registerPayment, setPaymentLink } from "../actions";
+import { issueInvoice, registerPayment, setPaymentLink, voidInvoice } from "../actions";
+import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   draft: { label: "Borrador", cls: "bg-slate-100 text-slate-600" },
@@ -20,10 +21,10 @@ export default async function InvoiceDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; paid?: string }>;
+  searchParams: Promise<{ error?: string; paid?: string; ok?: string }>;
 }) {
   const { id } = await params;
-  const { error, paid } = await searchParams;
+  const { error, paid, ok } = await searchParams;
   const org = await getCurrentOrg();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
@@ -47,6 +48,7 @@ export default async function InvoiceDetailPage({
 
   const st = STATUS[invoice.status] ?? STATUS.draft;
   const canPay = !["draft", "paid", "void"].includes(invoice.status) && invoice.balance_minor > 0;
+  const canVoid = !["void", "credited"].includes(invoice.status) && invoice.paid_minor === 0;
   const pays = (allocations ?? []) as unknown as {
     amount_minor: number;
     payments: { paid_at: string; method: string; reference: string | null } | null;
@@ -80,16 +82,30 @@ export default async function InvoiceDetailPage({
 
       {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       {paid && <p className="mt-4 rounded-lg bg-green-50 p-3 text-sm text-green-700">Pago registrado correctamente.</p>}
+      {ok === "void" && <p className="mt-4 rounded-lg bg-slate-100 p-3 text-sm text-slate-600">Factura anulada. Se repuso el stock de sus productos.</p>}
 
-      {invoice.status === "draft" && (
-        <form action={issueInvoice} className="mt-4">
-          <input type="hidden" name="invoice_id" value={invoice.id} />
-          <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
-            Emitir factura
-          </button>
-          <span className="ml-3 text-xs text-slate-400">Una vez emitida podrás registrar pagos.</span>
-        </form>
-      )}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        {invoice.status === "draft" && (
+          <form action={issueInvoice}>
+            <input type="hidden" name="invoice_id" value={invoice.id} />
+            <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+              Emitir factura
+            </button>
+            <span className="ml-3 text-xs text-slate-400">Una vez emitida podrás registrar pagos.</span>
+          </form>
+        )}
+        {canVoid && (
+          <form action={voidInvoice}>
+            <input type="hidden" name="invoice_id" value={invoice.id} />
+            <ConfirmSubmit
+              message="¿Anular esta factura? Quedará marcada como anulada y se repondrá el stock de sus productos. No se puede anular si ya tiene pagos."
+              className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+            >
+              Anular factura
+            </ConfirmSubmit>
+          </form>
+        )}
+      </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Conceptos + totales */}
@@ -155,9 +171,11 @@ export default async function InvoiceDetailPage({
                     type="number"
                     step="0.01"
                     min="0"
+                    max={fromMinor(invoice.balance_minor)}
                     defaultValue={fromMinor(invoice.balance_minor)}
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-900"
                   />
+                  <p className="mt-1 text-xs text-slate-400">Máximo: {formatMoney(invoice.balance_minor, currency)} (saldo pendiente).</p>
                 </div>
                 <div>
                   <label className="block text-slate-700">Método</label>

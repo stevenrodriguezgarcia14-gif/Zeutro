@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { ModuleHelp } from "@/components/ModuleHelp";
+import { ConfirmSubmit } from "@/components/ConfirmSubmit";
+import { markExpensePaid, deleteExpense } from "./actions";
 
 type Row = {
   id: string;
@@ -22,6 +24,12 @@ export default async function ExpensesPage() {
     .from("expenses")
     .select("id, description, category, vendor, amount_minor, expense_date, payment_status")
     .order("expense_date", { ascending: false });
+  const { data: accData } = await supabase
+    .from("accounts")
+    .select("id, name")
+    .eq("is_active", true)
+    .order("created_at");
+  const accounts = (accData ?? []) as { id: string; name: string }[];
 
   const rows = (data ?? []) as Row[];
   const month = new Date().toISOString().slice(0, 7);
@@ -88,6 +96,7 @@ export default async function ExpensesPage() {
                 <th className="px-4 py-3 font-medium">Proveedor</th>
                 <th className="px-4 py-3 font-medium">Estado</th>
                 <th className="px-4 py-3 font-medium text-right">Monto</th>
+                <th className="px-4 py-3 font-medium text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -105,6 +114,33 @@ export default async function ExpensesPage() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-right font-medium text-slate-900">{formatMoney(e.amount_minor, currency)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {e.payment_status === "pending" && (
+                        <form action={markExpensePaid} className="flex items-center gap-1">
+                          <input type="hidden" name="id" value={e.id} />
+                          {accounts.length > 0 && (
+                            <select name="account_id" className="rounded-lg border border-slate-300 px-2 py-1 text-xs" title="Cuenta de la que sale el dinero">
+                              <option value="">Sin cuenta</option>
+                              {accounts.map((a) => (
+                                <option key={a.id} value={a.id}>{a.name}</option>
+                              ))}
+                            </select>
+                          )}
+                          <button className="rounded-lg border border-green-300 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-50">Marcar pagado</button>
+                        </form>
+                      )}
+                      <form action={deleteExpense}>
+                        <input type="hidden" name="id" value={e.id} />
+                        <ConfirmSubmit
+                          message="¿Eliminar este gasto? Si estaba pagado desde una cuenta, se devolverá el monto al saldo."
+                          className="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50"
+                        >
+                          Eliminar
+                        </ConfirmSubmit>
+                      </form>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -33,10 +33,15 @@ export async function sendPurchaseItemToInventory(formData: FormData) {
 
   const { data: item } = await supabase
     .from("purchase_items")
-    .select("name, sku, quantity, unit_cost_minor, sale_price_minor")
+    .select("name, sku, quantity, unit_cost_minor, sale_price_minor, product_id")
     .eq("id", item_id)
     .single();
   if (!item) redirect(`/purchases/${purchase_id}?error=${encodeURIComponent("Producto no encontrado.")}`);
+
+  // Idempotencia: si este ítem ya se envió al inventario, no crear un duplicado.
+  if (item.product_id) {
+    redirect(`/purchases/${purchase_id}?error=${encodeURIComponent("Este producto ya está en tu inventario.")}`);
+  }
 
   const { data: product, error } = await supabase
     .from("products")
@@ -55,6 +60,9 @@ export async function sendPurchaseItemToInventory(formData: FormData) {
     .select("id")
     .single();
   if (error || !product) redirect(`/purchases/${purchase_id}?error=${encodeURIComponent(error?.message ?? "No se pudo crear el producto.")}`);
+
+  // Marcar el ítem como ya enviado (enlace), para que no se pueda duplicar.
+  await supabase.from("purchase_items").update({ product_id: product.id }).eq("id", item_id);
 
   await supabase.rpc("adjust_stock", {
     p_product_id: product.id, p_direction: "in", p_qty: Number(item.quantity) || 0, p_reason: "purchase", p_note: "Desde compra",

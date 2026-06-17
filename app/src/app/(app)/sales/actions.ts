@@ -74,3 +74,50 @@ export async function deleteOpportunity(formData: FormData) {
   revalidatePath("/sales");
   redirect("/sales");
 }
+
+// Cierra el ciclo: convierte una oportunidad ganada en una factura (borrador).
+export async function convertOpportunityToInvoice(formData: FormData) {
+  const id = String(formData.get("opportunity_id") ?? "");
+  const org = await getCurrentOrg();
+  if (!org) redirect("/onboarding");
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { data: opp } = await supabase
+    .from("opportunities")
+    .select("id, title, amount_minor, customer_id")
+    .eq("id", id)
+    .single();
+  if (!opp) redirect("/sales?error=" + encodeURIComponent("Oportunidad no encontrada."));
+  if (!opp.customer_id) {
+    redirect("/sales?error=" + encodeURIComponent("Esta oportunidad es de un prospecto. Conviértelo en cliente antes de facturar."));
+  }
+
+  const { count } = await supabase.from("invoices").select("*", { count: "exact", head: true });
+  const { data: number, error: numErr } = await supabase.rpc("next_doc_number", {
+    p_org: org.id, p_type: "invoice", p_prefix: "F-", p_seed: count ?? 0,
+  });
+  if (numErr || !number) redirect("/sales?error=" + encodeURIComponent(numErr?.message ?? "No se pudo generar el folio."));
+
+  const due = new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10);
+  const amount = opp.amount_minor ?? 0;
+  const { data: invoice, error } = await supabase
+    .from("invoices")
+    .insert({
+      organization_id: org.id, customer_id: opp.customer_id, number, currency: org.base_currency,
+      issue_date: new Date().toISOString().slice(0, 10), due_date: due,
+      subtotal_minor: amount, tax_minor: 0, total_minor: amount, status: "draft", created_by: user?.id,
+    })
+    .select("id").single();
+  if (error || !invoice) redirect("/sales?error=" + encodeURIComponent(error?.message ?? "No se pudo crear la factura."));
+
+  await supabase.from("invoice_items").insert({
+    organization_id: org.id, invoice_id: invoice.id, description: opp.title,
+    quantity: 1, unit_price_minor: amount, discount_pct: 0, tax_rate_bps: 0, line_total_minor: amount,
+  });
+  await supabase.from("opportunities").update({ status: "won" }).eq("id", id);
+
+  revalidatePath("/sales");
+  revalidatePath("/invoices");
+  redirect(`/invoices/${invoice.id}`);
+}

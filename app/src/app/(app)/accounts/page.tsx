@@ -44,7 +44,7 @@ export default async function AccountsPage({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Cuentas</h1>
-          <p className="mt-1 text-sm text-slate-500">Tu dinero en bancos, efectivo y más.</p>
+          <p className="mt-1 text-sm text-slate-500">Tus saldos de banco, efectivo y más — los registras tú.</p>
         </div>
         <Link
           href="/accounts/new"
@@ -57,8 +57,14 @@ export default async function AccountsPage({
 
       {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
-      <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
-        <p className="text-sm text-slate-500">Dinero total disponible</p>
+      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+        <span className="font-medium">Importante:</span> estos saldos son los que tú registras en Zentro.
+        Zentro <span className="font-medium">no se conecta a tu banco</span> ni sincroniza movimientos automáticamente.
+        Suben y bajan con tus ventas, gastos, pagos y transferencias. Si no cuadra con tu banco, registra un movimiento manual para corregir.
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5">
+        <p className="text-sm text-slate-500">Dinero total registrado</p>
         <p className="mt-2 text-3xl font-bold text-slate-900">{formatMoney(total, currency)}</p>
       </div>
 

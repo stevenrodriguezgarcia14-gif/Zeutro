@@ -3,6 +3,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { ModuleHelp } from "@/components/ModuleHelp";
 import { createQuickSale, deleteQuickSale } from "./actions";
+import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 
 const METHODS: Record<string, string> = { cash: "Efectivo", transfer: "Transferencia", card: "Tarjeta", check: "Cheque", gateway: "Pasarela", other: "Otro" };
 
@@ -14,12 +15,14 @@ export default async function QuickSalePage({ searchParams }: { searchParams: Pr
   const today = new Date().toISOString().slice(0, 10);
   const monthStart = today.slice(0, 7) + "-01";
 
-  const [{ data: sales }, { data: accounts }] = await Promise.all([
+  const [{ data: sales }, { data: accounts }, { data: products }] = await Promise.all([
     supabase.from("quick_sales").select("id, description, amount_minor, method, sold_at").order("sold_at", { ascending: false }).limit(50),
     supabase.from("accounts").select("id, name").eq("is_active", true).order("name"),
+    supabase.from("products").select("id, name").eq("track_inventory", true).eq("is_active", true).order("name"),
   ]);
   const rows = sales ?? [];
   const accs = accounts ?? [];
+  const prods = (products ?? []) as { id: string; name: string }[];
   const totalToday = rows.filter((r) => r.sold_at === today).reduce((s, r) => s + r.amount_minor, 0);
   const totalMonth = rows.filter((r) => r.sold_at >= monthStart).reduce((s, r) => s + r.amount_minor, 0);
 
@@ -77,6 +80,23 @@ export default async function QuickSalePage({ searchParams }: { searchParams: Pr
             </select>
           </div>
         </div>
+        {prods.length > 0 && (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700">Producto del inventario (opcional)</label>
+              <select name="product_id" defaultValue="" className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 outline-none focus:border-slate-900">
+                <option value="">— No descontar inventario —</option>
+                {prods.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700">Cantidad vendida</label>
+              <input name="qty" type="number" step="0.001" min="0" placeholder="1"
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-900" />
+              <p className="mt-1 text-xs text-slate-400">Si eliges producto, se descuenta del inventario.</p>
+            </div>
+          </div>
+        )}
         <button className="w-full rounded-lg bg-slate-900 py-2.5 font-medium text-white hover:bg-slate-800">Registrar venta</button>
       </form>
 
@@ -105,7 +125,9 @@ export default async function QuickSalePage({ searchParams }: { searchParams: Pr
                   <td className="px-4 py-2 text-right">
                     <form action={deleteQuickSale}>
                       <input type="hidden" name="id" value={r.id} />
-                      <button className="text-xs text-slate-300 hover:text-red-600">✕</button>
+                      <ConfirmSubmit message="¿Eliminar esta venta? Si actualizó una cuenta o descontó inventario, se revertirá." className="text-xs text-slate-300 hover:text-red-600">
+                        ✕
+                      </ConfirmSubmit>
                     </form>
                   </td>
                 </tr>
