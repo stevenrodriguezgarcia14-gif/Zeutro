@@ -5,7 +5,10 @@ import dynamic from "next/dynamic";
 import { Confetti } from "@/components/Confetti";
 import { TIER_LABEL, type Tier, type GlyphKey } from "@/components/academy/Emblem";
 
-const Coin3DGL = dynamic(() => import("@/components/academy/Coin3DGL").then((m) => m.Coin3DGL), { ssr: false });
+const Coin3DGL = dynamic(() => import("@/components/academy/Coin3DGL").then((m) => m.Coin3DGL), {
+  ssr: false,
+  loading: () => <div style={{ width: 200, height: 200 }} className="rounded-full bg-white/5" />,
+});
 
 export type UnlockItem = { slug: string; title: string; desc: string; tier: Tier; glyph: GlyphKey };
 
@@ -45,10 +48,10 @@ export function UnlockCelebration({ items, onDone }: { items: UnlockItem[]; onDo
               style={{ background: "repeating-conic-gradient(from 0deg, rgba(255,255,255,0.13) 0deg 7deg, transparent 7deg 17deg)", WebkitMaskImage: "radial-gradient(closest-side, #000 36%, transparent 72%)", maskImage: "radial-gradient(closest-side, #000 36%, transparent 72%)" }} />
           </div>
           {/* Halo */}
-          <div className="zentro-halo pointer-events-none absolute h-56 w-56 rounded-full" style={{ background: `radial-gradient(closest-side, ${g}, transparent 70%)` }} />
+          <div className="zentro-halo pointer-events-none absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: `radial-gradient(closest-side, ${g}, transparent 70%)` }} />
           {/* Ondas expansivas */}
-          <div className="zentro-shock pointer-events-none absolute h-44 w-44 rounded-full border-2" style={{ borderColor: g }} />
-          <div className="zentro-shock-2 pointer-events-none absolute h-44 w-44 rounded-full border" style={{ borderColor: g }} />
+          <div className="zentro-shock pointer-events-none absolute left-1/2 top-1/2 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full border-2" style={{ borderColor: g }} />
+          <div className="zentro-shock-2 pointer-events-none absolute left-1/2 top-1/2 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full border" style={{ borderColor: g }} />
           {/* Moneda 3D (WebGL) que se estampa */}
           <div className="zentro-slam relative">
             <Coin3DGL tier={it.tier} glyph={it.glyph} size={200} />

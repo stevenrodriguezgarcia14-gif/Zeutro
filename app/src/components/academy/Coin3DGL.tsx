@@ -72,7 +72,7 @@ export function Coin3DGL({ tier, glyph, size = 220 }: { tier: Tier; glyph: Glyph
         <directionalLight position={[3, 4, 5]} intensity={1.3} />
         <directionalLight position={[-4, -2, 2]} intensity={0.5} color="#bcd3ff" />
         <Coin tier={tier} glyph={glyph} />
-        <Environment resolution={256}>
+        <Environment resolution={128} frames={1}>
           <Lightformer form="rect" intensity={3} position={[2, 3, 3]} scale={[5, 5, 1]} />
           <Lightformer form="rect" intensity={1.4} position={[-3, 1, 3]} scale={[4, 4, 1]} color="#cfe0ff" />
           <Lightformer form="ring" intensity={2.4} position={[0, -1, 5]} scale={3.5} />
