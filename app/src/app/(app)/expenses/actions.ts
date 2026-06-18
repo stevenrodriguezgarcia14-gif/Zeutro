@@ -16,6 +16,8 @@ export async function createExpense(formData: FormData) {
   const payment_status = String(formData.get("payment_status") ?? "paid");
   const account_id = String(formData.get("account_id") ?? "") || null;
   const is_deductible = formData.get("is_deductible") === "on";
+  const project_id = String(formData.get("project_id") ?? "") || null;
+  const redirectTo = String(formData.get("redirect_to") ?? "/expenses");
 
   if (!description) {
     redirect(`/expenses/new?error=${encodeURIComponent("La descripción es obligatoria.")}`);
@@ -42,6 +44,7 @@ export async function createExpense(formData: FormData) {
     p_payment_status: payment_status,
     p_account_id: account_id,
     p_is_deductible: is_deductible,
+    p_project_id: project_id,
   });
 
   if (error) {
@@ -51,7 +54,8 @@ export async function createExpense(formData: FormData) {
   revalidatePath("/expenses");
   revalidatePath("/accounts");
   revalidatePath("/dashboard");
-  redirect("/expenses");
+  if (project_id) revalidatePath(`/projects/${project_id}`);
+  redirect(redirectTo);
 }
 
 export async function markExpensePaid(formData: FormData) {

@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
-import { updateProjectStatus, deleteProject } from "../actions";
+import { updateProjectStatus, deleteProject, createProjectInvoice } from "../actions";
 import { createTask, toggleTask, deleteTask } from "@/app/(app)/tasks/actions";
+import { createExpense } from "@/app/(app)/expenses/actions";
+import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 
 const STATUSES = [
   { v: "planning", l: "Planeación" },
@@ -35,18 +37,33 @@ export default async function ProjectDetailPage({
 
   const { data: project } = await supabase.from("projects").select("*, customers(legal_name)").eq("id", id).single();
   if (!project) notFound();
-  const { data: tasks } = await supabase
-    .from("tasks")
-    .select("id, title, status, priority, due_date")
-    .eq("project_id", id)
-    .order("status")
-    .order("due_date", { ascending: true, nullsFirst: false });
+  const [{ data: tasks }, { data: projExpenses }, { data: projInvoices }, { data: accounts }] = await Promise.all([
+    supabase
+      .from("tasks")
+      .select("id, title, status, priority, due_date")
+      .eq("project_id", id)
+      .order("status")
+      .order("due_date", { ascending: true, nullsFirst: false }),
+    supabase.from("expenses").select("amount_minor").eq("project_id", id),
+    supabase.from("invoices").select("total_minor, paid_minor, status").eq("project_id", id),
+    supabase.from("accounts").select("id, name").eq("is_active", true).order("name"),
+  ]);
 
   const ts = (tasks ?? []) as { id: string; title: string; status: string; priority: string; due_date: string | null }[];
   const total = ts.length;
   const done = ts.filter((t) => t.status === "done").length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const back = `/projects/${id}`;
+
+  const accs = (accounts ?? []) as { id: string; name: string }[];
+  const budget = project.budget_amount_minor as number | null;
+  const spent = (projExpenses ?? []).reduce((s, e) => s + (e.amount_minor ?? 0), 0);
+  const invs = (projInvoices ?? []) as { total_minor: number; paid_minor: number; status: string }[];
+  const invoiced = invs.filter((i) => i.status !== "void").reduce((s, i) => s + (i.total_minor ?? 0), 0);
+  const collected = invs.filter((i) => i.status !== "void").reduce((s, i) => s + (i.paid_minor ?? 0), 0);
+  const budgetPct = budget && budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
+  const overBudget = budget != null && budget > 0 && spent > budget;
+  const projProfit = invoiced - spent;
 
   return (
     <div>
@@ -71,7 +88,7 @@ export default async function ProjectDetailPage({
 
       {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-slate-200 bg-white p-5">
           <p className="text-sm text-slate-500">Avance</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">{pct}%</p>
@@ -79,14 +96,53 @@ export default async function ProjectDetailPage({
           <p className="mt-1 text-xs text-slate-400">{done}/{total} tareas</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5">
-          <p className="text-sm text-slate-500">Presupuesto</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{project.budget_amount_minor != null ? formatMoney(project.budget_amount_minor, currency) : "—"}</p>
+          <p className="text-sm text-slate-500">Presupuesto vs gastado</p>
+          <p className={`mt-2 text-2xl font-bold ${overBudget ? "text-red-600" : "text-slate-900"}`}>{formatMoney(spent, currency)}</p>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+            <div className={`h-full ${overBudget ? "bg-red-500" : "bg-emerald-500"}`} style={{ width: `${budget ? budgetPct : 0}%` }} />
+          </div>
+          <p className="mt-1 text-xs text-slate-400">
+            {budget != null ? `de ${formatMoney(budget, currency)}` : "Sin presupuesto"}{overBudget ? " · ⚠️ excedido" : ""}
+          </p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5">
-          <p className="text-sm text-slate-500">Tareas pendientes</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{total - done}</p>
+          <p className="text-sm text-slate-500">Facturado / cobrado</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{formatMoney(invoiced, currency)}</p>
+          <p className="mt-1 text-xs text-slate-400">Cobrado: {formatMoney(collected, currency)}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5">
+          <p className="text-sm text-slate-500">Margen del proyecto</p>
+          <p className={`mt-2 text-2xl font-bold ${projProfit >= 0 ? "text-green-600" : "text-red-600"}`}>{formatMoney(projProfit, currency)}</p>
+          <p className="mt-1 text-xs text-slate-400">Facturado − gastado</p>
         </div>
       </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <form action={createProjectInvoice}>
+          <input type="hidden" name="project_id" value={project.id} />
+          <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Facturar este proyecto →</button>
+        </form>
+      </div>
+
+      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
+        <h2 className="font-semibold text-slate-900">Gastos del proyecto</h2>
+        <p className="mt-1 text-xs text-slate-400">Registra aquí lo que gastas en este proyecto para comparar con el presupuesto.</p>
+        <form action={createExpense} className="mt-3 flex flex-wrap items-end gap-2">
+          <input type="hidden" name="project_id" value={project.id} />
+          <input type="hidden" name="redirect_to" value={back} />
+          <div className="min-w-44 flex-1"><input name="description" required placeholder="Ej. materiales, subcontrato" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900" /></div>
+          <input name="amount" type="number" step="0.01" min="0" required placeholder="0.00" className="w-28 rounded-lg border border-slate-300 px-3 py-2 text-right text-sm outline-none focus:border-slate-900" />
+          <select name="payment_status" defaultValue="paid" className="rounded-lg border border-slate-300 px-2 py-2 text-sm outline-none focus:border-slate-900">
+            <option value="paid">Pagado</option>
+            <option value="pending">Pendiente</option>
+          </select>
+          <select name="account_id" defaultValue="" className="rounded-lg border border-slate-300 px-2 py-2 text-sm outline-none focus:border-slate-900" title="Cuenta de la que sale el dinero">
+            <option value="">Sin cuenta</option>
+            {accs.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+          </select>
+          <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Registrar gasto</button>
+        </form>
+      </section>
 
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
         <h2 className="font-semibold text-slate-900">Tareas del proyecto</h2>
@@ -136,7 +192,9 @@ export default async function ProjectDetailPage({
 
       <form action={deleteProject} className="mt-6">
         <input type="hidden" name="project_id" value={project.id} />
-        <button className="text-sm text-red-600 hover:underline">Eliminar proyecto</button>
+        <ConfirmSubmit message="¿Eliminar este proyecto? Sus tareas y vínculos se perderán." className="text-sm text-red-600 hover:underline">
+          Eliminar proyecto
+        </ConfirmSubmit>
       </form>
     </div>
   );
