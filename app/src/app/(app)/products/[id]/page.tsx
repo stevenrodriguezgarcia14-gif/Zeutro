@@ -4,7 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney, fromMinor } from "@/lib/money";
 import { ProductImageUploader } from "@/components/ProductImageUploader";
-import { updateProduct, addComponent, deleteComponent, updateSheetSettings, applySuggestedPrice } from "./actions";
+import { updateProduct, addComponent, deleteComponent, updateSheetSettings, applySuggestedPrice, updateInventorySettings } from "./actions";
+
+const INV_REASON: Record<string, string> = {
+  purchase: "Compra", sale: "Venta", adjustment: "Ajuste", return: "Devolución",
+  loss: "Merma", initial: "Inicial",
+};
 
 const GROUPS: {
   type: string;
@@ -76,6 +81,16 @@ export default async function ProductCostingPage({
   if (!product) notFound();
 
   const { data: sheet } = await supabase.from("cost_sheets").select("*").eq("product_id", id).maybeSingle();
+
+  const { data: movements } = product.type === "product"
+    ? await supabase
+        .from("inventory_movements")
+        .select("id, direction, qty, reason, note, created_at")
+        .eq("product_id", id)
+        .order("created_at", { ascending: false })
+        .limit(30)
+    : { data: [] as { id: string; direction: string; qty: number; reason: string; note: string | null; created_at: string }[] };
+  const moves = movements ?? [];
 
   const { data: components } = sheet
     ? await supabase
@@ -157,6 +172,50 @@ export default async function ProductCostingPage({
               Guardar datos
             </button>
           </form>
+
+          {product.type === "product" && (
+            <div className="mt-6 border-t border-slate-100 pt-4">
+              <h3 className="font-semibold text-slate-900">Inventario</h3>
+              <form action={updateInventorySettings} className="mt-3 space-y-3 text-sm">
+                <input type="hidden" name="product_id" value={product.id} />
+                <label className="flex items-center gap-2 text-slate-700">
+                  <input type="checkbox" name="track_inventory" defaultChecked={product.track_inventory} className="h-4 w-4 rounded border-slate-300" />
+                  Controlar inventario de este producto
+                </label>
+                <div className="flex items-end gap-3">
+                  <div>
+                    <label className="block text-slate-700">Stock actual</label>
+                    <p className="mt-1 text-lg font-bold text-slate-900">{product.stock_qty ?? 0}</p>
+                  </div>
+                  <div>
+                    <label className="block text-slate-700">Stock mínimo (alerta)</label>
+                    <input name="min_stock" type="number" step="0.001" min="0" defaultValue={product.min_stock ?? ""} placeholder="—" className={fieldCls} />
+                  </div>
+                </div>
+                <button className="rounded-lg border border-slate-300 px-3 py-2 font-medium text-slate-700 hover:bg-slate-50">Guardar inventario</button>
+              </form>
+              <p className="mt-2 text-xs text-slate-400">Para entradas/salidas de stock usa <Link href="/inventory" className="underline">Inventario</Link>.</p>
+
+              <h4 className="mt-5 text-sm font-semibold text-slate-700">Historial de movimientos (kardex)</h4>
+              {moves.length === 0 ? (
+                <p className="mt-1 text-sm text-slate-400">Sin movimientos todavía.</p>
+              ) : (
+                <ul className="mt-2 divide-y divide-slate-100 text-sm">
+                  {moves.map((m) => (
+                    <li key={m.id} className="flex items-center justify-between py-2">
+                      <span className="text-slate-600">
+                        <span className="text-xs text-slate-400">{new Date(m.created_at).toLocaleDateString("es")}</span>{" "}
+                        {INV_REASON[m.reason] ?? m.reason}{m.note ? ` · ${m.note}` : ""}
+                      </span>
+                      <span className={`font-medium ${m.direction === "in" ? "text-green-700" : "text-red-700"}`}>
+                        {m.direction === "in" ? "+" : "−"}{m.qty}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </section>
 
         {/* Costeo */}

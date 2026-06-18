@@ -61,6 +61,22 @@ export async function updateProduct(formData: FormData) {
   redirect(`/products/${id}?ok=1`);
 }
 
+export async function updateInventorySettings(formData: FormData) {
+  const id = String(formData.get("product_id") ?? "");
+  const track_inventory = formData.get("track_inventory") === "on";
+  const minRaw = String(formData.get("min_stock") ?? "").trim();
+  const min_stock = minRaw === "" ? null : Number(minRaw);
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("products")
+    .update({ track_inventory, min_stock })
+    .eq("id", id);
+  if (error) redirect(`/products/${id}?error=${encodeURIComponent(error.message)}`);
+  revalidatePath(`/products/${id}`);
+  revalidatePath("/inventory");
+  redirect(`/products/${id}?ok=1`);
+}
+
 export async function applySuggestedPrice(formData: FormData) {
   const id = String(formData.get("product_id") ?? "");
   const price_minor = parseInt(String(formData.get("price_minor") ?? "0"), 10) || 0;
