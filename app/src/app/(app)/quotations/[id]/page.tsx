@@ -41,7 +41,9 @@ export default async function QuotationDetailPage({
   if (!q) notFound();
   const { data: items } = await supabase.from("quotation_items").select("*").eq("quotation_id", id);
 
-  const st = STATUS[q.status] ?? STATUS.draft;
+  const today = new Date().toISOString().slice(0, 10);
+  const isExpired = ["draft", "sent"].includes(q.status) && q.valid_until && q.valid_until < today;
+  const st = isExpired ? STATUS.expired : (STATUS[q.status] ?? STATUS.draft);
 
   return (
     <div>

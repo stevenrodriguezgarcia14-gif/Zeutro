@@ -78,6 +78,15 @@ export default async function NewCustomerPage({
             />
           </div>
         </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700">WhatsApp</label>
+          <input
+            name="whatsapp"
+            placeholder="Con código de país, ej. 52 55 1234 5678"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-900"
+          />
+          <p className="mt-1 text-xs text-slate-400">Para enviar recordatorios de cobro por WhatsApp con un clic.</p>
+        </div>
         <button
           type="submit"
           className="w-full rounded-lg bg-slate-900 py-2.5 font-medium text-white hover:bg-slate-800"

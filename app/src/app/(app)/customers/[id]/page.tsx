@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { addInteraction } from "./actions";
+import { deleteCustomer } from "../actions";
+import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 
 const INV_STATUS: Record<string, { label: string; cls: string }> = {
   draft: { label: "Borrador", cls: "bg-slate-100 text-slate-600" },
@@ -92,12 +94,20 @@ export default async function CustomerDetailPage({
             {customer.whatsapp && <span>💬 {customer.whatsapp}</span>}
           </div>
         </div>
-        <Link
-          href={`/invoices/new?customer=${customer.id}`}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-        >
-          + Nueva factura
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/customers/${customer.id}/edit`}
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Editar
+          </Link>
+          <Link
+            href={`/invoices/new?customer=${customer.id}`}
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+          >
+            + Nueva factura
+          </Link>
+        </div>
       </div>
 
       {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
@@ -197,6 +207,13 @@ export default async function CustomerDetailPage({
           </ul>
         </div>
       </div>
+
+      <form action={deleteCustomer} className="mt-8">
+        <input type="hidden" name="id" value={customer.id} />
+        <ConfirmSubmit message="¿Eliminar este cliente? Si tiene facturas u otros registros no se podrá borrar; en ese caso cámbialo a 'inactivo'." className="text-sm text-red-600 hover:underline">
+          Eliminar cliente
+        </ConfirmSubmit>
+      </form>
     </div>
   );
 }

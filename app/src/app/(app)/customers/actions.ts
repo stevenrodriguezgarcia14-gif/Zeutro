@@ -10,8 +10,10 @@ export async function createCustomer(formData: FormData) {
   const type = String(formData.get("type") ?? "company");
   const email = String(formData.get("email") ?? "").trim() || null;
   const phone = String(formData.get("phone") ?? "").trim() || null;
+  const whatsapp = String(formData.get("whatsapp") ?? "").trim() || null;
   const tax_id = String(formData.get("tax_id") ?? "").trim() || null;
   const payment_terms = String(formData.get("payment_terms") ?? "contado");
+  const notes = String(formData.get("notes") ?? "").trim() || null;
 
   if (!legal_name) {
     redirect(`/customers/new?error=${encodeURIComponent("El nombre es obligatorio.")}`);
@@ -31,8 +33,10 @@ export async function createCustomer(formData: FormData) {
     legal_name,
     email,
     phone,
+    whatsapp,
     tax_id,
     payment_terms,
+    notes,
     currency: org.base_currency,
     created_by: user?.id,
   });
@@ -41,6 +45,42 @@ export async function createCustomer(formData: FormData) {
     redirect(`/customers/new?error=${encodeURIComponent(error.message)}`);
   }
 
+  revalidatePath("/customers");
+  redirect("/customers");
+}
+
+export async function updateCustomer(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const legal_name = String(formData.get("legal_name") ?? "").trim();
+  if (!legal_name) redirect(`/customers/${id}/edit?error=${encodeURIComponent("El nombre es obligatorio.")}`);
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("customers")
+    .update({
+      type: String(formData.get("type") ?? "company"),
+      legal_name,
+      email: String(formData.get("email") ?? "").trim() || null,
+      phone: String(formData.get("phone") ?? "").trim() || null,
+      whatsapp: String(formData.get("whatsapp") ?? "").trim() || null,
+      tax_id: String(formData.get("tax_id") ?? "").trim() || null,
+      payment_terms: String(formData.get("payment_terms") ?? "contado"),
+      status: String(formData.get("status") ?? "active"),
+      notes: String(formData.get("notes") ?? "").trim() || null,
+    })
+    .eq("id", id);
+  if (error) redirect(`/customers/${id}/edit?error=${encodeURIComponent(error.message)}`);
+
+  revalidatePath("/customers");
+  revalidatePath(`/customers/${id}`);
+  redirect(`/customers/${id}`);
+}
+
+export async function deleteCustomer(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const supabase = await createClient();
+  const { error } = await supabase.from("customers").delete().eq("id", id);
+  if (error) redirect(`/customers/${id}?error=${encodeURIComponent("No se puede eliminar: el cliente tiene facturas u otros registros. Cámbialo a 'inactivo' en su lugar.")}`);
   revalidatePath("/customers");
   redirect("/customers");
 }

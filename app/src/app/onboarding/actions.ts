@@ -13,6 +13,9 @@ export async function createOrganization(formData: FormData) {
   if (!name) {
     redirect(`/onboarding?error=${encodeURIComponent("El nombre del negocio es obligatorio.")}`);
   }
+  if (!business_type) {
+    redirect(`/onboarding?error=${encodeURIComponent("Elige tu tipo de negocio para personalizar Zentro.")}`);
+  }
 
   const supabase = await createClient();
   const {
