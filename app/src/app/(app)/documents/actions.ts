@@ -22,9 +22,12 @@ export async function saveDocument(name: string, file_path: string, mime_type: s
 
 export async function deleteDocument(formData: FormData) {
   const id = String(formData.get("doc_id") ?? "");
-  const file_path = String(formData.get("file_path") ?? "");
   const supabase = await createClient();
-  await supabase.storage.from("documents").remove([file_path]);
+  // La ruta del archivo se deriva en el servidor desde la fila (respeta RLS),
+  // nunca del cliente: así no se puede manipular para borrar otro objeto.
+  const { data: doc } = await supabase.from("documents").select("file_path").eq("id", id).single();
+  if (!doc) return;
+  await supabase.storage.from("documents").remove([doc.file_path]);
   await supabase.from("documents").delete().eq("id", id);
   revalidatePath("/documents");
 }

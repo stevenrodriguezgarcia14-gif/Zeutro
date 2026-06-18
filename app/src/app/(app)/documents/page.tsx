@@ -3,6 +3,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { DocUploader } from "@/components/DocUploader";
 import { deleteDocument } from "./actions";
 import { ModuleHelp } from "@/components/ModuleHelp";
+import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 
 function fmtSize(b: number | null) {
   if (!b) return "";
@@ -67,8 +68,9 @@ export default async function DocumentsPage() {
                   <td className="px-4 py-3 text-right">
                     <form action={deleteDocument}>
                       <input type="hidden" name="doc_id" value={d.id} />
-                      <input type="hidden" name="file_path" value={d.file_path} />
-                      <button className="text-xs text-slate-300 hover:text-red-600">✕</button>
+                      <ConfirmSubmit message="¿Eliminar este documento? No se puede deshacer." className="text-xs text-slate-300 hover:text-red-600">
+                        ✕
+                      </ConfirmSubmit>
                     </form>
                   </td>
                 </tr>

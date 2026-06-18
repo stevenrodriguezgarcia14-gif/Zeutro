@@ -67,10 +67,12 @@ export default async function QuotationDetailPage({
             <StatusButton id={q.id} status="rejected" label="Marcar rechazada" />
           </>
         )}
-        {q.status === "accepted" && (
+        {["draft", "sent", "accepted"].includes(q.status) && (
           <form action={convertToInvoice}>
             <input type="hidden" name="quotation_id" value={q.id} />
-            <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Convertir a factura →</button>
+            <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+              {q.status === "accepted" ? "Convertir a factura →" : "Aceptar y facturar →"}
+            </button>
           </form>
         )}
         {q.status === "converted" && q.invoice_id && (

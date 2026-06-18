@@ -397,6 +397,7 @@ export const ROUTES: Route[] = [
   { slug: "precios", title: "Ruta Precios y Costos", emoji: "🏷️", desc: "Cobrar bien sin perder.", category: "precios" },
   { slug: "caja", title: "Ruta Flujo de Caja", emoji: "💧", desc: "Que nunca te falte dinero.", category: "caja" },
   { slug: "organizacion", title: "Ruta Organización", emoji: "🗂️", desc: "Orden para crecer sin caos.", category: "organizacion" },
+  { slug: "ventas", title: "Ruta Ventas", emoji: "📊", desc: "Cerrar más y mejores ventas.", category: "ventas" },
 ];
 
 export type LearnSummary = {

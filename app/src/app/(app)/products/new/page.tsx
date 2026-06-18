@@ -78,7 +78,7 @@ export default async function NewProductPage({
           <textarea
             name="description"
             rows={2}
-            placeholder="Detalles, ingredientes, presentación…"
+            placeholder="Detalles, presentación, características…"
             className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-900"
           />
         </div>
