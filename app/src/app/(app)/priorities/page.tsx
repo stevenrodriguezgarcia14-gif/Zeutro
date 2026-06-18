@@ -83,6 +83,14 @@ export default async function PrioritiesPage() {
     <div>
       <h1 className="text-2xl font-bold text-slate-900">Centro de Prioridades</h1>
       <p className="mt-1 text-sm text-slate-500">Lo más importante de hoy, ordenado por impacto en tu dinero.</p>
+      <details className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+        <summary className="cursor-pointer font-medium text-slate-700">¿Cómo se ordena esto?</summary>
+        <p className="mt-2">
+          Combinamos <b>cuánto dinero hay en juego</b> con la <b>urgencia</b>: las facturas más vencidas y de mayor monto suben,
+          luego las ventas próximas a cerrar (por monto y probabilidad) y el seguimiento de cotizaciones enviadas. Así lo de arriba
+          es lo que más mueve tu caja hoy.
+        </p>
+      </details>
 
       {taskList.length > 0 && (
         <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
