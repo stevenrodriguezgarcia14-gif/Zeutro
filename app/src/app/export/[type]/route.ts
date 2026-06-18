@@ -6,9 +6,12 @@ function money(minor: number | null | undefined): string {
   return ((minor ?? 0) / 100).toFixed(2);
 }
 
-// Escapa un campo CSV (comillas, comas, saltos de línea).
+// Escapa un campo CSV (comillas, comas, saltos de línea) y neutraliza la
+// inyección de fórmulas: si el valor empieza por = + - @ (o tab/CR), se
+// antepone un apóstrofo para que Excel/Sheets no lo interprete como fórmula.
 function cell(v: unknown): string {
-  const s = v === null || v === undefined ? "" : String(v);
+  let s = v === null || v === undefined ? "" : String(v);
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
   if (/[",\n;]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
   return s;
 }

@@ -102,6 +102,9 @@ export async function updatePassword(formData: FormData) {
   if (error) {
     redirect(`/auth/update-password?error=${encodeURIComponent(authErrorEs(error.message))}`);
   }
+  // Tras cambiar la contraseña, revocar TODAS las sesiones (incluidas las de
+  // otros dispositivos) para que un atacante con una sesión previa quede fuera.
+  await supabase.auth.signOut({ scope: "global" });
   revalidatePath("/", "layout");
   redirect(`/login?info=${encodeURIComponent("Contraseña actualizada. Inicia sesión.")}`);
 }
