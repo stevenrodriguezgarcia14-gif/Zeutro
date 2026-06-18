@@ -6,7 +6,7 @@ import { useState } from "react";
 export function PasswordInput({
   name,
   placeholder,
-  minLength = 8,
+  minLength = 12,
   required = true,
   showStrength = false,
 }: {
