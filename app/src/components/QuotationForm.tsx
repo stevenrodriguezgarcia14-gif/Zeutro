@@ -7,8 +7,8 @@ type CustomerOpt = { id: string; legal_name: string };
 type ProductOpt = { id: string; name: string; sale_price_minor: number };
 type Line = { key: number; product_id: string; description: string; quantity: string; unit_price: string; tax_pct: string };
 
-function newLine(key: number): Line {
-  return { key, product_id: "", description: "", quantity: "1", unit_price: "", tax_pct: "0" };
+function newLine(key: number, taxPct = "0"): Line {
+  return { key, product_id: "", description: "", quantity: "1", unit_price: "", tax_pct: taxPct };
 }
 
 export function QuotationForm({
@@ -17,23 +17,26 @@ export function QuotationForm({
   currency,
   action,
   defaultCustomerId = "",
+  defaultTaxPct = 0,
 }: {
   customers: CustomerOpt[];
   products: ProductOpt[];
   currency: string;
   action: (formData: FormData) => void;
   defaultCustomerId?: string;
+  defaultTaxPct?: number;
 }) {
   const today = new Date().toISOString().slice(0, 10);
   const in15 = new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10);
-  const [lines, setLines] = useState<Line[]>([newLine(1)]);
+  const taxDefault = String(defaultTaxPct);
+  const [lines, setLines] = useState<Line[]>([newLine(1, taxDefault)]);
   const [nextKey, setNextKey] = useState(2);
 
   function update(key: number, patch: Partial<Line>) {
     setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   }
   function addLine() {
-    setLines((ls) => [...ls, newLine(nextKey)]);
+    setLines((ls) => [...ls, newLine(nextKey, taxDefault)]);
     setNextKey((k) => k + 1);
   }
   function removeLine(key: number) {

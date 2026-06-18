@@ -381,6 +381,208 @@ export const LESSONS: Lesson[] = [
       },
     ],
   },
+
+  // ===================================================================
+  // Expansión de contenido — más profundidad por área (2026-06-18)
+  // ===================================================================
+  {
+    slug: "margen-de-verdad", category: "rentabilidad", emoji: "📐", minutes: 4,
+    title: "Margen de verdad: bruto vs neto",
+    resumen: "Dos márgenes que debes distinguir para no engañarte.",
+    related: "profitability",
+    body: [
+      "Cuando dices 'gano 30%', ¿30% de qué? Hay dos márgenes y confundirlos cuesta dinero.",
+      "## Margen bruto",
+      "Es lo que te queda de cada venta después de pagar SOLO el costo de lo vendido: (precio − costo) ÷ precio. Mide si tu producto, por sí solo, deja dinero.",
+      "## Margen neto",
+      "Es lo que te queda al final, después de TODO: costos + gastos + impuestos. Mide si el negocio completo gana.",
+      "## Por qué importa",
+      "Puedes tener buen margen bruto por producto y aun así perder, si tus gastos fijos se comen todo. Por eso Rentabilidad en Zentro te muestra ambas caras: por producto (bruto) y del negocio (neto).",
+    ],
+    challenges: [
+      {
+        id: "renta-3", type: "scenario", difficulty: "intermedio",
+        prompt: "Tu margen bruto por producto es saludable (40%), pero a fin de mes no te queda nada. ¿Qué pasa?",
+        options: [
+          { text: "Tus gastos fijos se están comiendo la ganancia", correct: true, feedback: "Correcto: buen margen bruto + cero neto = los gastos operativos son demasiado altos para tu volumen." },
+          { text: "Estás vendiendo a pérdida", correct: false, feedback: "No: el 40% bruto dice que cada venta deja dinero. El problema está después, en los gastos." },
+          { text: "El margen bruto está mal calculado", correct: false, feedback: "No necesariamente. Bruto y neto miden cosas distintas; aquí el neto se lo comen los gastos." },
+        ],
+        explanation: "Margen bruto mide el producto; margen neto mide el negocio. Si el bruto está bien pero el neto en cero, ataca los gastos fijos o sube el volumen.",
+      },
+      {
+        id: "renta-4", type: "scenario", difficulty: "avanzado",
+        prompt: "Producto A: margen 50%, vendes 10 al mes. Producto B: margen 20%, vendes 200 al mes. ¿Cuál aporta más ganancia?",
+        options: [
+          { text: "B: el margen total (margen × volumen) manda", correct: true, feedback: "Correcto. B deja más dinero total aunque su % sea menor: el volumen importa tanto como el margen." },
+          { text: "A: siempre gana el de mayor margen", correct: false, feedback: "El % alto no sirve de mucho si vendes poquísimo. Importa el dinero total, no el porcentaje." },
+          { text: "Imposible saber sin más datos", correct: false, feedback: "Con margen y volumen relativos ya puedes comparar el aporte total de cada uno." },
+        ],
+        explanation: "Ganancia total = margen × volumen. Un margen pequeño con mucho volumen puede vencer a un margen alto con poco volumen.",
+      },
+    ],
+  },
+  {
+    slug: "subir-precios", category: "precios", emoji: "📈", minutes: 4,
+    title: "Subir precios sin perder clientes",
+    resumen: "Cómo y cuándo ajustar precios con cabeza.",
+    related: "products",
+    body: [
+      "Subir precios da miedo, pero NO subirlos cuando tus costos suben es perder dinero en silencio.",
+      "## Señales de que debes ajustar",
+      "- Tu proveedor te subió y tu precio sigue igual.",
+      "- Llevas más de un año sin tocar precios.",
+      "- Tienes más demanda de la que puedes atender.",
+      "## Cómo hacerlo sin drama",
+      "- Sube poco y seguido, no de golpe.",
+      "- Mejora algo (presentación, servicio) para justificar el cambio.",
+      "- Avisa con tiempo a tus clientes frecuentes.",
+      "## En Zentro",
+      "Cuando cambie tu costo, actualiza el costo del producto y revisa el precio sugerido. Así nunca regalas margen sin darte cuenta.",
+    ],
+    challenges: [
+      {
+        id: "precio-2", type: "scenario", difficulty: "intermedio",
+        prompt: "Tu proveedor te subió el costo 15% y tú no mueves tu precio. ¿Qué le pasa a tu margen?",
+        options: [
+          { text: "Se reduce: estás absorbiendo el aumento", correct: true, feedback: "Correcto. Si el costo sube y el precio no, tu ganancia por venta baja: estás pagando tú el aumento." },
+          { text: "No pasa nada, vendes igual", correct: false, feedback: "Vendes igual en unidades, pero ganas menos en cada una. El margen se encoge." },
+          { text: "Mejora, porque vendes más", correct: false, feedback: "Subir el costo no aumenta tus ventas; solo reduce lo que te queda." },
+        ],
+        explanation: "Si el costo sube y el precio no, el aumento sale de tu margen. Revisa precios cada vez que cambie un costo.",
+      },
+      {
+        id: "precio-3", type: "scenario", difficulty: "basico",
+        prompt: "¿Cuál es la mejor forma de subir un precio sin espantar clientes?",
+        options: [
+          { text: "Ajustes pequeños y frecuentes, con algo de valor agregado", correct: true, feedback: "Correcto. Los saltos chicos se asimilan mejor que un golpe grande." },
+          { text: "Un aumento grande de una vez al año", correct: false, feedback: "Los saltos grandes generan rechazo y comparaciones." },
+          { text: "Nunca subirlos para no perder a nadie", correct: false, feedback: "No subir cuando los costos suben te hace perder margen poco a poco." },
+        ],
+        explanation: "Subir poco y seguido, acompañado de valor percibido, es la forma de ajustar precios sin perder clientes.",
+      },
+    ],
+  },
+  {
+    slug: "clientes-que-valen", category: "ventas", emoji: "💎", minutes: 4,
+    title: "No todos los clientes valen igual",
+    resumen: "Enfoca tu energía donde está el dinero.",
+    related: "customers",
+    body: [
+      "Atender a todos por igual suena justo, pero te agota y no es rentable. Unos pocos clientes suelen traer la mayoría de tus ingresos.",
+      "## La regla 80/20",
+      "Muchas veces ~20% de tus clientes generan ~80% de tus ventas. Identifícalos y cuídalos: son tu base.",
+      "## El cliente que cuesta más de lo que deja",
+      "Hay clientes que regatean, pagan tarde y exigen mucho. A veces 'despedir' a un mal cliente libera energía para 3 buenos.",
+      "## En Zentro",
+      "Mira en cada cliente cuánto te ha facturado y cobrado, y su historial de pago. Da seguimiento prioritario a los que más valor te dejan.",
+    ],
+    challenges: [
+      {
+        id: "ventas-2", type: "scenario", difficulty: "intermedio",
+        prompt: "Un cliente te compra mucho pero siempre paga 60 días tarde y te quita horas. ¿Qué haces?",
+        options: [
+          { text: "Renegocio condiciones (anticipo o plazo) o lo suelto", correct: true, feedback: "Correcto. Un cliente que no paga a tiempo te financia con TU dinero; ajusta condiciones o enfócate en mejores." },
+          { text: "Lo atiendo igual, el cliente siempre tiene la razón", correct: false, feedback: "Si te descapitaliza y te quita tiempo, 'tener la razón' te está costando el negocio." },
+          { text: "Le subo el precio en secreto", correct: false, feedback: "La falta de transparencia rompe la relación; mejor renegocia abiertamente." },
+        ],
+        explanation: "Un cliente rentable paga a tiempo y no consume todo tu tiempo. Renegocia o reenfoca: tu capacidad es limitada.",
+      },
+      {
+        id: "ventas-3", type: "scenario", difficulty: "basico",
+        prompt: "¿Dónde conviene poner más energía comercial?",
+        options: [
+          { text: "En el ~20% de clientes que traen la mayoría de tus ingresos", correct: true, feedback: "Correcto. Cuidar y hacer crecer a tus mejores clientes suele rendir más que perseguir desconocidos." },
+          { text: "Solo en clientes nuevos, los actuales ya están", correct: false, feedback: "Retener y crecer a un buen cliente cuesta menos que conseguir uno nuevo." },
+          { text: "En todos exactamente por igual", correct: false, feedback: "Repartir igual ignora que unos pocos dejan la mayor parte del dinero." },
+        ],
+        explanation: "La regla 80/20: enfoca tu energía en los clientes que más valor te dejan, sin descuidar la prospección sana.",
+      },
+      {
+        id: "ventas-accion-oportunidad", type: "action", difficulty: "basico",
+        prompt: "Registra una oportunidad de venta en tu embudo para darle seguimiento.",
+        check: (d) => d.opportunities > 0, cta: "Ir a Ventas", href: "/sales",
+      },
+    ],
+  },
+  {
+    slug: "colchon-de-caja", category: "caja", emoji: "🛟", minutes: 3,
+    title: "Tu colchón de caja",
+    resumen: "Cuánto efectivo de reserva necesitas y por qué.",
+    related: "cashflow",
+    body: [
+      "Un colchón de caja es el dinero de reserva que te permite dormir tranquilo y aguantar un mes malo sin entrar en pánico.",
+      "## Cuánto",
+      "Una guía simple: ten en reserva entre 1 y 3 meses de tus gastos fijos. Si gastas $30,000 al mes en operar, tu colchón ideal está entre $30,000 y $90,000.",
+      "## Cómo construirlo",
+      "- Apártalo, no lo mezcles con la operación.",
+      "- Aliméntalo en los meses buenos.",
+      "- Úsalo solo para emergencias reales, no para caprichos.",
+      "## En Zentro",
+      "Crea una cuenta aparte (ej. 'Reserva') y transfiérele un poco cada mes. El Flujo de caja te dirá si puedes permitírtelo sin quedarte corto.",
+    ],
+    challenges: [
+      {
+        id: "caja-2", type: "scenario", difficulty: "basico",
+        prompt: "Gastas $20,000 al mes en operar. ¿Cuál es un colchón de caja razonable?",
+        options: [
+          { text: "Entre $20,000 y $60,000 (1 a 3 meses de gastos)", correct: true, feedback: "Correcto. 1-3 meses de gastos fijos es la guía habitual para aguantar imprevistos." },
+          { text: "$2,000, con eso basta", correct: false, feedback: "Muy poco: no te cubre ni una semana mala." },
+          { text: "No hace falta reserva si vendo bien", correct: false, feedback: "Vender bien hoy no garantiza el mes que viene; la reserva es tu seguro." },
+        ],
+        explanation: "Un colchón de 1 a 3 meses de gastos fijos te da margen para sobrevivir un bache sin endeudarte.",
+      },
+      {
+        id: "caja-3", type: "scenario", difficulty: "intermedio",
+        prompt: "Tuviste un mes excelente con mucho efectivo extra. ¿Qué es lo más sano?",
+        options: [
+          { text: "Apartar parte para la reserva y reinvertir con cabeza", correct: true, feedback: "Correcto. Los meses buenos son para fortalecer el colchón y reinvertir, no solo para gastar." },
+          { text: "Gastarlo todo, te lo ganaste", correct: false, feedback: "Sin reserva, el próximo mes flojo te pega de lleno." },
+          { text: "Dejarlo todo quieto sin plan", correct: false, feedback: "Algo de reserva sí; pero el resto trabaja mejor reinvertido con criterio." },
+        ],
+        explanation: "Usa los meses buenos para construir reserva y reinvertir; así suavizas los meses malos.",
+      },
+    ],
+  },
+  {
+    slug: "inventario-sano", category: "organizacion", emoji: "📦", minutes: 4,
+    title: "Inventario sano: ni de más ni de menos",
+    resumen: "El stock parado es dinero dormido.",
+    related: "inventory",
+    body: [
+      "El inventario es dinero convertido en cosas. Demasiado te ahoga la caja; muy poco te hace perder ventas.",
+      "## El costo de tener de más",
+      "Mercancía parada es capital que no puedes usar para otra cosa, además del riesgo de que se dañe o pase de moda.",
+      "## El costo de tener de menos",
+      "Quedarte sin stock de lo que más se vende es perder ventas y mandar clientes a la competencia.",
+      "## El punto de reorden",
+      "Define un mínimo por producto: cuando el stock llega a ese nivel, es hora de reponer. Zentro te avisa con la alerta de bajo stock.",
+      "## En Zentro",
+      "Activa el control de inventario en tus productos físicos y pon su stock mínimo. Revisa la lista de bajo stock antes de que te deje sin vender.",
+    ],
+    challenges: [
+      {
+        id: "inv-1", type: "scenario", difficulty: "intermedio",
+        prompt: "Compras enormes cantidades 'porque sale más barato por unidad' y te quedas sin efectivo. ¿Qué error cometiste?",
+        options: [
+          { text: "Inmovilizar demasiado capital en inventario", correct: true, feedback: "Correcto. El descuento por volumen no sirve si el dinero parado en mercancía te deja sin caja." },
+          { text: "Ninguno, comprar barato siempre conviene", correct: false, feedback: "Comprar barato no conviene si te descapitaliza y la mercancía rota lento." },
+          { text: "Comprar poco, debiste comprar más", correct: false, feedback: "Al revés: el problema fue comprar de más para tu capacidad de venta." },
+        ],
+        explanation: "El ahorro por volumen es real, pero el inventario parado es caja inmovilizada. Equilibra precio, rotación y liquidez.",
+      },
+      {
+        id: "org-2", type: "scenario", difficulty: "basico",
+        prompt: "¿Para qué sirve el 'stock mínimo' de un producto?",
+        options: [
+          { text: "Para que Zentro te avise cuándo reponer antes de quedarte sin él", correct: true, feedback: "Correcto. El mínimo dispara la alerta de bajo stock a tiempo." },
+          { text: "Para fijar el precio del producto", correct: false, feedback: "El mínimo es de inventario, no tiene que ver con el precio." },
+          { text: "Para limitar cuánto puedes vender", correct: false, feedback: "No limita ventas; solo te avisa cuándo reabastecer." },
+        ],
+        explanation: "El stock mínimo es tu punto de reorden: cuando lo alcanzas, Zentro te avisa para reponer antes de quedarte sin vender.",
+      },
+    ],
+  },
 ];
 
 export function lessonsByCategory(cat: string): Lesson[] {
@@ -414,8 +616,10 @@ export const ACHIEVEMENTS: Achievement[] = [
   { slug: "primer-reto", title: "Mente analítica", desc: "Aprobaste tu primer desafío", tier: "bronce", glyph: "analysis", unlocked: (s) => s.scenariosPassed >= 1 },
   { slug: "pensador", title: "Pensador", desc: "Aprobaste 5 desafíos", tier: "plata", glyph: "stack", unlocked: (s) => s.scenariosPassed >= 5 },
   { slug: "estratega", title: "Estratega", desc: "Aprobaste 10 desafíos", tier: "oro", glyph: "target", unlocked: (s) => s.scenariosPassed >= 10 },
+  { slug: "maestro-analitico", title: "Maestro analítico", desc: "Aprobaste 18 desafíos", tier: "platino", glyph: "crown", unlocked: (s) => s.scenariosPassed >= 18 },
   { slug: "manos-obra", title: "Manos a la obra", desc: "Hiciste tu primera acción real en tu negocio", tier: "plata", glyph: "spark", unlocked: (s) => s.actionsDone >= 1 },
   { slug: "aplicado", title: "Aplicado", desc: "Aplicaste 3 cosas en tu negocio", tier: "oro", glyph: "guide", unlocked: (s) => s.actionsDone >= 3 },
+  { slug: "aplicado-total", title: "Todo aplicado", desc: "Aplicaste las 5 acciones clave en tu negocio", tier: "platino", glyph: "spark", unlocked: (s) => s.actionsDone >= 5 },
   { slug: "ruta-1", title: "Camino recorrido", desc: "Completaste una ruta (comprensión + aplicación)", tier: "oro", glyph: "route", unlocked: (s) => s.routesComplete >= 1 },
   { slug: "erudito", title: "Erudito Zentro", desc: "Completaste todas las rutas", tier: "platino", glyph: "crown", unlocked: (s) => s.routesTotal > 0 && s.routesComplete >= s.routesTotal },
   { slug: "certificado", title: "Certificado", desc: "Obtuviste tu primera credencial", tier: "platino", glyph: "shield", unlocked: (s) => s.certsEarned >= 1 },

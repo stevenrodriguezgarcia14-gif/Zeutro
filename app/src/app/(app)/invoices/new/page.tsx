@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { InvoiceForm } from "@/components/InvoiceForm";
 import { createInvoice } from "../actions";
+import { defaultVatPct } from "@/lib/tax";
 
 export default async function NewInvoicePage({
   searchParams,
@@ -55,6 +56,7 @@ export default async function NewInvoicePage({
           currency={currency}
           action={createInvoice}
           defaultCustomerId={customer ?? ""}
+          defaultTaxPct={defaultVatPct(org?.country)}
         />
       </div>
     </div>
