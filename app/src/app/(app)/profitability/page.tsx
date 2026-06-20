@@ -111,6 +111,9 @@ export default async function ProfitabilityPage() {
   const cats = [...byCat.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
 
   const recovered = netTotal >= 0;
+  // "Sin IVA" solo es relevante si el negocio realmente cobró IVA. Si no, la
+  // etiqueta confunde (parece que falta algo), así que se muestra "Ingresos" a secas.
+  const hasTax = taxCollectedTotal > 0;
 
   return (
     <div>
@@ -121,7 +124,7 @@ export default async function ProfitabilityPage() {
       {/* Acumulado (todo el tiempo) */}
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-400">Desde el inicio</h2>
       <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card title="Ingresos (sin IVA)" value={formatMoney(incomeTotal, currency)} tone="good" hint="Cobrado sin IVA + reventa + ventas rápidas" />
+        <Card title={hasTax ? "Ingresos (sin IVA)" : "Ingresos"} value={formatMoney(incomeTotal, currency)} tone="good" hint={hasTax ? "Tu ingreso real, ya descontado el IVA (que es del fisco)" : "Cobrado + reventa + ventas rápidas"} />
         <Card title="Invertido / gastado" value={formatMoney(expenseTotal, currency)} tone="bad" hint="Gastos + costo de la mercancía vendida" />
         <Card title="Ganancia neta" value={formatMoney(netTotal, currency)} tone={netTotal >= 0 ? "good" : "bad"} hint="Ingresos − gastos (incluye reventa)" />
       </div>
