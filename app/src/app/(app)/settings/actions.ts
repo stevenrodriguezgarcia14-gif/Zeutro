@@ -13,6 +13,7 @@ export async function updateOrganization(formData: FormData) {
   const tax_id = String(formData.get("tax_id") ?? "").trim() || null;
   const country = String(formData.get("country") ?? "MX");
   const base_currency = String(formData.get("base_currency") ?? "MXN");
+  const quick_sale_tax_bps = Math.max(0, Math.round((Number(formData.get("quick_sale_tax_pct") ?? 0) || 0) * 100));
 
   if (!name) {
     redirect(`/settings?error=${encodeURIComponent("El nombre del negocio es obligatorio.")}`);
@@ -21,7 +22,7 @@ export async function updateOrganization(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("organizations")
-    .update({ name, legal_name, tax_id, country, base_currency })
+    .update({ name, legal_name, tax_id, country, base_currency, quick_sale_tax_bps })
     .eq("id", id);
 
   if (error) redirect(`/settings?error=${encodeURIComponent(error.message)}`);

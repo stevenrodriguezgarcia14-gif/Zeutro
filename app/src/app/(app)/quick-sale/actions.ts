@@ -15,6 +15,8 @@ export async function createQuickSale(formData: FormData) {
   const product_id = String(formData.get("product_id") ?? "") || null;
   const qtyRaw = String(formData.get("qty") ?? "").trim();
   const qty = product_id && qtyRaw ? Number(qtyRaw) : null;
+  // IVA incluido en el monto (depende del negocio): % → bps. 0 = sin IVA.
+  const tax_rate_bps = Math.max(0, Math.round((Number(formData.get("tax_pct") ?? 0) || 0) * 100));
 
   if (amount <= 0) redirect(`/quick-sale?error=${encodeURIComponent("Escribe un monto mayor a 0.")}`);
 
@@ -32,6 +34,7 @@ export async function createQuickSale(formData: FormData) {
     p_sold_at: sold_at,
     p_product_id: product_id,
     p_qty: qty,
+    p_tax_rate_bps: tax_rate_bps,
   });
   if (error) redirect(`/quick-sale?error=${encodeURIComponent(error.message)}`);
 

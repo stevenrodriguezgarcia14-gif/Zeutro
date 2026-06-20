@@ -6,6 +6,7 @@ import { formatMoney } from "@/lib/money";
 import { getPurchasesOverview } from "@/lib/purchasesOverview";
 import { getActivation } from "@/lib/activation";
 import { learnSummary } from "@/lib/academia";
+import { netOfTaxInclusive } from "@/lib/income";
 import { dismissActivation } from "../org-actions";
 
 function Card({
@@ -52,7 +53,7 @@ export default async function DashboardPage() {
       supabase.from("tasks").select("due_date, status").not("status", "in", "(done,cancelled)"),
       supabase.from("opportunities").select("amount_minor, stages(probability_bps)").eq("status", "open"),
       supabase.from("projects").select("*", { count: "exact", head: true }).in("status", ["planning", "active", "on_hold"]),
-      supabase.from("quick_sales").select("amount_minor").gte("sold_at", monthStart),
+      supabase.from("quick_sales").select("amount_minor, tax_rate_bps").gte("sold_at", monthStart),
     ]);
 
   const inv = invoices ?? [];
@@ -72,7 +73,7 @@ export default async function DashboardPage() {
     const ratio = inv && inv.total_minor > 0 ? inv.subtotal_minor / inv.total_minor : 1;
     return s + Math.round((a.amount_minor ?? 0) * ratio);
   }, 0);
-  const incomeMonth = invoiceNetMonth + (qsRows ?? []).reduce((s, v) => s + (v.amount_minor ?? 0), 0);
+  const incomeMonth = invoiceNetMonth + (qsRows ?? []).reduce((s, v) => s + netOfTaxInclusive(v.amount_minor ?? 0, v.tax_rate_bps), 0);
   const expenseMonth = (expenses ?? []).reduce((s, e) => s + (e.amount_minor ?? 0), 0);
   const profitMonth = incomeMonth - expenseMonth;
   const cashTotal = (accounts ?? []).reduce((s, a) => s + (a.current_balance_minor ?? 0), 0);

@@ -2,6 +2,14 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
+import { getPurchasesOverview } from "@/lib/purchasesOverview";
+
+type Signal = { sev: "high" | "warning" | "info"; title: string; detail: string; href: string };
+const SIGNAL_SEV: Record<Signal["sev"], { label: string; cls: string; rank: number }> = {
+  high: { label: "Importante", cls: "bg-orange-100 text-orange-700", rank: 0 },
+  warning: { label: "Atención", cls: "bg-amber-100 text-amber-700", rank: 1 },
+  info: { label: "Aviso", cls: "bg-blue-100 text-blue-700", rank: 2 },
+};
 
 type Item = {
   kind: "cobro" | "venta" | "seguimiento";
@@ -27,7 +35,7 @@ export default async function PrioritiesPage() {
   const in7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
   const days = (d: string) => Math.round((Date.now() - new Date(d).getTime()) / 86400000);
 
-  const [{ data: invoices }, { data: opps }, { data: quotes }, { data: tasks }] = await Promise.all([
+  const [{ data: invoices }, { data: opps }, { data: quotes }, { data: tasks }, { data: products }, compras] = await Promise.all([
     supabase
       .from("invoices")
       .select("id, number, balance_minor, due_date, customers(legal_name)")
@@ -48,7 +56,27 @@ export default async function PrioritiesPage() {
       .neq("status", "cancelled")
       .not("due_date", "is", null)
       .lte("due_date", in7),
+    supabase
+      .from("products")
+      .select("id, name, stock_qty, min_stock, sale_price_minor, cost_price_minor, track_inventory")
+      .eq("is_active", true),
+    getPurchasesOverview(),
   ]);
+
+  // Señales del negocio (riesgos operativos que antes vivían en "Alertas").
+  const signals: Signal[] = [];
+  for (const p of (products ?? []) as { id: string; name: string; stock_qty: number; min_stock: number | null; sale_price_minor: number; cost_price_minor: number | null; track_inventory: boolean }[]) {
+    if (p.sale_price_minor > 0 && p.cost_price_minor != null && p.cost_price_minor > p.sale_price_minor) {
+      signals.push({ sev: "high", title: `Vendes a pérdida: ${p.name}`, detail: `Precio ${formatMoney(p.sale_price_minor, currency)} < costo ${formatMoney(p.cost_price_minor, currency)}`, href: `/products/${p.id}` });
+    }
+    if (p.track_inventory && p.min_stock != null && p.stock_qty <= p.min_stock) {
+      signals.push({ sev: "warning", title: `Bajo stock: ${p.name}`, detail: `Quedan ${p.stock_qty} (mínimo ${p.min_stock})`, href: `/inventory` });
+    }
+  }
+  if (compras.capitalEnMercancia > 0) {
+    signals.push({ sev: "info", title: "Mercancía sin recuperar", detail: `Tienes ${formatMoney(compras.capitalEnMercancia, currency)} invertidos en compras que aún no recuperas`, href: "/purchases" });
+  }
+  signals.sort((a, b) => SIGNAL_SEV[a.sev].rank - SIGNAL_SEV[b.sev].rank);
 
   const taskList = (tasks ?? []) as { id: string; title: string; due_date: string; priority: string }[];
 
@@ -142,6 +170,27 @@ export default async function PrioritiesPage() {
             );
           })}
         </div>
+      )}
+
+      {signals.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Señales del negocio</h2>
+          <p className="mt-1 text-xs text-slate-400">Riesgos que conviene revisar: stock bajo, productos a pérdida y mercancía por recuperar.</p>
+          <div className="mt-3 space-y-2">
+            {signals.map((a, i) => (
+              <Link key={i} href={a.href} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 hover:border-slate-400">
+                <div className="flex items-center gap-3">
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${SIGNAL_SEV[a.sev].cls}`}>{SIGNAL_SEV[a.sev].label}</span>
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">{a.title}</p>
+                    <p className="text-xs text-slate-500">{a.detail}</p>
+                  </div>
+                </div>
+                <span className="text-slate-300">→</span>
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

@@ -15,14 +15,19 @@ export default async function QuickSalePage({ searchParams }: { searchParams: Pr
   const today = new Date().toISOString().slice(0, 10);
   const monthStart = today.slice(0, 7) + "-01";
 
-  const [{ data: sales }, { data: accounts }, { data: products }] = await Promise.all([
+  const [{ data: sales }, { data: accounts }, { data: products }, { data: orgTax }] = await Promise.all([
     supabase.from("quick_sales").select("id, description, amount_minor, method, sold_at").order("sold_at", { ascending: false }).limit(50),
     supabase.from("accounts").select("id, name").eq("is_active", true).order("name"),
     supabase.from("products").select("id, name").eq("track_inventory", true).eq("is_active", true).order("name"),
+    supabase.from("organizations").select("quick_sale_tax_bps").eq("id", org?.id ?? "").maybeSingle(),
   ]);
   const rows = sales ?? [];
   const accs = accounts ?? [];
   const prods = (products ?? []) as { id: string; name: string }[];
+  // IVA por defecto del negocio (0 = sin IVA). El monto se captura IVA-incluido.
+  const defaultTaxPct = ((orgTax?.quick_sale_tax_bps ?? 0) as number) / 100;
+  // Si solo hay una cuenta, precárgala para que el saldo no se quede estancado (C5).
+  const defaultAccount = accs.length === 1 ? accs[0].id : "";
   const totalToday = rows.filter((r) => r.sold_at === today).reduce((s, r) => s + r.amount_minor, 0);
   const totalMonth = rows.filter((r) => r.sold_at >= monthStart).reduce((s, r) => s + r.amount_minor, 0);
 
@@ -73,13 +78,21 @@ export default async function QuickSalePage({ searchParams }: { searchParams: Pr
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700">Entra a la cuenta (opcional)</label>
-            <select name="account_id" defaultValue="" className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 outline-none focus:border-slate-900">
+            <label className="block text-sm font-medium text-slate-700">Entra a la cuenta {defaultAccount ? "" : "(opcional)"}</label>
+            <select name="account_id" defaultValue={defaultAccount} className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 outline-none focus:border-slate-900">
               <option value="">— No actualizar saldo —</option>
               {accs.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
           </div>
         </div>
+        {defaultTaxPct > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700">IVA incluido en el monto (%)</label>
+            <input name="tax_pct" type="number" step="0.01" min="0" defaultValue={defaultTaxPct}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-900" />
+            <p className="mt-1 text-xs text-slate-400">El monto que escribiste ya incluye este IVA. Déjalo en 0 si esta venta no lleva IVA. Tu ganancia se calcula sin el IVA.</p>
+          </div>
+        )}
         {prods.length > 0 && (
           <div className="grid grid-cols-2 gap-3">
             <div>

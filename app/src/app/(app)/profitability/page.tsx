@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { getPurchasesOverview } from "@/lib/purchasesOverview";
+import { netOfTaxInclusive, taxOfInclusive } from "@/lib/income";
 import { ModuleHelp } from "@/components/ModuleHelp";
 
 function Card({ title, value, tone = "default", hint }: { title: string; value: string; tone?: "default" | "good" | "bad"; hint?: string }) {
@@ -29,7 +30,7 @@ export default async function ProfitabilityPage() {
     supabase.from("expenses").select("amount_minor, expense_date, category"),
     supabase.from("invoice_items").select("product_id, quantity, unit_price_minor, invoices!inner(status)"),
     supabase.from("products").select("id, name, cost_price_minor"),
-    supabase.from("quick_sales").select("amount_minor, sold_at"),
+    supabase.from("quick_sales").select("amount_minor, sold_at, tax_rate_bps"),
   ]);
 
   const compras = await getPurchasesOverview();
@@ -84,9 +85,12 @@ export default async function ProfitabilityPage() {
   // Compras para reventa es su propio centro de ganancia (se vende registrando
   // unidades vendidas, no por factura), así que lo integramos al total sin doble
   // conteo: + ingreso recuperado y + costo de la mercancía vendida.
-  const qs = quickSales ?? [];
-  const qsTotal = qs.reduce((s, v) => s + (v.amount_minor ?? 0), 0);
-  const qsMonth = qs.filter((v) => v.sold_at >= monthStart).reduce((s, v) => s + (v.amount_minor ?? 0), 0);
+  // Ventas rápidas netas de IVA (igual criterio que las facturas). El IVA cobrado
+  // en ventas rápidas se suma al IVA total mostrado (no es ganancia).
+  const qs = (quickSales ?? []) as { amount_minor: number; sold_at: string; tax_rate_bps: number | null }[];
+  const qsTotal = qs.reduce((s, v) => s + netOfTaxInclusive(v.amount_minor ?? 0, v.tax_rate_bps), 0);
+  const qsMonth = qs.filter((v) => v.sold_at >= monthStart).reduce((s, v) => s + netOfTaxInclusive(v.amount_minor ?? 0, v.tax_rate_bps), 0);
+  taxCollectedTotal += qs.reduce((s, v) => s + taxOfInclusive(v.amount_minor ?? 0, v.tax_rate_bps), 0);
 
   const comprasCostoVendido = Math.max(0, compras.recuperado - compras.ganancia);
   // Ingreso = lo cobrado SIN IVA + reventa + ventas rápidas. El IVA cobrado NO es ganancia (se le debe al fisco).

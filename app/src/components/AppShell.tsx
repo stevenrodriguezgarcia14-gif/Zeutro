@@ -14,7 +14,6 @@ const groups: { label: string; items: { href: string; name: string }[] }[] = [
       { href: "/guide", name: "Centro de Orientación" },
       { href: "/academy", name: "Academia" },
       { href: "/priorities", name: "Centro de Prioridades" },
-      { href: "/alerts", name: "Alertas" },
     ],
   },
   {

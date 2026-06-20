@@ -127,6 +127,20 @@ export default async function SettingsPage({
             </div>
           </div>
           <OrgLocaleFields defaultCountry={org.country ?? "MX"} />
+          <div>
+            <label className="block text-sm font-medium text-slate-700">IVA en ventas rápidas / de mostrador (%)</label>
+            <input
+              name="quick_sale_tax_pct"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={(org.quick_sale_tax_bps ?? 0) / 100}
+              className="mt-1 w-40 rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-900"
+            />
+            <p className="mt-1 text-xs text-slate-400">
+              Depende de tu negocio: déjalo en <b>0</b> si tus ventas de contado no llevan IVA. Si pones una tasa, se pre-llena al registrar una venta rápida y tu ganancia se calcula sin ese IVA.
+            </p>
+          </div>
           <button
             type="submit"
             className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
