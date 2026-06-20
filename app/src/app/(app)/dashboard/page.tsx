@@ -74,6 +74,11 @@ export default async function DashboardPage() {
     return s + Math.round((a.amount_minor ?? 0) * ratio);
   }, 0);
   const incomeMonth = invoiceNetMonth + (qsRows ?? []).reduce((s, v) => s + netOfTaxInclusive(v.amount_minor ?? 0, v.tax_rate_bps), 0);
+  // ¿Hubo IVA este mes? (facturas con impuesto o ventas rápidas con tasa). Si no,
+  // no etiquetamos "sin IVA" para no confundir a negocios que no cobran IVA.
+  const invoiceGrossMonth = monthAllocs.reduce((s, a) => s + (a.amount_minor ?? 0), 0);
+  const qsTaxMonth = (qsRows ?? []).reduce((s, v) => s + ((v.amount_minor ?? 0) - netOfTaxInclusive(v.amount_minor ?? 0, v.tax_rate_bps)), 0);
+  const hasTaxMonth = invoiceGrossMonth - invoiceNetMonth > 0 || qsTaxMonth > 0;
   const expenseMonth = (expenses ?? []).reduce((s, e) => s + (e.amount_minor ?? 0), 0);
   const profitMonth = incomeMonth - expenseMonth;
   const cashTotal = (accounts ?? []).reduce((s, a) => s + (a.current_balance_minor ?? 0), 0);
@@ -164,7 +169,7 @@ export default async function DashboardPage() {
         Este mes (cobrado vs. gastado)
       </h2>
       <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card title="Ingresos cobrados" value={formatMoney(incomeMonth, currency)} tone="good" hint="Cobrado este mes, sin IVA" />
+        <Card title="Ingresos cobrados" value={formatMoney(incomeMonth, currency)} tone="good" hint={hasTaxMonth ? "Cobrado este mes, sin IVA" : "Cobrado este mes"} />
         <Card title="Gastos" value={formatMoney(expenseMonth, currency)} tone="bad" hint="Salidas registradas este mes" />
         <Card
           title="Utilidad del mes"
