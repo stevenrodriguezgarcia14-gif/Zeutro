@@ -144,9 +144,15 @@ export default async function DashboardPage() {
           <p className="mt-1 text-sm text-slate-500">
             Aquí verás el dinero, las ventas y los pendientes de tu negocio. Por ahora está vacío: da tu primer paso y los números aparecerán solos.
           </p>
-          <Link href="/guide" className="mt-4 inline-block rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800">
-            Empezar en el Centro de Orientación →
-          </Link>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <Link href="/quick-sale" className="inline-block rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800">
+              Registrar mi primera venta →
+            </Link>
+            <Link href="/guide" className="inline-block rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+              Ver el Centro de Orientación
+            </Link>
+          </div>
+          <p className="mt-3 text-xs text-slate-400">Anota una venta de contado en segundos y verás cómo se mueven tus números.</p>
         </div>
       )}
 

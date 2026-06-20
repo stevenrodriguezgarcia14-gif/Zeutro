@@ -42,7 +42,9 @@ export default async function RegisterPage({
           <div>
             <label className="block text-sm font-medium text-slate-700">Contraseña</label>
             <PasswordInput name="password" minLength={12} showStrength />
-            <p className="mt-1 text-xs text-slate-400">Mínimo 12 caracteres. Usa una frase fácil de recordar y difícil de adivinar.</p>
+            <p className="mt-1 text-xs text-slate-400">
+              Mínimo 12 caracteres para proteger los datos y el dinero de tu negocio. Truco: une 3 o 4 palabras, ej. <span className="font-medium text-slate-500">tacos-verdes-lunes-2024</span> — fácil de recordar, difícil de adivinar.
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700">Repite la contraseña</label>

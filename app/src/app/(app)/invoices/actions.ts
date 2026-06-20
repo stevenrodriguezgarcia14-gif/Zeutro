@@ -173,3 +173,17 @@ export async function registerPayment(formData: FormData) {
   revalidatePath("/collections");
   redirect(`/invoices/${invoice_id}?paid=1`);
 }
+
+export async function reversePayment(formData: FormData) {
+  const invoice_id = String(formData.get("invoice_id") ?? "");
+  const payment_id = String(formData.get("payment_id") ?? "");
+  const supabase = await createClient();
+  // Atómico: devuelve el saldo a la factura, su estado y deshace el movimiento de cuenta.
+  const { error } = await supabase.rpc("reverse_payment", { p_payment_id: payment_id });
+  if (error) redirect(`/invoices/${invoice_id}?error=${encodeURIComponent(error.message)}`);
+  revalidatePath(`/invoices/${invoice_id}`);
+  revalidatePath("/invoices");
+  revalidatePath("/collections");
+  revalidatePath("/accounts");
+  redirect(`/invoices/${invoice_id}?ok=reversed`);
+}

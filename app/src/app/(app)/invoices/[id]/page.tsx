@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney, fromMinor } from "@/lib/money";
-import { issueInvoice, registerPayment, setPaymentLink, voidInvoice } from "../actions";
+import { issueInvoice, registerPayment, reversePayment, setPaymentLink, voidInvoice } from "../actions";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -22,6 +22,7 @@ export default async function InvoiceDetailPage({
 }: {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string; paid?: string; ok?: string }>;
+
 }) {
   const { id } = await params;
   const { error, paid, ok } = await searchParams;
@@ -41,7 +42,7 @@ export default async function InvoiceDetailPage({
     supabase.from("invoice_items").select("*").eq("invoice_id", id),
     supabase
       .from("payment_allocations")
-      .select("amount_minor, payments(paid_at, method, reference)")
+      .select("amount_minor, payments(id, paid_at, method, reference)")
       .eq("invoice_id", id),
     supabase.from("accounts").select("id, name").eq("is_active", true).order("name"),
   ]);
@@ -51,7 +52,7 @@ export default async function InvoiceDetailPage({
   const canVoid = !["void", "credited"].includes(invoice.status) && invoice.paid_minor === 0;
   const pays = (allocations ?? []) as unknown as {
     amount_minor: number;
-    payments: { paid_at: string; method: string; reference: string | null } | null;
+    payments: { id: string; paid_at: string; method: string; reference: string | null } | null;
   }[];
 
   return (
@@ -83,6 +84,7 @@ export default async function InvoiceDetailPage({
       {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       {paid && <p className="mt-4 rounded-lg bg-green-50 p-3 text-sm text-green-700">Pago registrado correctamente.</p>}
       {ok === "void" && <p className="mt-4 rounded-lg bg-slate-100 p-3 text-sm text-slate-600">Factura anulada. Se repuso el stock de sus productos.</p>}
+      {ok === "reversed" && <p className="mt-4 rounded-lg bg-slate-100 p-3 text-sm text-slate-600">Pago revertido. El saldo volvió a la factura y se deshizo el movimiento de cuenta.</p>}
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         {invoice.status === "draft" && (
@@ -229,11 +231,25 @@ export default async function InvoiceDetailPage({
             ) : (
               <ul className="mt-2 divide-y divide-slate-100 text-sm">
                 {pays.map((p, i) => (
-                  <li key={i} className="flex justify-between py-2">
+                  <li key={i} className="flex items-center justify-between gap-2 py-2">
                     <span className="text-slate-600">
                       {p.payments?.paid_at} · {p.payments?.method}
                     </span>
-                    <span className="font-medium text-slate-900">{formatMoney(p.amount_minor, currency)}</span>
+                    <span className="flex items-center gap-3">
+                      <span className="font-medium text-slate-900">{formatMoney(p.amount_minor, currency)}</span>
+                      {invoice.status !== "void" && p.payments?.id && (
+                        <form action={reversePayment}>
+                          <input type="hidden" name="invoice_id" value={invoice.id} />
+                          <input type="hidden" name="payment_id" value={p.payments.id} />
+                          <ConfirmSubmit
+                            message="¿Revertir este pago? El saldo volverá a la factura y se deshará el movimiento de cuenta. Úsalo si lo registraste por error o duplicado."
+                            className="text-xs text-slate-300 hover:text-red-600"
+                          >
+                            Revertir
+                          </ConfirmSubmit>
+                        </form>
+                      )}
+                    </span>
                   </li>
                 ))}
               </ul>
