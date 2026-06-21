@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 export type Organization = {
@@ -13,8 +12,6 @@ export type Organization = {
   status: string;
   business_type: string | null;
 };
-
-const ACTIVE_COOKIE = "zentro_active_org";
 
 /** Empresas a las que pertenece el usuario actual (id + nombre). */
 export async function getUserOrgs(): Promise<{ id: string; name: string }[]> {
@@ -36,8 +33,9 @@ export async function getCurrentOrg(): Promise<Organization | null> {
   const orgs = (data as Organization[] | null) ?? [];
   if (orgs.length === 0) return null;
 
-  const cookieStore = await cookies();
-  const activeId = cookieStore.get(ACTIVE_COOKIE)?.value;
+  // La empresa activa la decide la base de datos (active_org()), igual que la RLS,
+  // para que lo que se muestra coincida exactamente con lo que se filtra.
+  const { data: activeId } = await supabase.rpc("active_org");
   return orgs.find((o) => o.id === activeId) ?? orgs[0];
 }
 
@@ -52,8 +50,7 @@ export async function getOrgContext(): Promise<{ orgs: { id: string; name: strin
   const orgs = all.map((o) => ({ id: o.id, name: o.name }));
   if (all.length === 0) return { orgs, current: null };
 
-  const cookieStore = await cookies();
-  const activeId = cookieStore.get(ACTIVE_COOKIE)?.value;
+  const { data: activeId } = await supabase.rpc("active_org");
   const current = all.find((o) => o.id === activeId) ?? all[0];
   return { orgs, current };
 }
