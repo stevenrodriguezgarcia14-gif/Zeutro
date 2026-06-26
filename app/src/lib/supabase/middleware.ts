@@ -39,7 +39,10 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/login") ||
     path.startsWith("/register") ||
     path.startsWith("/forgot-password") ||
-    path.startsWith("/auth");
+    path.startsWith("/auth") ||
+    path === "/terminos" ||
+    path === "/privacidad" ||
+    path === "/seguridad";
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
