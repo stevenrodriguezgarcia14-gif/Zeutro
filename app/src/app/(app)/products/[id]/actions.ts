@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
@@ -54,7 +55,7 @@ export async function updateProduct(formData: FormData) {
     .from("products")
     .update({ name, description, unit, sale_price_minor })
     .eq("id", id);
-  if (error) redirect(`/products/${id}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/products/${id}?error=${encodeURIComponent(safeError(error))}`);
 
   revalidatePath(`/products/${id}`);
   revalidatePath("/products");
@@ -71,7 +72,7 @@ export async function updateInventorySettings(formData: FormData) {
     .from("products")
     .update({ track_inventory, min_stock })
     .eq("id", id);
-  if (error) redirect(`/products/${id}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/products/${id}?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath(`/products/${id}`);
   revalidatePath("/inventory");
   redirect(`/products/${id}?ok=1`);
@@ -118,7 +119,7 @@ export async function addComponent(formData: FormData) {
     quantity,
     unit_cost_minor,
   });
-  if (error) redirect(`/products/${product_id}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/products/${product_id}?error=${encodeURIComponent(safeError(error))}`);
 
   await recompute(supabase, product_id);
   revalidatePath(`/products/${product_id}`);
@@ -153,7 +154,7 @@ export async function updateSheetSettings(formData: FormData) {
     .from("cost_sheets")
     .update({ output_qty, margin_min_bps, margin_target_bps, margin_max_bps })
     .eq("id", sheetId);
-  if (error) redirect(`/products/${product_id}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/products/${product_id}?error=${encodeURIComponent(safeError(error))}`);
 
   await recompute(supabase, product_id);
   revalidatePath(`/products/${product_id}`);

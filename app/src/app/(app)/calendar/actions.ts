@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
@@ -28,7 +29,7 @@ export async function createAppointment(formData: FormData) {
   const { error } = await supabase.from("appointments").insert({
     organization_id: org.id, title, customer_id, starts_at, duration_min, location, notes, created_by: user?.id,
   });
-  if (error) redirect(`/calendar?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/calendar?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath("/calendar");
   redirect("/calendar?ok=1");
 }

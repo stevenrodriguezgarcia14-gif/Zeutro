@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
@@ -48,7 +49,7 @@ export async function createExpense(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/expenses/new?error=${encodeURIComponent(error.message)}`);
+    redirect(`/expenses/new?error=${encodeURIComponent(safeError(error))}`);
   }
 
   revalidatePath("/expenses");
@@ -67,7 +68,7 @@ export async function markExpensePaid(formData: FormData) {
     p_account_id: account_id,
     p_paid_date: new Date().toISOString().slice(0, 10),
   });
-  if (error) redirect(`/expenses?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/expenses?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath("/expenses");
   revalidatePath("/accounts");
   revalidatePath("/dashboard");
@@ -79,7 +80,7 @@ export async function deleteExpense(formData: FormData) {
   const supabase = await createClient();
   // Atómico: si estaba pagado desde una cuenta, devuelve el dinero antes de borrar.
   const { error } = await supabase.rpc("delete_expense", { p_id: id });
-  if (error) redirect(`/expenses?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/expenses?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath("/expenses");
   revalidatePath("/accounts");
   revalidatePath("/dashboard");

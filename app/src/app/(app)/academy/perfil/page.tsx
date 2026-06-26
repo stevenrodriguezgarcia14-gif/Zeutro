@@ -6,7 +6,8 @@ import {
   ROUTES, ACHIEVEMENTS, CERTIFICATIONS, learnSummary, routeLessons, routeComplete, certRequirements,
 } from "@/lib/academia";
 import type { ActivationData } from "@/lib/guide";
-import { Emblem, TIER_LABEL } from "@/components/academy/Emblem";
+import { Emblem } from "@/components/academy/Emblem";
+import { TIER_LABEL } from "@/components/academy/tiers";
 import { Credential } from "@/components/academy/Credential";
 import { AcademyNotifier } from "@/components/academy/AcademyNotifier";
 

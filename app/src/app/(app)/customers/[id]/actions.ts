@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
@@ -35,7 +36,7 @@ export async function addInteraction(formData: FormData) {
     created_by: user?.id,
   });
 
-  if (error) redirect(`/customers/${customer_id}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/customers/${customer_id}?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath(`/customers/${customer_id}`);
   redirect(`/customers/${customer_id}`);
 }

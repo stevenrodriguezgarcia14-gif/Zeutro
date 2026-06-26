@@ -50,6 +50,26 @@ export default async function RegisterPage({
             <label className="block text-sm font-medium text-slate-700">Repite la contraseña</label>
             <PasswordInput name="password2" minLength={12} />
           </div>
+          <label className="flex items-start gap-2.5 text-xs text-slate-500">
+            <input
+              type="checkbox"
+              name="accept"
+              value="yes"
+              required
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 accent-slate-900"
+            />
+            <span>
+              Acepto los{" "}
+              <Link href="/terminos" target="_blank" className="font-medium text-slate-700 underline">
+                Términos
+              </Link>{" "}
+              y el{" "}
+              <Link href="/privacidad" target="_blank" className="font-medium text-slate-700 underline">
+                Aviso de Privacidad
+              </Link>
+              .
+            </span>
+          </label>
           <button
             type="submit"
             className="w-full rounded-lg bg-slate-900 py-2.5 font-medium text-white hover:bg-slate-800"

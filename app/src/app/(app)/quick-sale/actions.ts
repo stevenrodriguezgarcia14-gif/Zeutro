@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
@@ -36,7 +37,7 @@ export async function createQuickSale(formData: FormData) {
     p_qty: qty,
     p_tax_rate_bps: tax_rate_bps,
   });
-  if (error) redirect(`/quick-sale?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/quick-sale?error=${encodeURIComponent(safeError(error))}`);
 
   revalidatePath("/quick-sale");
   revalidatePath("/dashboard");
@@ -51,7 +52,7 @@ export async function deleteQuickSale(formData: FormData) {
   const supabase = await createClient();
   // Atómico: revierte el movimiento de cuenta y repone stock antes de borrar.
   const { error } = await supabase.rpc("delete_quick_sale", { p_id: id });
-  if (error) redirect(`/quick-sale?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/quick-sale?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath("/quick-sale");
   revalidatePath("/dashboard");
   revalidatePath("/profitability");

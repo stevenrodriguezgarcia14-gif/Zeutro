@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
@@ -24,7 +25,7 @@ export async function createPurchase(formData: FormData) {
     .insert({ organization_id: org.id, name, purchase_date, description, notes, currency: org.base_currency, created_by: user?.id })
     .select("id")
     .single();
-  if (error || !purchase) redirect(`/purchases/new?error=${encodeURIComponent(error?.message ?? "Error")}`);
+  if (error || !purchase) redirect(`/purchases/new?error=${encodeURIComponent(safeError(error, "Error"))}`);
 
   revalidatePath("/purchases");
   redirect(`/purchases/${purchase.id}`);
@@ -41,7 +42,7 @@ export async function addExpense(formData: FormData) {
   if (!org) redirect("/onboarding");
   const supabase = await createClient();
   const { error } = await supabase.from("purchase_expenses").insert({ organization_id: org.id, purchase_id, type, description, amount_minor });
-  if (error) redirect(`/purchases/${purchase_id}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/purchases/${purchase_id}?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath(`/purchases/${purchase_id}`);
   redirect(`/purchases/${purchase_id}`);
 }
@@ -70,7 +71,7 @@ export async function addItem(formData: FormData) {
   const { error } = await supabase.from("purchase_items").insert({
     organization_id: org.id, purchase_id, name, category, sku, quantity, unit_cost_minor,
   });
-  if (error) redirect(`/purchases/${purchase_id}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/purchases/${purchase_id}?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath(`/purchases/${purchase_id}`);
   redirect(`/purchases/${purchase_id}`);
 }
@@ -85,7 +86,7 @@ export async function updateItem(formData: FormData) {
     .from("purchase_items")
     .update({ sale_price_minor, units_sold })
     .eq("id", id);
-  if (error) redirect(`/purchases/${purchase_id}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/purchases/${purchase_id}?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath(`/purchases/${purchase_id}`);
   redirect(`/purchases/${purchase_id}`);
 }
@@ -109,7 +110,7 @@ export async function updateMargins(formData: FormData) {
     .from("purchases")
     .update({ margin_min_bps, margin_target_bps, margin_max_bps })
     .eq("id", purchase_id);
-  if (error) redirect(`/purchases/${purchase_id}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/purchases/${purchase_id}?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath(`/purchases/${purchase_id}`);
   redirect(`/purchases/${purchase_id}?ok=1`);
 }

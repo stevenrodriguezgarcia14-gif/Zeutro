@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
@@ -42,7 +43,7 @@ export async function createCustomer(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/customers/new?error=${encodeURIComponent(error.message)}`);
+    redirect(`/customers/new?error=${encodeURIComponent(safeError(error))}`);
   }
 
   revalidatePath("/customers");
@@ -69,7 +70,7 @@ export async function updateCustomer(formData: FormData) {
       notes: String(formData.get("notes") ?? "").trim() || null,
     })
     .eq("id", id);
-  if (error) redirect(`/customers/${id}/edit?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/customers/${id}/edit?error=${encodeURIComponent(safeError(error))}`);
 
   revalidatePath("/customers");
   revalidatePath(`/customers/${id}`);

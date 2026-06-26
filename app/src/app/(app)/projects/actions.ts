@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
@@ -24,7 +25,7 @@ export async function createProject(formData: FormData) {
     .from("projects")
     .insert({ organization_id: org.id, name, customer_id, start_date, end_date, budget_amount_minor, created_by: user?.id })
     .select("id").single();
-  if (error || !project) redirect(`/projects/new?error=${encodeURIComponent(error?.message ?? "Error")}`);
+  if (error || !project) redirect(`/projects/new?error=${encodeURIComponent(safeError(error, "Error"))}`);
   revalidatePath("/projects");
   redirect(`/projects/${project.id}`);
 }
@@ -69,7 +70,7 @@ export async function createProjectInvoice(formData: FormData) {
   const { data: number, error: numErr } = await supabase.rpc("next_doc_number", {
     p_org: org.id, p_type: "invoice", p_prefix: "F-", p_seed: count ?? 0,
   });
-  if (numErr || !number) redirect(`/projects/${id}?error=${encodeURIComponent(numErr?.message ?? "No se pudo generar el folio.")}`);
+  if (numErr || !number) redirect(`/projects/${id}?error=${encodeURIComponent(safeError(numErr, "No se pudo generar el folio."))}`);
 
   const amount = p.budget_amount_minor ?? 0;
   const due = new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10);
@@ -82,7 +83,7 @@ export async function createProjectInvoice(formData: FormData) {
       project_id: id, created_by: user?.id,
     })
     .select("id").single();
-  if (error || !invoice) redirect(`/projects/${id}?error=${encodeURIComponent(error?.message ?? "No se pudo crear la factura.")}`);
+  if (error || !invoice) redirect(`/projects/${id}?error=${encodeURIComponent(safeError(error, "No se pudo crear la factura."))}`);
 
   await supabase.from("invoice_items").insert({
     organization_id: org.id, invoice_id: invoice.id, description: `Proyecto: ${p.name}`,

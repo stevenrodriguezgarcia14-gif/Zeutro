@@ -1,10 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { sendMail, brandedEmail } from "@/lib/email";
+import { sendMail, brandedEmail, escapeHtml } from "@/lib/email";
 
 export async function updateOrganization(formData: FormData) {
   const id = String(formData.get("org_id") ?? "");
@@ -25,7 +26,7 @@ export async function updateOrganization(formData: FormData) {
     .update({ name, legal_name, tax_id, country, base_currency, quick_sale_tax_bps })
     .eq("id", id);
 
-  if (error) redirect(`/settings?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/settings?error=${encodeURIComponent(safeError(error))}`);
 
   revalidatePath("/", "layout");
   redirect("/settings?ok=1");
@@ -36,7 +37,7 @@ export async function updateBusinessType(formData: FormData) {
   const business_type = String(formData.get("business_type") ?? "").trim() || null;
   const supabase = await createClient();
   const { error } = await supabase.from("organizations").update({ business_type }).eq("id", id);
-  if (error) redirect(`/settings?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/settings?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath("/", "layout");
   revalidatePath("/guide");
   redirect("/settings?ok=1");
@@ -61,14 +62,16 @@ export async function inviteUser(formData: FormData) {
   const { error } = await supabase
     .from("invitations")
     .upsert({ organization_id: org.id, email, role, status: "pending", created_by: user?.id }, { onConflict: "organization_id,email" });
-  if (error) redirect(`/settings?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/settings?error=${encodeURIComponent(safeError(error))}`);
 
   // Enviar correo de invitación (no bloquea si falla el envío)
   const origin = (await headers()).get("origin") ?? "https://zentro-ten-phi.vercel.app";
+  const safeOrgName = escapeHtml(org.name);
   const html = brandedEmail(
     `Te invitaron a ${org.name} en Zentro`,
     `<p>Te uniste a un equipo en <b>Zentro</b>, el sistema operativo del negocio.</p>
-     <p>Para entrar, crea tu cuenta (o inicia sesión) usando <b>este mismo correo</b>: ${email}. Te unirás automáticamente.</p>`,
+     <p>Para entrar, crea tu cuenta (o inicia sesión) usando <b>este mismo correo</b>: ${escapeHtml(email)}. Te unirás automáticamente.</p>
+     <p style="color:#94a3b8">Equipo: ${safeOrgName}</p>`,
     "Crear mi cuenta",
     `${origin}/register`,
   );
@@ -94,7 +97,7 @@ export async function changeMemberRole(formData: FormData) {
     .update({ role })
     .eq("organization_id", org_id)
     .eq("user_id", user_id);
-  if (error) redirect(`/settings?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/settings?error=${encodeURIComponent(safeError(error))}`);
   redirect("/settings?ok=1");
 }
 
@@ -115,7 +118,7 @@ export async function deleteOrganization(formData: FormData) {
 
   const supabase = await createClient();
   const { error } = await supabase.from("organizations").delete().eq("id", id);
-  if (error) redirect(`/settings?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/settings?error=${encodeURIComponent(safeError(error))}`);
 
   revalidatePath("/", "layout");
   redirect("/settings?deleted=1");

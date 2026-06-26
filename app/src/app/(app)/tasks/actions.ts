@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
@@ -44,7 +45,7 @@ export async function createTask(formData: FormData) {
   const { error } = await supabase.from("tasks").insert({
     organization_id: org.id, title, priority, due_date, project_id, recurrence, assignee_id: user?.id, created_by: user?.id,
   });
-  if (error) redirect(`${redirectTo}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`${redirectTo}?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath(redirectTo);
   revalidatePath("/priorities");
   redirect(redirectTo);

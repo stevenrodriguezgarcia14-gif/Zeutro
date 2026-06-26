@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
@@ -48,7 +49,7 @@ export async function createQuotation(formData: FormData) {
   const { data: number, error: numErr } = await supabase.rpc("next_doc_number", {
     p_org: org.id, p_type: "quotation", p_prefix: "C-", p_seed: count ?? 0,
   });
-  if (numErr || !number) redirect(`/quotations/new?error=${encodeURIComponent(numErr?.message ?? "No se pudo generar el folio.")}`);
+  if (numErr || !number) redirect(`/quotations/new?error=${encodeURIComponent(safeError(numErr, "No se pudo generar el folio."))}`);
 
   const { data: quotation, error } = await supabase
     .from("quotations")
@@ -58,11 +59,11 @@ export async function createQuotation(formData: FormData) {
       status: intent === "send" ? "sent" : "draft", created_by: user?.id,
     })
     .select("id").single();
-  if (error || !quotation) redirect(`/quotations/new?error=${encodeURIComponent(error?.message ?? "Error")}`);
+  if (error || !quotation) redirect(`/quotations/new?error=${encodeURIComponent(safeError(error, "Error"))}`);
 
   const itemsToInsert = items.map((it) => ({ ...it, organization_id: org.id, quotation_id: quotation.id }));
   const { error: itemsError } = await supabase.from("quotation_items").insert(itemsToInsert);
-  if (itemsError) redirect(`/quotations/new?error=${encodeURIComponent(itemsError.message)}`);
+  if (itemsError) redirect(`/quotations/new?error=${encodeURIComponent(safeError(itemsError))}`);
 
   revalidatePath("/quotations");
   redirect(`/quotations/${quotation.id}`);
@@ -95,7 +96,7 @@ export async function convertToInvoice(formData: FormData) {
   const { data: number, error: numErr } = await supabase.rpc("next_doc_number", {
     p_org: org.id, p_type: "invoice", p_prefix: "F-", p_seed: count ?? 0,
   });
-  if (numErr || !number) redirect(`/quotations/${id}?error=${encodeURIComponent(numErr?.message ?? "No se pudo generar el folio.")}`);
+  if (numErr || !number) redirect(`/quotations/${id}?error=${encodeURIComponent(safeError(numErr, "No se pudo generar el folio."))}`);
   const due = new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10);
 
   const { data: invoice, error } = await supabase
@@ -107,7 +108,7 @@ export async function convertToInvoice(formData: FormData) {
       status: "issued", created_by: user?.id,
     })
     .select("id").single();
-  if (error || !invoice) redirect(`/quotations/${id}?error=${encodeURIComponent(error?.message ?? "Error")}`);
+  if (error || !invoice) redirect(`/quotations/${id}?error=${encodeURIComponent(safeError(error, "Error"))}`);
 
   if (qItems && qItems.length > 0) {
     await supabase.from("invoice_items").insert(

@@ -19,7 +19,8 @@
 
   /* Acento de marca: Verde Zentro (señal de dinero / crecimiento / "cobrado") */
   --color-brand: #00c781;
-  --color-brand-dark: #00a86b;
+  /* brand-dark se usa para TEXTO/iconos sobre blanco: tono accesible (WCAG AA, ~4.8:1). */
+  --color-brand-dark: #047857;
   --color-brand-tint: #d8f7ec;
 
   /* Semánticos */

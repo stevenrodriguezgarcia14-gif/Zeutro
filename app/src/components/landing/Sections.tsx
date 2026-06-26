@@ -456,7 +456,7 @@ const TRUST = [
   {
     icon: <Icon.lock size={22} />,
     title: "Tus datos, tuyos",
-    desc: "Cifrado, respaldos automáticos y exportación en 1 clic, siempre que quieras.",
+    desc: "Tu información viaja cifrada (TLS) y la exportas cuando quieras. Cada negocio ve solo lo suyo.",
   },
   {
     icon: <Icon.globe size={22} />,
@@ -496,13 +496,18 @@ export function Trust() {
           ))}
         </div>
 
-        <Reveal delay={120} className="mx-auto mt-10 max-w-2xl rounded-2xl border border-slate-200 bg-white p-7 text-center">
-          <p className="text-lg text-slate-700">
-            “Construyo Zentro porque viví el caos de llevar un negocio en seis apps a
-            la vez. Quería un solo lugar que me dijera qué hacer cada día.”
+        <Reveal delay={120} className="mx-auto mt-10 max-w-2xl rounded-2xl border border-slate-200 bg-white p-7">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-dark">
+            Por qué construyo Zentro
           </p>
-          <p className="mt-3 text-sm font-semibold text-slate-900">
-            — El equipo de Zentro
+          <p className="mt-3 text-lg text-slate-700">
+            “Viví el caos de llevar un negocio en seis apps a la vez: clientes en WhatsApp,
+            ventas en Excel, cobros que se me olvidaban. Construyo Zentro para tener un solo
+            lugar que me diga qué hacer y a quién cobrar cada día. Si llevas tu negocio así,
+            lo hago para ti.”
+          </p>
+          <p className="mt-4 text-sm font-semibold text-slate-900">
+            — Fundador de Zentro
           </p>
         </Reveal>
       </div>
@@ -516,23 +521,47 @@ const PLANS = [
   {
     name: "Gratis",
     price: "$0",
+    period: "/mes",
     note: "Para empezar a ordenar tu negocio.",
-    features: ["Clientes y ventas", "Cotizaciones y facturas", "Centro de Prioridades"],
+    features: [
+      "1 usuario · 1 empresa",
+      "Clientes, productos y ventas",
+      "Cotizaciones y facturas",
+      "Centro de Prioridades",
+      "Importa tus clientes desde Excel",
+    ],
     cta: "Empieza gratis",
     featured: false,
   },
   {
     name: "Pro",
-    price: "Para crecer",
-    note: "Todo el poder de Zentro para tu negocio.",
+    price: "$12",
+    period: "/mes",
+    note: "Para vender más y cobrar a tiempo.",
     features: [
       "Todo lo de Gratis",
-      "Cobros, compras y rentabilidad",
-      "Flujo de caja y KPIs avanzados",
-      "Proyectos y multi-usuario",
+      "Cobranza con recordatorios",
+      "Compras, inventario y rentabilidad real",
+      "Flujo de caja y KPIs",
+      "Proyectos y tareas · hasta 3 usuarios",
     ],
-    cta: "Probar Pro",
+    cta: "Empieza gratis",
     featured: true,
+  },
+  {
+    name: "Negocio",
+    price: "$29",
+    period: "/mes",
+    note: "Para crecer con tu equipo.",
+    features: [
+      "Todo lo de Pro",
+      "Multiempresa · hasta 10 usuarios",
+      "Reportes avanzados",
+      "Roles y permisos",
+      "Soporte prioritario",
+    ],
+    cta: "Empieza gratis",
+    featured: false,
   },
 ];
 
@@ -546,11 +575,12 @@ export function Pricing() {
             Empieza gratis. Crece cuando lo necesites.
           </h2>
           <p className="mt-4 text-lg text-slate-600">
-            Sin tarjeta, sin permanencia. Cancela cuando quieras.
+            Sin permanencia. Empieza gratis y cambia de plan cuando lo necesites. Precios en USD;
+            ahorra ~2 meses pagando al año.
           </p>
         </Reveal>
 
-        <div className="mx-auto mt-12 grid max-w-3xl gap-5 md:grid-cols-2">
+        <div className="mx-auto mt-12 grid max-w-5xl gap-5 md:grid-cols-3">
           {PLANS.map((p, i) => (
             <Reveal key={p.name} delay={i * 100}>
               <div
@@ -568,16 +598,19 @@ export function Pricing() {
                     </span>
                   )}
                 </div>
-                <p className={`mt-4 font-display text-3xl font-bold ${p.featured ? "text-white" : "text-slate-900"}`}>
+                <p className={`mt-4 font-display text-4xl font-bold ${p.featured ? "text-white" : "text-slate-900"}`}>
                   {p.price}
+                  <span className={`text-base font-medium ${p.featured ? "text-slate-400" : "text-slate-400"}`}>
+                    {p.period}
+                  </span>
                 </p>
                 <p className={`mt-1 text-sm ${p.featured ? "text-slate-300" : "text-slate-500"}`}>
                   {p.note}
                 </p>
                 <ul className="mt-6 flex flex-1 flex-col gap-3">
                   {p.features.map((f) => (
-                    <li key={f} className={`flex items-start gap-2.5 ${p.featured ? "text-slate-200" : "text-slate-700"}`}>
-                      <Icon.check size={16} className="mt-1 shrink-0 text-brand" />
+                    <li key={f} className={`flex items-start gap-2.5 text-sm ${p.featured ? "text-slate-200" : "text-slate-700"}`}>
+                      <Icon.check size={16} className="mt-0.5 shrink-0 text-brand" />
                       {f}
                     </li>
                   ))}
@@ -596,6 +629,28 @@ export function Pricing() {
             </Reveal>
           ))}
         </div>
+
+        <Reveal delay={120} className="mx-auto mt-6 max-w-5xl">
+          <div className="flex flex-col items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-6 py-5 text-center sm:flex-row sm:text-left">
+            <div>
+              <p className="font-semibold text-slate-900">¿Necesitas más?</p>
+              <p className="text-sm text-slate-600">
+                Plan <span className="font-medium">Empresarial</span>: usuarios ilimitados,
+                personalización y soporte dedicado. Precio a medida.
+              </p>
+            </div>
+            <a
+              href="mailto:zeutro.notificaciones@gmail.com?subject=Plan%20Empresarial%20Zentro"
+              className="shrink-0 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 hover:border-slate-400"
+            >
+              Hablar con nosotros
+            </a>
+          </div>
+          <p className="mt-4 text-center text-xs text-slate-400">
+            Hoy puedes empezar gratis sin tarjeta. El cobro de los planes de pago se activará muy
+            pronto; mientras tanto, creas tu cuenta y usas Zentro sin costo.
+          </p>
+        </Reveal>
       </div>
     </section>
   );
@@ -670,9 +725,9 @@ export function Footer() {
         <FooterCol
           title="Legal"
           links={[
-            ["Términos", "#"],
-            ["Privacidad", "#"],
-            ["Seguridad", "#"],
+            ["Términos", "/terminos"],
+            ["Privacidad", "/privacidad"],
+            ["Seguridad", "/seguridad"],
           ]}
         />
       </div>

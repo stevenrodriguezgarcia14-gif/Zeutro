@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -34,7 +35,7 @@ export async function createOrganization(formData: FormData) {
   });
 
   if (rpcError) {
-    redirect(`/onboarding?error=${encodeURIComponent(rpcError.message)}`);
+    redirect(`/onboarding?error=${encodeURIComponent(safeError(rpcError))}`);
   }
 
   revalidatePath("/", "layout");

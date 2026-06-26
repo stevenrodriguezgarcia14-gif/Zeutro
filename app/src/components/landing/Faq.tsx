@@ -26,7 +26,7 @@ const FAQS = [
   },
   {
     q: "¿Mis datos están seguros?",
-    a: "Sí. Tu información viaja cifrada, con respaldos automáticos y aislamiento por negocio. Nadie más que tu equipo accede a tus datos.",
+    a: "Tu información viaja cifrada (TLS) y se aloja en infraestructura de Supabase con respaldos gestionados. Cada negocio queda aislado a nivel de base de datos: nadie más que tu equipo ve tus datos, y los exportas cuando quieras. Más detalle en la página de Seguridad.",
   },
 ];
 

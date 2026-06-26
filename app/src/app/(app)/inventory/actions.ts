@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
@@ -17,7 +18,7 @@ export async function adjustStock(formData: FormData) {
   const { error } = await supabase.rpc("adjust_stock", {
     p_product_id: product_id, p_direction: direction, p_qty: qty, p_reason: reason, p_note: note,
   });
-  if (error) redirect(`/inventory?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/inventory?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath("/inventory");
   redirect("/inventory");
 }
@@ -59,7 +60,7 @@ export async function sendPurchaseItemToInventory(formData: FormData) {
     })
     .select("id")
     .single();
-  if (error || !product) redirect(`/purchases/${purchase_id}?error=${encodeURIComponent(error?.message ?? "No se pudo crear el producto.")}`);
+  if (error || !product) redirect(`/purchases/${purchase_id}?error=${encodeURIComponent(safeError(error, "No se pudo crear el producto."))}`);
 
   // Marcar el ítem como ya enviado (enlace), para que no se pueda duplicar.
   await supabase.from("purchase_items").update({ product_id: product.id }).eq("id", item_id);

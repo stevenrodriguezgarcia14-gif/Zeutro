@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
@@ -43,7 +44,7 @@ export async function createOpportunity(formData: FormData) {
     owner_user_id: user?.id,
     created_by: user?.id,
   });
-  if (error) redirect(`/sales/new?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/sales/new?error=${encodeURIComponent(safeError(error))}`);
 
   revalidatePath("/sales");
   redirect("/sales");
@@ -97,7 +98,7 @@ export async function convertOpportunityToInvoice(formData: FormData) {
   const { data: number, error: numErr } = await supabase.rpc("next_doc_number", {
     p_org: org.id, p_type: "invoice", p_prefix: "F-", p_seed: count ?? 0,
   });
-  if (numErr || !number) redirect("/sales?error=" + encodeURIComponent(numErr?.message ?? "No se pudo generar el folio."));
+  if (numErr || !number) redirect("/sales?error=" + encodeURIComponent(safeError(numErr, "No se pudo generar el folio.")));
 
   const due = new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10);
   const amount = opp.amount_minor ?? 0;
@@ -109,7 +110,7 @@ export async function convertOpportunityToInvoice(formData: FormData) {
       subtotal_minor: amount, tax_minor: 0, total_minor: amount, status: "draft", created_by: user?.id,
     })
     .select("id").single();
-  if (error || !invoice) redirect("/sales?error=" + encodeURIComponent(error?.message ?? "No se pudo crear la factura."));
+  if (error || !invoice) redirect("/sales?error=" + encodeURIComponent(safeError(error, "No se pudo crear la factura.")));
 
   await supabase.from("invoice_items").insert({
     organization_id: org.id, invoice_id: invoice.id, description: opp.title,

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
@@ -73,7 +74,7 @@ export async function createInvoice(formData: FormData) {
   const { data: number, error: numErr } = await supabase.rpc("next_doc_number", {
     p_org: org.id, p_type: "invoice", p_prefix: "F-", p_seed: count ?? 0,
   });
-  if (numErr || !number) redirect(`/invoices/new?error=${encodeURIComponent(numErr?.message ?? "No se pudo generar el folio.")}`);
+  if (numErr || !number) redirect(`/invoices/new?error=${encodeURIComponent(safeError(numErr, "No se pudo generar el folio."))}`);
 
   const { data: invoice, error } = await supabase
     .from("invoices")
@@ -95,13 +96,13 @@ export async function createInvoice(formData: FormData) {
     .single();
 
   if (error || !invoice) {
-    redirect(`/invoices/new?error=${encodeURIComponent(error?.message ?? "No se pudo crear la factura.")}`);
+    redirect(`/invoices/new?error=${encodeURIComponent(safeError(error, "No se pudo crear la factura."))}`);
   }
 
   const itemsToInsert = items.map((it) => ({ ...it, organization_id: org.id, invoice_id: invoice.id }));
   const { error: itemsError } = await supabase.from("invoice_items").insert(itemsToInsert);
   if (itemsError) {
-    redirect(`/invoices/new?error=${encodeURIComponent(itemsError.message)}`);
+    redirect(`/invoices/new?error=${encodeURIComponent(safeError(itemsError))}`);
   }
 
   if (intent === "issue") await decrementStockForInvoice(supabase, invoice.id);
@@ -119,7 +120,7 @@ export async function issueInvoice(formData: FormData) {
     .update({ status: "issued" })
     .eq("id", id)
     .eq("status", "draft");
-  if (error) redirect(`/invoices/${id}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/invoices/${id}?error=${encodeURIComponent(safeError(error))}`);
   await decrementStockForInvoice(supabase, id);
   revalidatePath(`/invoices/${id}`);
   revalidatePath("/inventory");
@@ -131,7 +132,7 @@ export async function voidInvoice(formData: FormData) {
   const supabase = await createClient();
   // Anula la factura y repone el stock de sus líneas (atómico en la RPC).
   const { error } = await supabase.rpc("void_invoice", { p_id: id });
-  if (error) redirect(`/invoices/${id}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/invoices/${id}?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath(`/invoices/${id}`);
   revalidatePath("/invoices");
   revalidatePath("/inventory");
@@ -167,7 +168,7 @@ export async function registerPayment(formData: FormData) {
     p_reference: reference,
   });
 
-  if (error) redirect(`/invoices/${invoice_id}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/invoices/${invoice_id}?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath(`/invoices/${invoice_id}`);
   revalidatePath("/invoices");
   revalidatePath("/collections");
@@ -180,7 +181,7 @@ export async function reversePayment(formData: FormData) {
   const supabase = await createClient();
   // Atómico: devuelve el saldo a la factura, su estado y deshace el movimiento de cuenta.
   const { error } = await supabase.rpc("reverse_payment", { p_payment_id: payment_id });
-  if (error) redirect(`/invoices/${invoice_id}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/invoices/${invoice_id}?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath(`/invoices/${invoice_id}`);
   revalidatePath("/invoices");
   revalidatePath("/collections");

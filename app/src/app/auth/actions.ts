@@ -28,7 +28,11 @@ export async function register(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const password2 = String(formData.get("password2") ?? "");
   const full_name = String(formData.get("full_name") ?? "").trim();
+  const accepted = formData.get("accept") === "yes";
 
+  if (!accepted) {
+    redirect(`/register?error=${encodeURIComponent("Debes aceptar los Términos y el Aviso de Privacidad para crear tu cuenta.")}`);
+  }
   if (password.length < 12) {
     redirect(`/register?error=${encodeURIComponent("La contraseña debe tener al menos 12 caracteres.")}`);
   }

@@ -1,6 +1,8 @@
 "use client";
 
-export type Tier = "bronce" | "plata" | "oro" | "platino";
+import type { Tier } from "./tiers";
+export type { Tier };
+export { TIER_LABEL } from "./tiers";
 export type GlyphKey = "guide" | "stack" | "analysis" | "target" | "spark" | "route" | "crown" | "shield";
 
 type TierCfg = { conic: string; glyph: string; glow: string; label: string };
@@ -100,4 +102,3 @@ export function Emblem({
   );
 }
 
-export const TIER_LABEL = (t: Tier) => EMBLEM_TIERS[t].label;

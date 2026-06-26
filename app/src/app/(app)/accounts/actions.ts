@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
@@ -33,7 +34,7 @@ export async function createAccount(formData: FormData) {
     created_by: user?.id,
   });
 
-  if (error) redirect(`/accounts/new?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/accounts/new?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath("/accounts");
   revalidatePath("/dashboard");
   redirect("/accounts");
@@ -55,7 +56,7 @@ export async function recordMovement(formData: FormData) {
     p_description: description,
   });
 
-  if (error) redirect(`/accounts/${account_id}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/accounts/${account_id}?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath(`/accounts/${account_id}`);
   revalidatePath("/accounts");
   revalidatePath("/dashboard");
@@ -77,7 +78,7 @@ export async function transfer(formData: FormData) {
     p_description: "Transferencia",
   });
 
-  if (error) redirect(`/accounts?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/accounts?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath("/accounts");
   revalidatePath("/dashboard");
   redirect("/accounts");

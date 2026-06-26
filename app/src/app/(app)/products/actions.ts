@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
@@ -56,7 +57,7 @@ export async function createProduct(formData: FormData) {
     .single();
 
   if (error || !product) {
-    redirect(`/products/new?error=${encodeURIComponent(error?.message ?? "No se pudo crear.")}`);
+    redirect(`/products/new?error=${encodeURIComponent(safeError(error, "No se pudo crear."))}`);
   }
 
   revalidatePath("/products");
