@@ -58,22 +58,15 @@ export default function PrivacyPage() {
       </UL>
       <P>No vendemos tus datos ni los de tu negocio. No los usamos para publicidad de terceros.</P>
 
-      <H2>5. Con quién los compartimos (subencargados)</H2>
-      <P>Para operar usamos proveedores de confianza que tratan datos por nuestra cuenta:</P>
-      <UL>
-        <li>
-          <strong>Supabase</strong> — base de datos, autenticación y almacenamiento.
-        </li>
-        <li>
-          <strong>Vercel</strong> — alojamiento y entrega de la aplicación.
-        </li>
-        <li>
-          <strong>Proveedor de correo</strong> — envío de correos transaccionales (confirmación,
-          recuperación de contraseña, avisos).
-        </li>
-      </UL>
+      <H2>5. Con quién los compartimos</H2>
       <P>
-        Algunos proveedores pueden alojar datos fuera de tu país. En esos casos exigimos garantías
+        No vendemos ni cedemos tus datos. Para operar, nos apoyamos en proveedores tecnológicos de
+        confianza —infraestructura en la nube, base de datos y envío de correos— que tratan los
+        datos por nuestra cuenta y únicamente para que el servicio funcione. Les exigimos garantías
+        de seguridad y confidencialidad adecuadas.
+      </P>
+      <P>
+        Algunos proveedores pueden alojar datos fuera de tu país. En esos casos aplican garantías
         contractuales adecuadas para su protección.
       </P>
 

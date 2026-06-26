@@ -47,10 +47,10 @@ export default function SecurityPage() {
 
       <H2>Infraestructura y respaldos</H2>
       <P>
-        Zentro se apoya en infraestructura de proveedores líderes: <strong>Supabase</strong> para la
-        base de datos y autenticación, y <strong>Vercel</strong> para el alojamiento. La base de
-        datos cuenta con respaldos gestionados por la infraestructura. Además, tú puedes{" "}
-        <strong>exportar tu información cuando quieras</strong> para tener tu propia copia.
+        Zentro se apoya en infraestructura de proveedores líderes en la nube para la base de datos,
+        la autenticación y el alojamiento, con respaldos gestionados a nivel de infraestructura.
+        Además, tú puedes <strong>exportar tu información cuando quieras</strong> para tener tu
+        propia copia.
       </P>
 
       <H2>Tu parte</H2>
