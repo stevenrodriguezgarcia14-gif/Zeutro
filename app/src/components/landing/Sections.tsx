@@ -410,13 +410,13 @@ export function Comparison() {
           <table className="w-full min-w-[640px] border-separate border-spacing-0 text-sm">
             <thead>
               <tr>
-                <th className="p-3 text-left" />
+                <th className="sticky left-0 z-20 bg-white p-3 text-left" />
                 {COMP_COLS.map((c) => (
                   <th
                     key={c}
                     className={`p-3 text-center font-semibold ${
                       c === "Zentro"
-                        ? "rounded-t-xl bg-ink text-white"
+                        ? "sticky right-0 z-20 rounded-t-xl bg-ink text-white shadow-[-8px_0_12px_-8px_rgba(15,23,42,0.18)]"
                         : "text-slate-500"
                     }`}
                   >
@@ -434,14 +434,14 @@ export function Comparison() {
             <tbody>
               {COMP_ROWS.map((row, ri) => (
                 <tr key={row.label}>
-                  <td className="border-t border-slate-100 p-3 text-left font-medium text-slate-700">
+                  <td className="sticky left-0 z-10 border-t border-slate-100 bg-white p-3 text-left font-medium text-slate-700">
                     {row.label}
                   </td>
                   {row.cells.map((cell, ci) => (
                     <td
                       key={ci}
                       className={`border-t border-slate-100 p-3 text-center ${
-                        ci === row.cells.length - 1 ? "bg-slate-50" : ""
+                        ci === row.cells.length - 1 ? "sticky right-0 z-10 bg-slate-50 shadow-[-8px_0_12px_-8px_rgba(15,23,42,0.12)]" : ""
                       } ${ri === COMP_ROWS.length - 1 && ci === row.cells.length - 1 ? "rounded-b-xl" : ""}`}
                     >
                       <Cell v={cell} />
@@ -451,6 +451,9 @@ export function Comparison() {
               ))}
             </tbody>
           </table>
+          <p className="mt-3 text-center text-xs text-slate-400 sm:hidden">
+            Desliza para comparar — Zentro queda fijo a la derecha →
+          </p>
         </Reveal>
 
         <Reveal delay={150} className="mx-auto mt-10 max-w-2xl text-center">
