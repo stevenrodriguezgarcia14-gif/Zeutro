@@ -229,7 +229,23 @@ export function ProductShowcase() {
           </p>
         </Reveal>
         <Reveal delay={100} className="mx-auto mt-12 max-w-4xl">
-          <DashboardMockup />
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.35)]">
+            <video
+              className="block w-full"
+              src="/demo/zentro-demo.mp4"
+              poster="/demo/zentro-demo-poster.jpg"
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+              preload="metadata"
+              aria-label="Recorrido por Zentro: dashboard, productos, flujo de caja y Centro de Prioridades"
+            />
+          </div>
+          <p className="mt-3 text-center text-sm text-slate-500">
+            Recorrido real por Zentro — datos de ejemplo de un negocio.
+          </p>
         </Reveal>
       </div>
     </section>

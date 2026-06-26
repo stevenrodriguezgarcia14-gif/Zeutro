@@ -32,7 +32,7 @@ export function DashboardMockup({ dark = false }: { dark?: boolean }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-[140px_1fr] sm:grid-cols-[170px_1fr]">
+      <div className="grid grid-cols-1 sm:grid-cols-[170px_1fr]">
         {/* Sidebar */}
         <aside
           className={`hidden flex-col gap-1 border-r p-3 sm:flex ${
