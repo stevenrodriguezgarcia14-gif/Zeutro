@@ -26,10 +26,14 @@ export function QuotationForm({
   defaultCustomerId?: string;
   defaultTaxPct?: number;
 }) {
-  const today = new Date().toISOString().slice(0, 10);
-  const in15 = new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10);
+  // Fechas por defecto calculadas UNA vez (inicializador perezoso): son
+  // valores iniciales del formulario y no deben cambiar entre re-renders.
+  const [{ today, in15 }] = useState(() => ({
+    today: new Date().toISOString().slice(0, 10),
+    in15: new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10),
+  }));
   const taxDefault = String(defaultTaxPct);
-  const [lines, setLines] = useState<Line[]>([newLine(1, taxDefault)]);
+  const [lines, setLines] = useState<Line[]>(() => [newLine(1, taxDefault)]);
   const [nextKey, setNextKey] = useState(2);
 
   function update(key: number, patch: Partial<Line>) {

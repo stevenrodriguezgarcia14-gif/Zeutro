@@ -12,7 +12,6 @@ function emit(level: Level, message: string, context?: Record<string, unknown>) 
     ...(context ? { context } : {}),
     ts: new Date().toISOString(),
   };
-  // eslint-disable-next-line no-console
   (level === "error" ? console.error : level === "warn" ? console.warn : console.log)(
     JSON.stringify(line),
   );

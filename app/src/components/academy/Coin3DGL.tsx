@@ -50,7 +50,7 @@ function Coin({ tier, glyph }: { tier: Tier; glyph: GlyphKey }) {
   const spin = useRef<THREE.Group>(null);
   const m = METAL[tier];
   const front = useMemo(() => makeFaceTexture(tier, GLYPHS[glyph], false), [tier, glyph]);
-  const back = useMemo(() => makeFaceTexture(tier, GLYPHS[glyph], true), [tier]);
+  const back = useMemo(() => makeFaceTexture(tier, GLYPHS[glyph], true), [tier, glyph]);
   useFrame((_, d) => { if (spin.current) spin.current.rotation.y += d * 0.7; });
   return (
     <group ref={spin} rotation={[-0.16, 0, 0]}>

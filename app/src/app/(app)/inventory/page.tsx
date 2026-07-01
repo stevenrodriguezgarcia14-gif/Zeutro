@@ -59,7 +59,7 @@ export default async function InventoryPage({
 
       {rows.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-600">
-          No tienes productos físicos. Crea productos tipo "Producto" o envíalos desde una Compra.
+          No tienes productos físicos. Crea productos tipo &ldquo;Producto&rdquo; o envíalos desde una Compra.
         </div>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white">

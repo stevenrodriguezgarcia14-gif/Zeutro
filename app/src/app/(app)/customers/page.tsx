@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ModuleHelp } from "@/components/ModuleHelp";
 
@@ -19,6 +19,8 @@ export default async function CustomersPage() {
           <p className="mt-1 text-sm text-slate-500">{rows.length} cliente(s)</p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Descarga CSV servida por un route handler: <a> es correcto (Link haría prefetch del archivo). */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a
             href="/export/customers"
             className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"

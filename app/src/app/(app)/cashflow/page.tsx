@@ -4,11 +4,19 @@ import { formatMoney } from "@/lib/money";
 import { getPurchasesOverview } from "@/lib/purchasesOverview";
 import { ModuleHelp } from "@/components/ModuleHelp";
 
+function Card({ title, value, currency }: { title: string; value: number; currency: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5">
+      <p className="text-sm text-slate-500">{title}</p>
+      <p className={`mt-2 text-2xl font-bold ${value < 0 ? "text-red-600" : "text-slate-900"}`}>{formatMoney(value, currency)}</p>
+    </div>
+  );
+}
+
 export default async function CashflowPage() {
   const org = await getCurrentOrg();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
-  const today = new Date().toISOString().slice(0, 10);
   const horizonDate = (d: number) => new Date(Date.now() + d * 86400000).toISOString().slice(0, 10);
 
   const [{ data: accounts }, { data: invoices }, { data: opps }, { data: expenses }] = await Promise.all([
@@ -43,15 +51,6 @@ export default async function CashflowPage() {
   const p90 = projection(90);
   const anyNegative = [p30, p60, p90].some((p) => p < 0);
 
-  function Card({ title, value }: { title: string; value: number }) {
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-5">
-        <p className="text-sm text-slate-500">{title}</p>
-        <p className={`mt-2 text-2xl font-bold ${value < 0 ? "text-red-600" : "text-slate-900"}`}>{formatMoney(value, currency)}</p>
-      </div>
-    );
-  }
-
   return (
     <div>
       <h1 className="text-2xl font-bold text-slate-900">Flujo de caja</h1>
@@ -60,10 +59,10 @@ export default async function CashflowPage() {
 
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-400">Saldo proyectado</h2>
       <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <Card title="Hoy (en cuentas)" value={saldo} />
-        <Card title="En 30 días" value={p30} />
-        <Card title="En 60 días" value={p60} />
-        <Card title="En 90 días" value={p90} />
+        <Card title="Hoy (en cuentas)" value={saldo} currency={currency} />
+        <Card title="En 30 días" value={p30} currency={currency} />
+        <Card title="En 60 días" value={p60} currency={currency} />
+        <Card title="En 90 días" value={p90} currency={currency} />
       </div>
 
       {anyNegative && (

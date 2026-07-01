@@ -38,6 +38,9 @@ export function Reveal({
 
   return createElement(
     Tag,
+    // El ref solo se adjunta al elemento (ref-como-prop de React 19), no se lee
+    // durante el render; la regla no distingue createElement de una función común.
+    // eslint-disable-next-line react-hooks/refs
     { ref, "data-show": show, className: `zentro-reveal ${className}`, style: { animationDelay: `${delay}ms` } },
     children,
   );
