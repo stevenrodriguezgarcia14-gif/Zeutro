@@ -26,16 +26,17 @@ export default async function AccountDetailPage({
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
 
-  const { data: account } = await supabase.from("accounts").select("*").eq("id", id).single();
+  const [{ data: account }, { data: txns }] = await Promise.all([
+    supabase.from("accounts").select("*").eq("id", id).single(),
+    supabase
+      .from("account_transactions")
+      .select("id, direction, amount_minor, transaction_date, description, source_type")
+      .eq("account_id", id)
+      .order("transaction_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(100),
+  ]);
   if (!account) notFound();
-
-  const { data: txns } = await supabase
-    .from("account_transactions")
-    .select("id, direction, amount_minor, transaction_date, description, source_type")
-    .eq("account_id", id)
-    .order("transaction_date", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(100);
 
   const rows = txns ?? [];
 

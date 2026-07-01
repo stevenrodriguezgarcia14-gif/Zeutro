@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 export type Organization = {
@@ -13,44 +14,45 @@ export type Organization = {
   business_type: string | null;
 };
 
+export type OrgContext = {
+  orgs: { id: string; name: string }[];
+  current: Organization | null;
+  isPlatformAdmin: boolean;
+};
+
+/**
+ * Contexto de la app en UN solo round-trip a la base: acepta invitaciones
+ * pendientes, lista las empresas del usuario, resuelve la activa (misma
+ * fuente que la RLS: active_org()) e indica si es admin de plataforma.
+ *
+ * Envuelto en cache() de React: dentro de un mismo request (layout + página
+ * + componentes) la RPC se ejecuta UNA sola vez, sin importar cuántos
+ * módulos llamen a getOrgContext()/getCurrentOrg().
+ */
+export const getOrgContext = cache(async (): Promise<OrgContext> => {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("app_bootstrap");
+  const boot = (data ?? {}) as {
+    orgs?: Organization[] | null;
+    active_org?: string | null;
+    is_platform_admin?: boolean;
+  };
+  const all = boot.orgs ?? [];
+  const orgs = all.map((o) => ({ id: o.id, name: o.name }));
+  const current = all.find((o) => o.id === boot.active_org) ?? all[0] ?? null;
+  return { orgs, current, isPlatformAdmin: !!boot.is_platform_admin };
+});
+
 /** Empresas a las que pertenece el usuario actual (id + nombre). */
 export async function getUserOrgs(): Promise<{ id: string; name: string }[]> {
-  const supabase = await createClient();
-  // my_organizations() es SECURITY DEFINER: incluye también orgs suspendidas
-  // (RLS las ocultaría) para poder mostrarlas en el selector y la pantalla
-  // de "Cuenta suspendida".
-  const { data } = await supabase.rpc("my_organizations");
-  return ((data as Organization[] | null) ?? []).map((o) => ({ id: o.id, name: o.name }));
+  return (await getOrgContext()).orgs;
 }
 
 /**
- * Empresa (negocio) activa del usuario. Respeta la cookie de "empresa activa";
- * si no hay o no es válida, usa la primera. Null si no tiene ninguna.
+ * Empresa (negocio) activa del usuario. La decide la base de datos
+ * (active_org()), igual que la RLS, para que lo que se muestra coincida
+ * exactamente con lo que se filtra. Null si no tiene ninguna.
  */
 export async function getCurrentOrg(): Promise<Organization | null> {
-  const supabase = await createClient();
-  const { data } = await supabase.rpc("my_organizations");
-  const orgs = (data as Organization[] | null) ?? [];
-  if (orgs.length === 0) return null;
-
-  // La empresa activa la decide la base de datos (active_org()), igual que la RLS,
-  // para que lo que se muestra coincida exactamente con lo que se filtra.
-  const { data: activeId } = await supabase.rpc("active_org");
-  return orgs.find((o) => o.id === activeId) ?? orgs[0];
-}
-
-/**
- * Devuelve la lista de empresas y la activa en UNA sola consulta.
- * Pensado para el layout (evita pedir las organizaciones dos veces por navegación).
- */
-export async function getOrgContext(): Promise<{ orgs: { id: string; name: string }[]; current: Organization | null }> {
-  const supabase = await createClient();
-  const { data } = await supabase.rpc("my_organizations");
-  const all = (data as Organization[] | null) ?? [];
-  const orgs = all.map((o) => ({ id: o.id, name: o.name }));
-  if (all.length === 0) return { orgs, current: null };
-
-  const { data: activeId } = await supabase.rpc("active_org");
-  const current = all.find((o) => o.id === activeId) ?? all[0];
-  return { orgs, current };
+  return (await getOrgContext()).current;
 }

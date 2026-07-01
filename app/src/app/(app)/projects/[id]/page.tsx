@@ -35,9 +35,8 @@ export default async function ProjectDetailPage({
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
 
-  const { data: project } = await supabase.from("projects").select("*, customers(legal_name)").eq("id", id).single();
-  if (!project) notFound();
-  const [{ data: tasks }, { data: projExpenses }, { data: projInvoices }, { data: accounts }] = await Promise.all([
+  const [{ data: project }, { data: tasks }, { data: projExpenses }, { data: projInvoices }, { data: accounts }] = await Promise.all([
+    supabase.from("projects").select("*, customers(legal_name)").eq("id", id).single(),
     supabase
       .from("tasks")
       .select("id, title, status, priority, due_date")
@@ -48,6 +47,7 @@ export default async function ProjectDetailPage({
     supabase.from("invoices").select("total_minor, paid_minor, status").eq("project_id", id),
     supabase.from("accounts").select("id, name").eq("is_active", true).order("name"),
   ]);
+  if (!project) notFound();
 
   const ts = (tasks ?? []) as { id: string; title: string; status: string; priority: string; due_date: string | null }[];
   const total = ts.length;

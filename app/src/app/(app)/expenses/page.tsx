@@ -20,15 +20,13 @@ export default async function ExpensesPage() {
   const org = await getCurrentOrg();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("expenses")
-    .select("id, description, category, vendor, amount_minor, expense_date, payment_status")
-    .order("expense_date", { ascending: false });
-  const { data: accData } = await supabase
-    .from("accounts")
-    .select("id, name")
-    .eq("is_active", true)
-    .order("created_at");
+  const [{ data }, { data: accData }] = await Promise.all([
+    supabase
+      .from("expenses")
+      .select("id, description, category, vendor, amount_minor, expense_date, payment_status")
+      .order("expense_date", { ascending: false }),
+    supabase.from("accounts").select("id, name").eq("is_active", true).order("created_at"),
+  ]);
   const accounts = (accData ?? []) as { id: string; name: string }[];
 
   const rows = (data ?? []) as Row[];

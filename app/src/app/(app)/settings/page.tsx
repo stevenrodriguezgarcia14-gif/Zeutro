@@ -43,23 +43,30 @@ export default async function SettingsPage({
   if (!active) redirect("/onboarding");
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: org } = await supabase.from("organizations").select("*").eq("id", active.id).single();
-  const { data: orgs } = await supabase
-    .from("organizations")
-    .select("id, name, created_at")
-    .order("created_at");
+  // Todas las lecturas son independientes: una sola tanda paralela
+  // (antes eran 6 round-trips secuenciales a Supabase).
+  const [
+    { data: { user } },
+    { data: org },
+    { data: orgs },
+    { data: role },
+    { data: members },
+    { data: invites },
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.from("organizations").select("*").eq("id", active.id).single(),
+    supabase.from("organizations").select("id, name, created_at").order("created_at"),
+    supabase.rpc("current_user_role"),
+    supabase.rpc("list_org_members", { p_org: active.id }),
+    supabase
+      .from("invitations")
+      .select("id, email, role, status")
+      .eq("organization_id", active.id)
+      .eq("status", "pending"),
+  ]);
 
   const allOrgs = orgs ?? [];
-
-  const { data: role } = await supabase.rpc("current_user_role");
   const isAdmin = role === "owner" || role === "admin";
-  const { data: members } = await supabase.rpc("list_org_members", { p_org: active.id });
-  const { data: invites } = await supabase
-    .from("invitations")
-    .select("id, email, role, status")
-    .eq("organization_id", active.id)
-    .eq("status", "pending");
   const memberList = (members ?? []) as { user_id: string; email: string; role: string }[];
   const inviteList = (invites ?? []) as { id: string; email: string; role: string; status: string }[];
 

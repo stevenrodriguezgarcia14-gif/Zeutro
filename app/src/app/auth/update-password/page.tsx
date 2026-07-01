@@ -1,5 +1,6 @@
 import { updatePassword } from "@/app/auth/actions";
 import { PasswordInput } from "@/components/PasswordInput";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function UpdatePasswordPage({
   searchParams,
@@ -26,9 +27,7 @@ export default async function UpdatePasswordPage({
             <label className="block text-sm font-medium text-slate-700">Repite la contraseña</label>
             <PasswordInput name="password2" minLength={12} />
           </div>
-          <button type="submit" className="w-full rounded-lg bg-slate-900 py-2.5 font-medium text-white hover:bg-slate-800">
-            Guardar contraseña
-          </button>
+          <SubmitButton pendingText="Guardando…">Guardar contraseña</SubmitButton>
         </form>
       </div>
     </main>

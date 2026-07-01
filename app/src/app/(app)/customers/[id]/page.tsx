@@ -48,10 +48,8 @@ export default async function CustomerDetailPage({
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
 
-  const { data: customer } = await supabase.from("customers").select("*").eq("id", id).single();
-  if (!customer) notFound();
-
-  const [{ data: invoices }, { data: payments }, { data: interactions }] = await Promise.all([
+  const [{ data: customer }, { data: invoices }, { data: payments }, { data: interactions }] = await Promise.all([
+    supabase.from("customers").select("*").eq("id", id).single(),
     supabase
       .from("invoices")
       .select("id, number, issue_date, due_date, total_minor, balance_minor, status")
@@ -65,6 +63,7 @@ export default async function CustomerDetailPage({
       .order("occurred_at", { ascending: false })
       .limit(50),
   ]);
+  if (!customer) notFound();
 
   const invs = invoices ?? [];
   const billed = invs

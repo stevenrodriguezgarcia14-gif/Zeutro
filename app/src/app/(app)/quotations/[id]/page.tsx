@@ -37,9 +37,11 @@ export default async function QuotationDetailPage({
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
 
-  const { data: q } = await supabase.from("quotations").select("*, customers(legal_name)").eq("id", id).single();
+  const [{ data: q }, { data: items }] = await Promise.all([
+    supabase.from("quotations").select("*, customers(legal_name)").eq("id", id).single(),
+    supabase.from("quotation_items").select("*").eq("quotation_id", id),
+  ]);
   if (!q) notFound();
-  const { data: items } = await supabase.from("quotation_items").select("*").eq("quotation_id", id);
 
   const today = new Date().toISOString().slice(0, 10);
   const isExpired = ["draft", "sent"].includes(q.status) && q.valid_until && q.valid_until < today;

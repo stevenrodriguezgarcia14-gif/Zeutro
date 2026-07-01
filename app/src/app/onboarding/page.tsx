@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { createOrganization } from "./actions";
 import { getCurrentOrg } from "@/lib/org";
-import { createClient } from "@/lib/supabase/server";
 import { OrgLocaleFields } from "@/components/OrgLocaleFields";
 import { BusinessTypePicker } from "@/components/BusinessTypePicker";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function OnboardingPage({
   searchParams,
@@ -12,11 +12,8 @@ export default async function OnboardingPage({
 }) {
   const { error } = await searchParams;
 
-  // Si fue invitado a un negocio, unirlo automáticamente antes de ofrecer crear uno.
-  const supabase = await createClient();
-  await supabase.rpc("accept_pending_invitations");
-
-  // Si ya tiene negocio (propio o por invitación), al dashboard.
+  // getCurrentOrg (app_bootstrap) ya acepta invitaciones pendientes: si fue
+  // invitado a un negocio, aquí aparece y va directo al dashboard.
   const org = await getCurrentOrg();
   if (org) redirect("/dashboard");
 
@@ -51,12 +48,7 @@ export default async function OnboardingPage({
             <p className="mb-2 text-xs text-slate-500">Con esto Zentro te muestra primero lo que más te sirve. Podrás cambiarlo después.</p>
             <BusinessTypePicker />
           </div>
-          <button
-            type="submit"
-            className="w-full rounded-lg bg-slate-900 py-2.5 font-medium text-white hover:bg-slate-800"
-          >
-            Crear y empezar
-          </button>
+          <SubmitButton pendingText="Creando tu negocio…">Crear y empezar</SubmitButton>
         </form>
       </div>
     </main>

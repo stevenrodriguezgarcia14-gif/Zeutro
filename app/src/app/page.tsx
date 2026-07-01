@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/landing/Navbar";
 import { UseCases } from "@/components/landing/UseCases";
 import { Faq } from "@/components/landing/Faq";
@@ -21,20 +19,9 @@ import {
   MobileStickyCta,
 } from "@/components/landing/Sections";
 
-export default async function Home() {
-  // Si el usuario ya tiene sesión, va directo a su panel.
-  let isLoggedIn = false;
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    isLoggedIn = Boolean(user);
-  } catch {
-    // Sin Supabase configurado mostramos la landing igualmente.
-  }
-  if (isLoggedIn) redirect("/dashboard");
-
+// La redirección de usuarios con sesión a /dashboard la hace el proxy,
+// así esta página es 100% estática (se sirve desde CDN, sin tocar auth).
+export default function Home() {
   return (
     <>
       <Navbar />

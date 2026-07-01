@@ -4,6 +4,7 @@ import { formatMoney } from "@/lib/money";
 import { ModuleHelp } from "@/components/ModuleHelp";
 import { createQuickSale, deleteQuickSale } from "./actions";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
+import { SubmitButton } from "@/components/SubmitButton";
 
 const METHODS: Record<string, string> = { cash: "Efectivo", transfer: "Transferencia", card: "Tarjeta", check: "Cheque", gateway: "Pasarela", other: "Otro" };
 
@@ -110,7 +111,7 @@ export default async function QuickSalePage({ searchParams }: { searchParams: Pr
             </div>
           </div>
         )}
-        <button className="w-full rounded-lg bg-slate-900 py-2.5 font-medium text-white hover:bg-slate-800">Registrar venta</button>
+        <SubmitButton pendingText="Registrando venta…">Registrar venta</SubmitButton>
       </form>
 
       <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">Últimas ventas</h2>

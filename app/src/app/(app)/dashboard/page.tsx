@@ -39,22 +39,30 @@ export default async function DashboardPage() {
   const monthStart = `${month}-01`;
 
   const today = new Date().toISOString().slice(0, 10);
-  const [{ count: customersCount }, { data: invoices }, { data: payments }, { data: expenses }, { data: accounts }, { data: tasks }, { data: opps }, { count: projectsCount }, { data: qsRows }] =
-    await Promise.all([
-      supabase.from("customers").select("*", { count: "exact", head: true }),
-      supabase.from("invoices").select("balance_minor, status, due_date"),
-      // Cobrado del mes NETO de IVA: asignaciones de pago proporcionales al subtotal de su factura.
-      supabase
-        .from("payment_allocations")
-        .select("amount_minor, payments!inner(paid_at), invoices(subtotal_minor, total_minor)")
-        .gte("payments.paid_at", monthStart),
-      supabase.from("expenses").select("amount_minor, expense_date").gte("expense_date", monthStart),
-      supabase.from("accounts").select("current_balance_minor").eq("is_active", true),
-      supabase.from("tasks").select("due_date, status").not("status", "in", "(done,cancelled)"),
-      supabase.from("opportunities").select("amount_minor, stages(probability_bps)").eq("status", "open"),
-      supabase.from("projects").select("*", { count: "exact", head: true }).in("status", ["planning", "active", "on_hold"]),
-      supabase.from("quick_sales").select("amount_minor, tax_rate_bps").gte("sold_at", monthStart),
-    ]);
+  // Todo el tablero en UNA sola tanda paralela (antes eran dos tandas
+  // secuenciales: cada una costaba un round-trip completo a Supabase).
+  const [
+    { count: customersCount }, { data: invoices }, { data: payments }, { data: expenses }, { data: accounts },
+    { data: tasks }, { data: opps }, { count: projectsCount }, { data: qsRows },
+    compras, activation, { data: acadProgress },
+  ] = await Promise.all([
+    supabase.from("customers").select("*", { count: "exact", head: true }),
+    supabase.from("invoices").select("balance_minor, status, due_date"),
+    // Cobrado del mes NETO de IVA: asignaciones de pago proporcionales al subtotal de su factura.
+    supabase
+      .from("payment_allocations")
+      .select("amount_minor, payments!inner(paid_at), invoices(subtotal_minor, total_minor)")
+      .gte("payments.paid_at", monthStart),
+    supabase.from("expenses").select("amount_minor, expense_date").gte("expense_date", monthStart),
+    supabase.from("accounts").select("current_balance_minor").eq("is_active", true),
+    supabase.from("tasks").select("due_date, status").not("status", "in", "(done,cancelled)"),
+    supabase.from("opportunities").select("amount_minor, stages(probability_bps)").eq("status", "open"),
+    supabase.from("projects").select("*", { count: "exact", head: true }).in("status", ["planning", "active", "on_hold"]),
+    supabase.from("quick_sales").select("amount_minor, tax_rate_bps").gte("sold_at", monthStart),
+    getPurchasesOverview(),
+    getActivation(org?.business_type),
+    supabase.from("academy_progress").select("kind, item_slug"),
+  ]);
 
   const inv = invoices ?? [];
   const outstanding = inv
@@ -82,11 +90,6 @@ export default async function DashboardPage() {
   const expenseMonth = (expenses ?? []).reduce((s, e) => s + (e.amount_minor ?? 0), 0);
   const profitMonth = incomeMonth - expenseMonth;
   const cashTotal = (accounts ?? []).reduce((s, a) => s + (a.current_balance_minor ?? 0), 0);
-  const [compras, activation, { data: acadProgress }] = await Promise.all([
-    getPurchasesOverview(),
-    getActivation(org?.business_type),
-    supabase.from("academy_progress").select("kind, item_slug"),
-  ]);
   const hideActivation = (await cookies()).get("zentro_hide_activation")?.value === "1";
 
   const acadPassed = new Set((acadProgress ?? []).filter((p) => p.kind === "challenge").map((p) => p.item_slug));
@@ -194,26 +197,26 @@ export default async function DashboardPage() {
       {/* Operación de hoy */}
       <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">Operación de hoy</h2>
       <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <a href="/tasks" className="block rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300">
+        <Link href="/tasks" className="block rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300">
           <p className="text-sm text-slate-500">Tareas vencidas</p>
           <p className={`mt-2 text-2xl font-bold ${tasksOverdue > 0 ? "text-red-600" : "text-slate-900"}`}>{tasksOverdue}</p>
           <p className="mt-1 text-xs text-slate-400">{tasksToday} para hoy · {tasksPending} pendientes</p>
-        </a>
-        <a href="/sales" className="block rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300">
+        </Link>
+        <Link href="/sales" className="block rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300">
           <p className="text-sm text-slate-500">Ventas en proceso</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">{oppList.length}</p>
           <p className="mt-1 text-xs text-slate-400">≈ {formatMoney(pipelineValue, currency)} probable</p>
-        </a>
-        <a href="/projects" className="block rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300">
+        </Link>
+        <Link href="/projects" className="block rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300">
           <p className="text-sm text-slate-500">Proyectos activos</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">{projectsCount ?? 0}</p>
           <p className="mt-1 text-xs text-slate-400">En curso o planeación</p>
-        </a>
-        <a href="/calendar" className="block rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300">
+        </Link>
+        <Link href="/calendar" className="block rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300">
           <p className="text-sm text-slate-500">Agenda</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">📅</p>
           <p className="mt-1 text-xs text-slate-400">Ver calendario</p>
-        </a>
+        </Link>
       </div>
 
       </>
@@ -221,7 +224,7 @@ export default async function DashboardPage() {
 
       {/* Tu aprendizaje (Academia) */}
       <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">Tu aprendizaje</h2>
-      <a href="/academy" className="mt-2 block rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300">
+      <Link href="/academy" className="mt-2 block rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300">
         <div className="flex items-center justify-between">
           <div>
             <p className="font-medium text-slate-900">Academia Zentro</p>
@@ -232,18 +235,18 @@ export default async function DashboardPage() {
         <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
           <div className="h-full rounded-full bg-emerald-500" style={{ width: `${learnPct}%` }} />
         </div>
-      </a>
+      </Link>
 
       <div className="mt-8 flex flex-wrap gap-3 text-sm">
-        <a href="/priorities" className="rounded-lg bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-800">
+        <Link href="/priorities" className="rounded-lg bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-800">
           Ver qué hacer hoy →
-        </a>
-        <a href="/cashflow" className="rounded-lg border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-slate-50">
+        </Link>
+        <Link href="/cashflow" className="rounded-lg border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-slate-50">
           Flujo de caja
-        </a>
-        <a href="/sales" className="rounded-lg border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-slate-50">
+        </Link>
+        <Link href="/sales" className="rounded-lg border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-slate-50">
           Embudo de ventas
-        </a>
+        </Link>
       </div>
     </div>
   );

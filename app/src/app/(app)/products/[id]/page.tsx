@@ -77,28 +77,27 @@ export default async function ProductCostingPage({
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
 
-  const { data: product } = await supabase.from("products").select("*").eq("id", id).single();
-  if (!product) notFound();
-
-  const { data: sheet } = await supabase.from("cost_sheets").select("*").eq("product_id", id).maybeSingle();
-
-  const { data: movements } = product.type === "product"
-    ? await supabase
+  // Las 4 lecturas en paralelo (los componentes se filtran por la ficha de
+  // costos del producto vía join, para no esperar a conocer su id).
+  const [{ data: product }, { data: sheet }, { data: movements }, { data: componentRows }] =
+    await Promise.all([
+      supabase.from("products").select("*").eq("id", id).single(),
+      supabase.from("cost_sheets").select("*").eq("product_id", id).maybeSingle(),
+      supabase
         .from("inventory_movements")
         .select("id, direction, qty, reason, note, created_at")
         .eq("product_id", id)
         .order("created_at", { ascending: false })
-        .limit(30)
-    : { data: [] as { id: string; direction: string; qty: number; reason: string; note: string | null; created_at: string }[] };
-  const moves = movements ?? [];
-
-  const { data: components } = sheet
-    ? await supabase
+        .limit(30),
+      supabase
         .from("cost_components")
-        .select("id, type, name, quantity, unit_cost_minor, line_total_minor")
-        .eq("cost_sheet_id", sheet.id)
-        .order("created_at")
-    : { data: [] as never[] };
+        .select("id, type, name, quantity, unit_cost_minor, line_total_minor, cost_sheets!inner(product_id)")
+        .eq("cost_sheets.product_id", id)
+        .order("created_at"),
+    ]);
+  if (!product) notFound();
+  const moves = product.type === "product" ? (movements ?? []) : [];
+  const components = sheet ? componentRows : [];
 
   const comps = components ?? [];
   const totalCost = comps.reduce((s, c) => s + (c.line_total_minor ?? 0), 0);

@@ -15,34 +15,29 @@ export type Activation = {
 
 async function loadData(): Promise<ActivationData> {
   const supabase = await createClient();
-  const today = new Date().toISOString().slice(0, 10);
-  const c = (q: PromiseLike<{ count: number | null }>) => q.then((r) => r.count ?? 0);
-  const t = supabase;
-
-  const [
-    customers, products, productsWithPrice, purchases, purchaseItems, purchaseItemsWithPrice, resaleSales,
-    quickSales, quotations, invoices, payments, expenses, accounts, opportunities, projects, overdueInvoices, openQuotations,
-  ] = await Promise.all([
-    c(t.from("customers").select("*", { count: "exact", head: true })),
-    c(t.from("products").select("*", { count: "exact", head: true })),
-    c(t.from("products").select("*", { count: "exact", head: true }).gt("sale_price_minor", 0)),
-    c(t.from("purchases").select("*", { count: "exact", head: true })),
-    c(t.from("purchase_items").select("*", { count: "exact", head: true })),
-    c(t.from("purchase_items").select("*", { count: "exact", head: true }).gt("sale_price_minor", 0)),
-    c(t.from("purchase_items").select("*", { count: "exact", head: true }).gt("units_sold", 0)),
-    c(t.from("quick_sales").select("*", { count: "exact", head: true })),
-    c(t.from("quotations").select("*", { count: "exact", head: true })),
-    c(t.from("invoices").select("*", { count: "exact", head: true })),
-    c(t.from("payments").select("*", { count: "exact", head: true })),
-    c(t.from("expenses").select("*", { count: "exact", head: true })),
-    c(t.from("accounts").select("*", { count: "exact", head: true })),
-    c(t.from("opportunities").select("*", { count: "exact", head: true }).eq("status", "open")),
-    c(t.from("projects").select("*", { count: "exact", head: true })),
-    c(t.from("invoices").select("*", { count: "exact", head: true }).gt("balance_minor", 0).lt("due_date", today).not("status", "in", "(paid,void)")),
-    c(t.from("quotations").select("*", { count: "exact", head: true }).eq("status", "sent")),
-  ]);
-
-  return { customers, products, productsWithPrice, purchases, purchaseItems, purchaseItemsWithPrice, resaleSales, quickSales, quotations, invoices, payments, expenses, accounts, opportunities, projects, overdueInvoices, openQuotations };
+  // Un solo round-trip: activation_counts() calcula los 17 conteos en la base
+  // (antes eran 17 requests HTTP). La RLS por empresa activa aplica igual.
+  const { data } = await supabase.rpc("activation_counts");
+  const d = (data ?? {}) as Partial<ActivationData>;
+  return {
+    customers: d.customers ?? 0,
+    products: d.products ?? 0,
+    productsWithPrice: d.productsWithPrice ?? 0,
+    purchases: d.purchases ?? 0,
+    purchaseItems: d.purchaseItems ?? 0,
+    purchaseItemsWithPrice: d.purchaseItemsWithPrice ?? 0,
+    resaleSales: d.resaleSales ?? 0,
+    quickSales: d.quickSales ?? 0,
+    quotations: d.quotations ?? 0,
+    invoices: d.invoices ?? 0,
+    payments: d.payments ?? 0,
+    expenses: d.expenses ?? 0,
+    accounts: d.accounts ?? 0,
+    opportunities: d.opportunities ?? 0,
+    projects: d.projects ?? 0,
+    overdueInvoices: d.overdueInvoices ?? 0,
+    openQuotations: d.openQuotations ?? 0,
+  };
 }
 
 /** Calcula el estado de activación y las sugerencias de siguiente paso. */

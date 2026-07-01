@@ -30,15 +30,12 @@ export default async function InvoiceDetailPage({
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
 
-  const { data: invoice } = await supabase
-    .from("invoices")
-    .select("*, customers(legal_name, email)")
-    .eq("id", id)
-    .single();
-
-  if (!invoice) notFound();
-
-  const [{ data: items }, { data: allocations }, { data: accounts }] = await Promise.all([
+  const [{ data: invoice }, { data: items }, { data: allocations }, { data: accounts }] = await Promise.all([
+    supabase
+      .from("invoices")
+      .select("*, customers(legal_name, email)")
+      .eq("id", id)
+      .single(),
     supabase.from("invoice_items").select("*").eq("invoice_id", id),
     supabase
       .from("payment_allocations")
@@ -46,6 +43,8 @@ export default async function InvoiceDetailPage({
       .eq("invoice_id", id),
     supabase.from("accounts").select("id, name").eq("is_active", true).order("name"),
   ]);
+
+  if (!invoice) notFound();
 
   const st = STATUS[invoice.status] ?? STATUS.draft;
   const canPay = !["draft", "paid", "void"].includes(invoice.status) && invoice.balance_minor > 0;

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { register } from "@/app/auth/actions";
 import { PasswordInput } from "@/components/PasswordInput";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function RegisterPage({
   searchParams,
@@ -70,12 +71,7 @@ export default async function RegisterPage({
               .
             </span>
           </label>
-          <button
-            type="submit"
-            className="w-full rounded-lg bg-slate-900 py-2.5 font-medium text-white hover:bg-slate-800"
-          >
-            Crear cuenta
-          </button>
+          <SubmitButton pendingText="Creando tu cuenta…">Crear cuenta</SubmitButton>
         </form>
 
         <p className="mt-6 text-center text-sm text-slate-500">

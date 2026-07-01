@@ -42,13 +42,12 @@ export default async function PurchaseDetailPage({
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
 
-  const { data: purchase } = await supabase.from("purchases").select("*").eq("id", id).single();
-  if (!purchase) notFound();
-
-  const [{ data: items }, { data: expenses }] = await Promise.all([
+  const [{ data: purchase }, { data: items }, { data: expenses }] = await Promise.all([
+    supabase.from("purchases").select("*").eq("id", id).single(),
     supabase.from("purchase_items").select("id, name, category, sku, quantity, unit_cost_minor, sale_price_minor, units_sold").eq("purchase_id", id).order("created_at"),
     supabase.from("purchase_expenses").select("id, type, description, amount_minor").eq("purchase_id", id).order("created_at"),
   ]);
+  if (!purchase) notFound();
 
   const expList = (expenses ?? []) as { id: string; type: string; description: string | null; amount_minor: number }[];
   const totalExpenses = expList.reduce((s, e) => s + e.amount_minor, 0);

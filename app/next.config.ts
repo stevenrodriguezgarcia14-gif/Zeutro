@@ -2,10 +2,28 @@ import type { NextConfig } from "next";
 
 /**
  * Cabeceras de seguridad (defensa en profundidad).
- * Nota: la Content-Security-Policy (CSP) se deja documentada abajo pero NO activada
- * por defecto, porque una CSP estricta puede romper Next/Supabase/3D si no se prueba
- * en un entorno real. Actívala y ajústala cuando puedas verificar la app cargando.
+ * La CSP se envía solo en producción: en desarrollo Next necesita `eval`
+ * (HMR/react-refresh) y una CSP la rompería.
  */
+const csp = [
+  "default-src 'self'",
+  // Next inyecta scripts inline propios; sin nonces, 'unsafe-inline' es necesario.
+  // Aun así la CSP bloquea cargar scripts de dominios externos (XSS por <script src>).
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  // Logos y fotos de producto viven en Supabase Storage.
+  "img-src 'self' data: blob: https://*.supabase.co",
+  "font-src 'self' data:",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+  "media-src 'self' blob:",
+  // three.js / decodificadores pueden usar workers vía blob.
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join("; ");
+
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -19,21 +37,9 @@ const securityHeaders = [
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
   },
-  // Plantilla de CSP para activar tras probar (descomenta y ajusta los orígenes de Supabase):
-  // {
-  //   key: "Content-Security-Policy",
-  //   value: [
-  //     "default-src 'self'",
-  //     "script-src 'self' 'unsafe-inline'",
-  //     "style-src 'self' 'unsafe-inline'",
-  //     "img-src 'self' data: blob: https://*.supabase.co",
-  //     "font-src 'self' data:",
-  //     "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
-  //     "frame-ancestors 'none'",
-  //     "base-uri 'self'",
-  //     "form-action 'self'",
-  //   ].join("; "),
-  // },
+  ...(process.env.NODE_ENV === "production"
+    ? [{ key: "Content-Security-Policy", value: csp }]
+    : []),
 ];
 
 const nextConfig: NextConfig = {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { login, resendConfirmation } from "@/app/auth/actions";
 import { PasswordInput } from "@/components/PasswordInput";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function LoginPage({
   searchParams,
@@ -47,12 +48,7 @@ export default async function LoginPage({
             <label className="block text-sm font-medium text-slate-700">Contraseña</label>
             <PasswordInput name="password" minLength={8} />
           </div>
-          <button
-            type="submit"
-            className="w-full rounded-lg bg-slate-900 py-2.5 font-medium text-white hover:bg-slate-800"
-          >
-            Iniciar sesión
-          </button>
+          <SubmitButton pendingText="Iniciando sesión…">Iniciar sesión</SubmitButton>
         </form>
 
         <p className="mt-3 text-center text-sm">
