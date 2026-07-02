@@ -4,6 +4,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { ModuleHelp } from "@/components/ModuleHelp";
 import { SearchBox } from "@/components/SearchBox";
+import { matches } from "@/lib/search";
 
 export default async function ProductsPage({
   searchParams,
@@ -15,15 +16,13 @@ export default async function ProductsPage({
   const org = await getCurrentOrg();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
-  let query = supabase
+  const { data: products } = await supabase
     .from("products")
     .select("id, name, type, unit, sale_price_minor, cost_price_minor, is_active")
     .order("created_at", { ascending: false });
-  const safe = term.replace(/[,()%_\\]/g, " ").trim();
-  if (safe) query = query.ilike("name", `%${safe}%`);
-  const { data: products } = await query;
 
-  const rows = products ?? [];
+  // Filtro insensible a acentos ("cafe" encuentra "Café").
+  const rows = (products ?? []).filter((p) => matches(term, p.name));
 
   return (
     <div>

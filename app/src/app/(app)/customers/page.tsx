@@ -2,6 +2,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { ModuleHelp } from "@/components/ModuleHelp";
 import { SearchBox } from "@/components/SearchBox";
+import { matches } from "@/lib/search";
 
 export default async function CustomersPage({
   searchParams,
@@ -11,21 +12,14 @@ export default async function CustomersPage({
   const { q } = await searchParams;
   const term = (q ?? "").trim();
   const supabase = await createClient();
-  let query = supabase
+  const { data: customers } = await supabase
     .from("customers")
     .select("id, legal_name, type, email, phone, status")
     .order("created_at", { ascending: false });
-  if (term) {
-    // Comas y paréntesis rompen la sintaxis de or() de PostgREST; % y _ son comodines.
-    const safe = term.replace(/[,()%_\\]/g, " ").trim();
-    if (safe) {
-      const like = `%${safe}%`;
-      query = query.or(`legal_name.ilike.${like},email.ilike.${like},phone.ilike.${like}`);
-    }
-  }
-  const { data: customers } = await query;
 
-  const rows = customers ?? [];
+  // Filtro en memoria (la lista ya viene completa) insensible a acentos:
+  // "sofia" debe encontrar a "Sofía". ilike de Postgres no ignora acentos.
+  const rows = (customers ?? []).filter((c) => matches(term, c.legal_name, c.email, c.phone));
 
   return (
     <div>

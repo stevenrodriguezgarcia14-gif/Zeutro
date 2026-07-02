@@ -4,6 +4,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { ModuleHelp } from "@/components/ModuleHelp";
 import { SearchBox } from "@/components/SearchBox";
+import { matches } from "@/lib/search";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   draft: { label: "Borrador", cls: "bg-slate-100 text-slate-600" },
@@ -42,16 +43,8 @@ export default async function InvoicesPage({
     .order("created_at", { ascending: false });
 
   const all = (data ?? []) as unknown as Row[];
-  // Filtro por folio o cliente sobre la lista ya cargada (la consulta trae
-  // todas las facturas de la empresa activa igualmente).
-  const needle = term.toLowerCase();
-  const rows = needle
-    ? all.filter(
-        (r) =>
-          r.number.toLowerCase().includes(needle) ||
-          (r.customers?.legal_name ?? "").toLowerCase().includes(needle),
-      )
-    : all;
+  // Filtro por folio o cliente, insensible a acentos ("lopez" → "López").
+  const rows = all.filter((r) => matches(term, r.number, r.customers?.legal_name));
 
   return (
     <div>
