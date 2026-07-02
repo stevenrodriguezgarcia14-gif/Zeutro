@@ -12,8 +12,26 @@ function isPublicPath(path: string) {
     path.startsWith("/register") ||
     path.startsWith("/forgot-password") ||
     path.startsWith("/auth") ||
+    path.startsWith("/api") ||
     STATIC_PUBLIC.has(path)
   );
+}
+
+/**
+ * Prefijos de rutas privadas reales. Un visitante sin sesión que entra a una
+ * URL que NO es pública ni privada conocida debe ver el 404, no la pantalla
+ * de login (antes /lo-que-sea redirigía a /login y desorientaba).
+ */
+const PROTECTED_PREFIXES = [
+  "/dashboard", "/guide", "/academy", "/priorities", "/customers", "/sales",
+  "/quotations", "/products", "/purchases", "/inventory", "/quick-sale",
+  "/invoices", "/collections", "/expenses", "/accounts", "/cashflow",
+  "/profitability", "/tasks", "/projects", "/calendar", "/documents",
+  "/settings", "/onboarding", "/admin", "/export", "/print", "/alerts",
+];
+
+function isProtectedPath(path: string) {
+  return PROTECTED_PREFIXES.some((p) => path === p || path.startsWith(p + "/"));
 }
 
 /**
@@ -35,6 +53,7 @@ export async function updateSession(request: NextRequest) {
 
   if (!hasSessionCookie) {
     if (isPublicPath(path)) return NextResponse.next();
+    if (!isProtectedPath(path)) return NextResponse.next(); // ruta inexistente → 404
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -68,6 +87,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user && !isPublicPath(path)) {
+    if (!isProtectedPath(path)) return supabaseResponse; // ruta inexistente → 404
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

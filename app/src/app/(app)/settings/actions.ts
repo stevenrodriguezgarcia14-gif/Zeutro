@@ -43,6 +43,20 @@ export async function updateBusinessType(formData: FormData) {
   redirect("/settings?ok=1");
 }
 
+export async function updateAutomation(formData: FormData) {
+  const id = String(formData.get("org_id") ?? "");
+  const auto_reminders = formData.get("auto_reminders") === "on";
+  const weekly_summary = formData.get("weekly_summary") === "on";
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("organizations")
+    .update({ auto_reminders, weekly_summary })
+    .eq("id", id);
+  if (error) redirect(`/settings?error=${encodeURIComponent(safeError(error))}`);
+  revalidatePath("/settings");
+  redirect("/settings?ok=1");
+}
+
 export async function saveLogo(orgId: string, url: string) {
   const supabase = await createClient();
   await supabase.from("organizations").update({ logo_url: url }).eq("id", orgId);

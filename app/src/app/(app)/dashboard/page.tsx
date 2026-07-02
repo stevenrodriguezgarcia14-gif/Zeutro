@@ -95,7 +95,11 @@ export default async function DashboardPage() {
   const acadPassed = new Set((acadProgress ?? []).filter((p) => p.kind === "challenge").map((p) => p.item_slug));
   const acadCerts = (acadProgress ?? []).filter((p) => p.kind === "certification").length;
   const learn = learnSummary(acadPassed, activation.data, acadCerts);
-  const learnPct = learn.scenariosTotal ? Math.round((learn.scenariosPassed / learn.scenariosTotal) * 100) : 0;
+  // Mismo conteo que muestra la Academia: escenarios aprobados + acciones
+  // aplicadas (antes el dashboard contaba solo escenarios y los números no coincidían).
+  const learnDone = learn.scenariosPassed + learn.actionsDone;
+  const learnTotal = learn.scenariosTotal + learn.actionsTotal;
+  const learnPct = learnTotal ? Math.round((learnDone / learnTotal) * 100) : 0;
 
   // Operación de hoy
   const taskList = (tasks ?? []) as { due_date: string | null; status: string }[];
@@ -177,8 +181,14 @@ export default async function DashboardPage() {
         <Card
           title="Utilidad del mes"
           value={formatMoney(profitMonth, currency)}
-          tone={profitMonth >= 0 ? "good" : "bad"}
-          hint={profitMonth >= 0 ? "Vas ganando 🎉" : "Vas en pérdida ⚠️"}
+          tone={incomeMonth === 0 && expenseMonth === 0 ? "default" : profitMonth >= 0 ? "good" : "bad"}
+          hint={
+            incomeMonth === 0 && expenseMonth === 0
+              ? "Sin movimientos este mes todavía"
+              : profitMonth >= 0
+                ? "Vas ganando 🎉"
+                : "Vas en pérdida ⚠️"
+          }
         />
       </div>
 
@@ -228,7 +238,7 @@ export default async function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <p className="font-medium text-slate-900">Academia Zentro</p>
-            <p className="text-xs text-slate-500">{learn.scenariosPassed}/{learn.scenariosTotal} desafíos · {learn.routesComplete}/{learn.routesTotal} rutas · {learn.certsEarned} credencial(es)</p>
+            <p className="text-xs text-slate-500">{learnDone}/{learnTotal} desafíos · {learn.routesComplete}/{learn.routesTotal} rutas · {learn.certsEarned} credencial(es)</p>
           </div>
           <span className="shrink-0 text-sm font-medium text-emerald-600">{learnPct}%</span>
         </div>

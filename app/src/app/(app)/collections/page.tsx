@@ -52,6 +52,13 @@ export default async function CollectionsPage() {
       <p className="mt-1 text-sm text-slate-500">A quién cobrar, ordenado por urgencia. Envía recordatorios con un clic.</p>
       <div className="mt-4"><ModuleHelp slug="collections" /></div>
 
+      <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-slate-700">
+        🤖 <b>Zentro cobra por ti:</b> si una factura se vence y el cliente tiene correo, le enviamos
+        recordatorios automáticos a tu nombre (día 1 de atraso y luego cada 4 días, máx. 4).
+        {" "}
+        <Link href="/settings" className="font-medium text-emerald-700 underline">Configurar</Link>
+      </div>
+
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-slate-200 bg-white p-5">
           <p className="text-sm text-slate-500">Total por cobrar</p>

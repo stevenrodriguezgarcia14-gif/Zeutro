@@ -28,7 +28,13 @@ export const log = {
  * para enviar a Sentry cuando definas SENTRY_DSN (ver comentario).
  */
 export function report(scope: string, error: unknown, context?: Record<string, unknown>) {
-  const message = error instanceof Error ? error.message : String(error);
+  // Los errores de PostgREST/Supabase son objetos planos, no Error: se
+  // serializan a JSON para no perder el mensaje ("[object Object]").
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" && error !== null
+        ? JSON.stringify(error)
+        : String(error);
   log.error(`[${scope}] ${message}`, context);
-  // TODO(observabilidad): si process.env.SENTRY_DSN está definido, enviar aquí.
 }

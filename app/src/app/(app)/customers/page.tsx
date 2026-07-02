@@ -1,13 +1,29 @@
 ﻿import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ModuleHelp } from "@/components/ModuleHelp";
+import { SearchBox } from "@/components/SearchBox";
 
-export default async function CustomersPage() {
+export default async function CustomersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  const term = (q ?? "").trim();
   const supabase = await createClient();
-  const { data: customers } = await supabase
+  let query = supabase
     .from("customers")
     .select("id, legal_name, type, email, phone, status")
     .order("created_at", { ascending: false });
+  if (term) {
+    // Comas y paréntesis rompen la sintaxis de or() de PostgREST; % y _ son comodines.
+    const safe = term.replace(/[,()%_\\]/g, " ").trim();
+    if (safe) {
+      const like = `%${safe}%`;
+      query = query.or(`legal_name.ilike.${like},email.ilike.${like},phone.ilike.${like}`);
+    }
+  }
+  const { data: customers } = await query;
 
   const rows = customers ?? [];
 
@@ -43,15 +59,23 @@ export default async function CustomersPage() {
       </div>
       <div className="mt-4"><ModuleHelp slug="customers" /></div>
 
+      <div className="mt-4"><SearchBox action="/customers" q={term} placeholder="Buscar por nombre, correo o teléfono…" /></div>
+
       {rows.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-          <p className="text-slate-600">Aún no tienes clientes.</p>
-          <Link
-            href="/customers/new"
-            className="mt-3 inline-block rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-          >
-            Crear el primero
-          </Link>
+          {term ? (
+            <p className="text-slate-600">Sin resultados para “{term}”. Revisa la ortografía o limpia la búsqueda.</p>
+          ) : (
+            <>
+              <p className="text-slate-600">Aún no tienes clientes.</p>
+              <Link
+                href="/customers/new"
+                className="mt-3 inline-block rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              >
+                Crear el primero
+              </Link>
+            </>
+          )}
         </div>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white">

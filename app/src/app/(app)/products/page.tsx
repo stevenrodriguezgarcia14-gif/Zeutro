@@ -3,15 +3,25 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { ModuleHelp } from "@/components/ModuleHelp";
+import { SearchBox } from "@/components/SearchBox";
 
-export default async function ProductsPage() {
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  const term = (q ?? "").trim();
   const org = await getCurrentOrg();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
-  const { data: products } = await supabase
+  let query = supabase
     .from("products")
     .select("id, name, type, unit, sale_price_minor, cost_price_minor, is_active")
     .order("created_at", { ascending: false });
+  const safe = term.replace(/[,()%_\\]/g, " ").trim();
+  if (safe) query = query.ilike("name", `%${safe}%`);
+  const { data: products } = await query;
 
   const rows = products ?? [];
 
@@ -31,15 +41,23 @@ export default async function ProductsPage() {
       </div>
       <div className="mt-4"><ModuleHelp slug="products" /></div>
 
+      <div className="mt-4"><SearchBox action="/products" q={term} placeholder="Buscar producto o servicio…" /></div>
+
       {rows.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-          <p className="text-slate-600">Aún no tienes productos ni servicios.</p>
-          <Link
-            href="/products/new"
-            className="mt-3 inline-block rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-          >
-            Crear el primero
-          </Link>
+          {term ? (
+            <p className="text-slate-600">Sin resultados para “{term}”.</p>
+          ) : (
+            <>
+              <p className="text-slate-600">Aún no tienes productos ni servicios.</p>
+              <Link
+                href="/products/new"
+                className="mt-3 inline-block rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              >
+                Crear el primero
+              </Link>
+            </>
+          )}
         </div>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white">

@@ -7,6 +7,7 @@ import { BusinessTypePicker } from "@/components/BusinessTypePicker";
 import {
   updateOrganization,
   updateBusinessType,
+  updateAutomation,
   deleteOrganization,
   inviteUser,
   cancelInvitation,
@@ -97,6 +98,49 @@ export default async function SettingsPage({
           <BusinessTypePicker defaultValue={org.business_type} />
           <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
             Guardar tipo de negocio
+          </button>
+        </form>
+      </section>
+
+      {/* Correos automáticos (cobranza y resumen semanal) */}
+      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
+        <h2 className="font-semibold text-slate-900">Zentro trabaja por ti</h2>
+        <p className="mb-4 text-sm text-slate-500">
+          Correos que Zentro envía solo, sin que abras la app.
+        </p>
+        <form action={updateAutomation} className="space-y-3">
+          <input type="hidden" name="org_id" value={org.id} />
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              name="auto_reminders"
+              defaultChecked={org.auto_reminders ?? true}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 accent-slate-900"
+            />
+            <span className="text-sm">
+              <span className="font-medium text-slate-800">Recordatorios de cobranza automáticos</span>
+              <span className="block text-slate-500">
+                Si una factura se vence, Zentro le escribe al cliente (si tiene correo) a tu nombre:
+                al día 1 de atraso y luego cada 4 días, máximo 4 avisos. Incluye tu link de pago si lo configuraste en la factura.
+              </span>
+            </span>
+          </label>
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              name="weekly_summary"
+              defaultChecked={org.weekly_summary ?? true}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 accent-slate-900"
+            />
+            <span className="text-sm">
+              <span className="font-medium text-slate-800">Resumen semanal por correo</span>
+              <span className="block text-slate-500">
+                Cada lunes: cuánto cobraste, cuánto gastaste, cuánto te deben y qué priorizar.
+              </span>
+            </span>
+          </label>
+          <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+            Guardar
           </button>
         </form>
       </section>

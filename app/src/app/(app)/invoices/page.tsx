@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { ModuleHelp } from "@/components/ModuleHelp";
+import { SearchBox } from "@/components/SearchBox";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   draft: { label: "Borrador", cls: "bg-slate-100 text-slate-600" },
@@ -25,7 +26,13 @@ type Row = {
   customers: { legal_name: string } | null;
 };
 
-export default async function InvoicesPage() {
+export default async function InvoicesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  const term = (q ?? "").trim();
   const org = await getCurrentOrg();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
@@ -34,7 +41,17 @@ export default async function InvoicesPage() {
     .select("id, number, issue_date, due_date, total_minor, balance_minor, status, customers(legal_name)")
     .order("created_at", { ascending: false });
 
-  const rows = (data ?? []) as unknown as Row[];
+  const all = (data ?? []) as unknown as Row[];
+  // Filtro por folio o cliente sobre la lista ya cargada (la consulta trae
+  // todas las facturas de la empresa activa igualmente).
+  const needle = term.toLowerCase();
+  const rows = needle
+    ? all.filter(
+        (r) =>
+          r.number.toLowerCase().includes(needle) ||
+          (r.customers?.legal_name ?? "").toLowerCase().includes(needle),
+      )
+    : all;
 
   return (
     <div>
@@ -62,7 +79,13 @@ export default async function InvoicesPage() {
       </div>
       <div className="mt-4"><ModuleHelp slug="invoices" /></div>
 
-      {rows.length === 0 ? (
+      <div className="mt-4"><SearchBox action="/invoices" q={term} placeholder="Buscar por folio o cliente…" /></div>
+
+      {rows.length === 0 && term ? (
+        <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+          <p className="text-slate-600">Sin resultados para “{term}”.</p>
+        </div>
+      ) : rows.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
           <p className="text-slate-600">Aún no tienes facturas.</p>
           <Link
