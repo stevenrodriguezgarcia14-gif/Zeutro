@@ -38,7 +38,11 @@ export default async function QuickSalePage({ searchParams }: { searchParams: Pr
       <p className="mt-1 text-sm text-slate-500">Registra una venta de contado en segundos, sin factura ni cliente.</p>
       <div className="mt-4"><ModuleHelp slug="quicksale" /></div>
 
-      {ok === "1" && <p className="mt-2 rounded-lg bg-green-50 p-3 text-sm text-green-700">✓ Venta registrada.</p>}
+      {ok && ok !== "del" && (
+        <p className="mt-2 rounded-lg bg-green-50 p-3 text-sm text-green-700">
+          ✓ Venta registrada{Number(ok) > 1 ? `: +${formatMoney(Number(ok), currency)}` : ""}. ¡Bien vendido!
+        </p>
+      )}
       {ok === "del" && <p className="mt-2 rounded-lg bg-green-50 p-3 text-sm text-green-700">Venta eliminada.</p>}
       {error && <p className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
@@ -58,7 +62,8 @@ export default async function QuickSalePage({ searchParams }: { searchParams: Pr
           <div>
             <label className="block text-sm font-medium text-slate-700">Monto *</label>
             <input name="amount" type="number" step="0.01" min="0" required placeholder="0.00"
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-900" />
+              autoFocus inputMode="decimal"
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-lg font-semibold outline-none focus:border-slate-900" />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700">Fecha</label>

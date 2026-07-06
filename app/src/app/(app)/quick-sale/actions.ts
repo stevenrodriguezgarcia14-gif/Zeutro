@@ -44,7 +44,8 @@ export async function createQuickSale(formData: FormData) {
   revalidatePath("/profitability");
   revalidatePath("/accounts");
   revalidatePath("/inventory");
-  redirect("/quick-sale?ok=1");
+  // El monto viaja en la URL para confirmar la venta con su cifra real.
+  redirect(`/quick-sale?ok=${amount}`);
 }
 
 export async function deleteQuickSale(formData: FormData) {

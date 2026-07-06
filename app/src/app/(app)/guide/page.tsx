@@ -134,6 +134,25 @@ export default async function GuidePage() {
         </details>
       </section>
 
+      {/* Zentro en el bolsillo */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-5">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Lleva Zentro en tu bolsillo</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Instala Zentro en tu teléfono como una app: se abre con un toque, sin buscarla en el navegador.
+          Perfecta para anotar ventas y gastos en el momento.
+        </p>
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="rounded-xl bg-slate-50 p-3 text-sm text-slate-700">
+            <p className="font-medium text-slate-900">En Android (Chrome)</p>
+            <p className="mt-1 text-xs text-slate-600">Abre zentro en Chrome → menú <b>⋮</b> → <b>«Agregar a pantalla de inicio»</b> (o «Instalar app»).</p>
+          </div>
+          <div className="rounded-xl bg-slate-50 p-3 text-sm text-slate-700">
+            <p className="font-medium text-slate-900">En iPhone (Safari)</p>
+            <p className="mt-1 text-xs text-slate-600">Abre zentro en Safari → botón <b>Compartir</b> → <b>«Agregar a inicio»</b>.</p>
+          </div>
+        </div>
+      </section>
+
       {/* Academia */}
       <section>
         <div className="flex items-center justify-between">

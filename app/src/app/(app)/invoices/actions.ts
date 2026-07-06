@@ -158,10 +158,11 @@ export async function registerPayment(formData: FormData) {
   const paid_at = String(formData.get("paid_at") ?? "") || new Date().toISOString().slice(0, 10);
   const reference = String(formData.get("reference") ?? "") || null;
 
+  const amount_minor = toMinor(amount);
   const supabase = await createClient();
   const { error } = await supabase.rpc("register_payment", {
     p_invoice_id: invoice_id,
-    p_amount_minor: toMinor(amount),
+    p_amount_minor: amount_minor,
     p_account_id: account_id,
     p_method: method,
     p_paid_at: paid_at,
@@ -172,7 +173,8 @@ export async function registerPayment(formData: FormData) {
   revalidatePath(`/invoices/${invoice_id}`);
   revalidatePath("/invoices");
   revalidatePath("/collections");
-  redirect(`/invoices/${invoice_id}?paid=1`);
+  // El monto viaja en la URL para celebrar el cobro con su cifra real.
+  redirect(`/invoices/${invoice_id}?paid=${amount_minor}`);
 }
 
 export async function reversePayment(formData: FormData) {

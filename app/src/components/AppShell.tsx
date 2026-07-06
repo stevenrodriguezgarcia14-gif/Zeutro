@@ -6,6 +6,41 @@ import { usePathname } from "next/navigation";
 import { signOut } from "@/app/auth/actions";
 import { setActiveOrg } from "@/app/(app)/org-actions";
 
+/** Acciones de registro más frecuentes: 1 toque desde cualquier pantalla. */
+const quickActions: { href: string; name: string; hint: string }[] = [
+  { href: "/quick-sale", name: "Venta rápida", hint: "Anota una venta de contado" },
+  { href: "/expenses/new", name: "Gasto", hint: "Registra una salida de dinero" },
+  { href: "/invoices/new", name: "Factura", hint: "Cobra a un cliente con fecha límite" },
+  { href: "/customers/new", name: "Cliente", hint: "Agrega un cliente nuevo" },
+];
+
+function Icon({ d, className }: { d: string; className?: string }) {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d={d} />
+    </svg>
+  );
+}
+
+const ICONS = {
+  home: "M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5",
+  today: "M12 8v4l2.5 2.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0",
+  collect: "M3 8h18v10H3zM3 11h18M7 15h4",
+  menu: "M4 6h16M4 12h16M4 18h16",
+  plus: "M12 5v14M5 12h14",
+} as const;
+
 const groups: { label: string; items: { href: string; name: string }[] }[] = [
   {
     label: "Inicio",
@@ -68,7 +103,12 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
   const close = () => setOpen(false);
+  const closeAll = () => {
+    setOpen(false);
+    setQuickOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -135,6 +175,22 @@ export function AppShell({
           </div>
 
           <nav className="flex-1 overflow-y-auto p-3">
+            {/* Registro en 1 clic: las acciones que se hacen todos los días */}
+            <div className="mb-4 hidden md:block">
+              <p className="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Registrar</p>
+              <div className="grid grid-cols-2 gap-1.5 px-1">
+                {quickActions.map((a) => (
+                  <Link
+                    key={a.href}
+                    href={a.href}
+                    title={a.hint}
+                    className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-center text-xs font-medium text-slate-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
+                  >
+                    + {a.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
             {groups.map((g) => (
               <div key={g.label} className="mb-4">
                 <p className="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">{g.label}</p>
@@ -175,10 +231,98 @@ export function AppShell({
         </aside>
 
         {/* Contenido */}
-        <main className="min-w-0 flex-1">
+        <main className="min-w-0 flex-1 pb-24 md:pb-0">
           <div className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">{children}</div>
         </main>
       </div>
+
+      {/* Hoja de registro rápido (móvil) */}
+      {quickOpen && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setQuickOpen(false)} />
+          <div className="fixed inset-x-3 bottom-24 z-50 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl md:hidden">
+            <p className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Registrar</p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {quickActions.map((a) => (
+                <Link
+                  key={a.href}
+                  href={a.href}
+                  onClick={closeAll}
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-3 hover:bg-emerald-50"
+                >
+                  <span className="block text-sm font-semibold text-slate-900">+ {a.name}</span>
+                  <span className="mt-0.5 block text-xs text-slate-500">{a.hint}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Barra inferior (móvil): lo diario a un toque */}
+      <nav
+        aria-label="Navegación rápida"
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
+      >
+        {[
+          { href: "/dashboard", name: "Inicio", icon: ICONS.home },
+          { href: "/priorities", name: "Hoy", icon: ICONS.today },
+        ].map((it) => {
+          const active = pathname === it.href || pathname.startsWith(it.href + "/");
+          return (
+            <Link
+              key={it.href}
+              href={it.href}
+              onClick={closeAll}
+              className={`flex h-14 flex-col items-center justify-center gap-0.5 text-[10px] ${
+                active ? "font-semibold text-emerald-700" : "text-slate-500"
+              }`}
+            >
+              <Icon d={it.icon} />
+              {it.name}
+            </Link>
+          );
+        })}
+        <button
+          onClick={() => {
+            setOpen(false);
+            setQuickOpen((v) => !v);
+          }}
+          aria-label="Registrar venta, gasto, factura o cliente"
+          className="flex flex-col items-center justify-center"
+        >
+          <span className="-mt-5 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg">
+            <Icon d={ICONS.plus} className={`transition-transform ${quickOpen ? "rotate-45" : ""}`} />
+          </span>
+          <span className="mt-0.5 text-[10px] text-slate-500">Registrar</span>
+        </button>
+        {(() => {
+          const active = pathname === "/collections" || pathname.startsWith("/collections/");
+          return (
+            <Link
+              href="/collections"
+              onClick={closeAll}
+              className={`flex h-14 flex-col items-center justify-center gap-0.5 text-[10px] ${
+                active ? "font-semibold text-emerald-700" : "text-slate-500"
+              }`}
+            >
+              <Icon d={ICONS.collect} />
+              Cobrar
+            </Link>
+          );
+        })()}
+        <button
+          onClick={() => {
+            setQuickOpen(false);
+            setOpen(true);
+          }}
+          aria-label="Abrir menú completo"
+          className="flex h-14 flex-col items-center justify-center gap-0.5 text-[10px] text-slate-500"
+        >
+          <Icon d={ICONS.menu} />
+          Menú
+        </button>
+      </nav>
     </div>
   );
 }

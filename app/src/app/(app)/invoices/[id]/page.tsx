@@ -81,7 +81,21 @@ export default async function InvoiceDetailPage({
       </div>
 
       {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      {paid && <p className="mt-4 rounded-lg bg-green-50 p-3 text-sm text-green-700">Pago registrado correctamente.</p>}
+      {paid && (
+        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+          <p className="font-semibold text-emerald-800">
+            {Number(paid) > 1
+              ? `Cobraste ${formatMoney(Number(paid), currency)}`
+              : "Pago registrado"}
+            {invoice.customers?.legal_name ? ` de ${invoice.customers.legal_name}` : ""}. 💰
+          </p>
+          <p className="mt-0.5 text-sm text-emerald-700">
+            {invoice.balance_minor <= 0
+              ? "¡Factura saldada por completo! Ese dinero ya es tuyo. 🎉"
+              : `Va quedando pendiente ${formatMoney(invoice.balance_minor, currency)} de esta factura.`}
+          </p>
+        </div>
+      )}
       {ok === "void" && <p className="mt-4 rounded-lg bg-slate-100 p-3 text-sm text-slate-600">Factura anulada. Se repuso el stock de sus productos.</p>}
       {ok === "reversed" && <p className="mt-4 rounded-lg bg-slate-100 p-3 text-sm text-slate-600">Pago revertido. El saldo volvió a la factura y se deshizo el movimiento de cuenta.</p>}
 

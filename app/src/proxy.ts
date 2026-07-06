@@ -14,6 +14,6 @@ export const config = {
      * IMPORTANTE: incluir mp4/webm aquí; si no, el middleware intercepta la
      * petición del video de la landing y la redirige a /login (no carga).
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|webm|mov|m4v|mp3|ogg|wav|woff|woff2|ttf|otf)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|webm|mov|m4v|mp3|ogg|wav|woff|woff2|ttf|otf)$).*)",
   ],
 };
