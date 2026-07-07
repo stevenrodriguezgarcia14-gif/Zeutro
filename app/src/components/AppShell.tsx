@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "@/app/auth/actions";
 import { setActiveOrg } from "@/app/(app)/org-actions";
+import { FounderChat } from "@/components/FounderChat";
 
 /** Acciones de registro más frecuentes: 1 toque desde cualquier pantalla. */
 const quickActions: { href: string; name: string; hint: string }[] = [
@@ -235,6 +236,9 @@ export function AppShell({
           <div className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">{children}</div>
         </main>
       </div>
+
+      {/* Chat con el fundador (el fundador responde desde /admin/support) */}
+      {!isPlatformAdmin && <FounderChat />}
 
       {/* Hoja de registro rápido (móvil) */}
       {quickOpen && (

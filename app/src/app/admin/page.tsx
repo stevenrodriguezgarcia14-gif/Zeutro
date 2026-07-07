@@ -48,9 +48,14 @@ export default async function AdminDashboard({
     <div>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Dashboard de la plataforma</h1>
-        <Link href="/admin/academy" className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800">
-          Previsualizar Academia →
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/support" className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800">
+            💬 Soporte
+          </Link>
+          <Link href="/admin/academy" className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800">
+            Previsualizar Academia →
+          </Link>
+        </div>
       </div>
       <p className="mt-1 text-sm text-slate-400">Métricas y gestión global de Zentro (solo administradores).</p>
 

@@ -69,7 +69,7 @@ export async function GET(req: Request) {
 
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
-  const result = { ok: true, reminders: 0, summaries: 0, skipped: 0, errors: 0 };
+  const result = { ok: true, reminders: 0, upcoming: 0, summaries: 0, monthlies: 0, skipped: 0, errors: 0 };
 
   // ---------- 1) Recordatorios de cobranza ----------
   const { data: overdue, error: qErr } = await db
@@ -116,6 +116,55 @@ export async function GET(req: Request) {
     } else {
       // Libera el reclamo para reintentar en el próximo día programado.
       await db.from("reminder_log").delete().eq("invoice_id", inv.id).eq("period", today).eq("kind", "collection");
+      result.errors++;
+    }
+  }
+
+  // ---------- 1b) Aviso preventivo: "tu factura vence mañana" ----------
+  // Prevención > cobranza: un recordatorio amable ANTES del vencimiento evita
+  // el atraso en lugar de perseguirlo (North Star: dinero cobrado a tiempo).
+  const tomorrow = new Date(now.getTime() + 86400000).toISOString().slice(0, 10);
+  const { data: dueSoon, error: dsErr } = await db
+    .from("invoices")
+    .select(
+      "id, number, due_date, balance_minor, payment_link, organization_id, customers(legal_name, email), organizations(name, base_currency, auto_reminders)",
+    )
+    .gt("balance_minor", 0)
+    .eq("due_date", tomorrow)
+    .in("status", ["issued", "partially_paid"]);
+  if (dsErr) report("cron.dueSoon", dsErr);
+
+  for (const inv of (dueSoon ?? []) as unknown as OverdueRow[]) {
+    const org = inv.organizations;
+    const cust = inv.customers;
+    if (!org?.auto_reminders || !cust?.email) { result.skipped++; continue; }
+
+    // Idempotente: 1 aviso por factura y fecha de vencimiento.
+    const { error: claimErr } = await db.from("reminder_log").insert({
+      organization_id: inv.organization_id,
+      kind: "upcoming",
+      invoice_id: inv.id,
+      recipient: cust.email,
+      period: inv.due_date,
+    });
+    if (claimErr) { result.skipped++; continue; }
+
+    const amount = formatMoney(inv.balance_minor, org.base_currency);
+    const orgName = escapeHtml(org.name);
+    const html = brandedEmail(
+      `Tu factura ${inv.number} vence mañana`,
+      `<p>Hola ${escapeHtml(cust.legal_name)},</p>
+       <p>Te escribimos de parte de <b>${orgName}</b>. Un recordatorio amable: la factura <b>${escapeHtml(inv.number)}</b> por <b>${amount}</b> vence <b>mañana ${inv.due_date}</b>.</p>
+       <p>Pagando a tiempo evitas recordatorios de cobranza. Si ya realizaste el pago, ignora este mensaje. ¡Gracias!</p>
+       <p style="color:#94a3b8;font-size:12px">Enviado automáticamente por Zentro a nombre de ${orgName}.</p>`,
+      inv.payment_link ? "Pagar ahora" : undefined,
+      inv.payment_link ?? undefined,
+    );
+    const sent = await sendMail(cust.email, `Tu factura ${inv.number} vence mañana · ${org.name}`, html);
+    if (sent) {
+      result.upcoming++;
+    } else {
+      await db.from("reminder_log").delete().eq("invoice_id", inv.id).eq("period", inv.due_date).eq("kind", "upcoming");
       result.errors++;
     }
   }
@@ -178,6 +227,92 @@ export async function GET(req: Request) {
           result.summaries++;
         } else {
           await db.from("reminder_log").delete().eq("organization_id", org.id).eq("period", week).eq("kind", "weekly").eq("recipient", owner.email);
+          result.errors++;
+        }
+      }
+    }
+  }
+
+  // ---------- 3) Resumen mensual (día 1 de cada mes) ----------
+  // ?force=monthly permite probarlo sin esperar al día 1 (idempotente por mes).
+  const forceMonthly = new URL(req.url).searchParams.get("force") === "monthly";
+  if (now.getUTCDate() === 1 || forceMonthly) {
+    // Mes cerrado (el anterior al actual) y el previo a ese, para comparar.
+    const monthStart = `${today.slice(0, 7)}-01`;
+    const prevDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+    const prevStart = prevDate.toISOString().slice(0, 10);
+    const prevPeriod = prevStart.slice(0, 7); // YYYY-MM (idempotencia)
+    const prev2Start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 2, 1)).toISOString().slice(0, 10);
+    const monthName = new Intl.DateTimeFormat("es", { month: "long", year: "numeric", timeZone: "UTC" }).format(prevDate);
+
+    const [{ data: owners }, { data: orgs }, { data: pays }, { data: qs }, { data: exps }, { data: invs }] =
+      await Promise.all([
+        db.rpc("org_owner_emails"),
+        db.from("organizations").select("id, name, base_currency, weekly_summary"),
+        db.from("payments").select("organization_id, amount_minor, paid_at").gte("paid_at", prev2Start).lt("paid_at", monthStart),
+        db.from("quick_sales").select("organization_id, amount_minor, sold_at").gte("sold_at", prev2Start).lt("sold_at", monthStart),
+        db.from("expenses").select("organization_id, amount_minor, expense_date").gte("expense_date", prev2Start).lt("expense_date", monthStart),
+        db.from("invoices").select("organization_id, balance_minor, due_date, status").gt("balance_minor", 0).in("status", ["issued", "partially_paid", "overdue"]),
+      ]);
+
+    type MovRow = { organization_id: string; amount_minor: number };
+    const sumRange = (rows: (MovRow & Record<string, unknown>)[] | null, orgId: string, dateKey: string, from: string) =>
+      (rows ?? [])
+        .filter((r) => r.organization_id === orgId && String(r[dateKey]) >= from)
+        .reduce((s, r) => s + (r.amount_minor ?? 0), 0);
+    const sumBefore = (rows: (MovRow & Record<string, unknown>)[] | null, orgId: string, dateKey: string, before: string) =>
+      (rows ?? [])
+        .filter((r) => r.organization_id === orgId && String(r[dateKey]) < before)
+        .reduce((s, r) => s + (r.amount_minor ?? 0), 0);
+
+    for (const org of orgs ?? []) {
+      if (!org.weekly_summary) continue; // mismo consentimiento que los resúmenes
+      const cobrado = sumRange(pays as never, org.id, "paid_at", prevStart) + sumRange(qs as never, org.id, "sold_at", prevStart);
+      const gastado = sumRange(exps as never, org.id, "expense_date", prevStart);
+      const cobradoAntes = sumBefore(pays as never, org.id, "paid_at", prevStart) + sumBefore(qs as never, org.id, "sold_at", prevStart);
+      const utilidad = cobrado - gastado;
+      const pendientes = (invs ?? []).filter((i) => i.organization_id === org.id);
+      const porCobrar = pendientes.reduce((s, i) => s + (i.balance_minor ?? 0), 0);
+      const vencidas = pendientes.filter((i) => i.due_date < today).length;
+      if (cobrado === 0 && gastado === 0 && porCobrar === 0) continue;
+
+      const delta = cobradoAntes > 0 ? Math.round(((cobrado - cobradoAntes) / cobradoAntes) * 100) : null;
+      const deltaLine =
+        delta === null
+          ? ""
+          : delta >= 0
+            ? `<p style="margin-top:12px">Cobraste <b style="color:#047857">${delta}% más</b> que el mes anterior. ¡Sigue así!</p>`
+            : `<p style="margin-top:12px">Cobraste <b style="color:#b91c1c">${Math.abs(delta)}% menos</b> que el mes anterior. Revisa tu Centro de Prioridades para recuperar el ritmo.</p>`;
+
+      for (const owner of (owners ?? []).filter((o: { organization_id: string }) => o.organization_id === org.id)) {
+        const { error: claimErr } = await db.from("reminder_log").insert({
+          organization_id: org.id,
+          kind: "monthly",
+          recipient: owner.email,
+          period: prevPeriod,
+        });
+        if (claimErr) continue; // ya enviado este mes
+
+        const fm = (v: number) => formatMoney(v, org.base_currency);
+        const html = brandedEmail(
+          `Tu mes en ${org.name} — ${monthName}`,
+          `<p>Así cerró <b>${escapeHtml(org.name)}</b> en ${monthName}:</p>
+           <table style="width:100%;font-size:14px;border-collapse:collapse">
+             <tr><td style="padding:6px 0;color:#475569">Cobrado en el mes</td><td align="right" style="font-weight:bold;color:#047857">${fm(cobrado)}</td></tr>
+             <tr><td style="padding:6px 0;color:#475569">Gastado en el mes</td><td align="right" style="font-weight:bold;color:#b91c1c">${fm(gastado)}</td></tr>
+             <tr><td style="padding:6px 0;color:#475569">Utilidad del mes</td><td align="right" style="font-weight:bold;color:${utilidad >= 0 ? "#047857" : "#b91c1c"}">${fm(utilidad)}</td></tr>
+             <tr><td style="padding:6px 0;color:#475569">Por cobrar hoy</td><td align="right" style="font-weight:bold">${fm(porCobrar)}</td></tr>
+             <tr><td style="padding:6px 0;color:#475569">Facturas vencidas</td><td align="right" style="font-weight:bold">${vencidas}</td></tr>
+           </table>
+           ${deltaLine}`,
+          "Ver mi rentabilidad",
+          `${APP_URL}/profitability`,
+        );
+        const sent = await sendMail(owner.email, `📈 Tu mes en ${org.name} — ${monthName}`, html);
+        if (sent) {
+          result.monthlies++;
+        } else {
+          await db.from("reminder_log").delete().eq("organization_id", org.id).eq("period", prevPeriod).eq("kind", "monthly").eq("recipient", owner.email);
           result.errors++;
         }
       }

@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { authErrorEs, isUnconfirmedEmail } from "@/lib/authErrors";
+import { sendMail, brandedEmail, escapeHtml } from "@/lib/email";
+import { FOUNDER_EMAIL } from "@/lib/founder";
+import { report } from "@/lib/log";
 
 export async function login(formData: FormData) {
   const email = String(formData.get("email") ?? "");
@@ -53,6 +56,22 @@ export async function register(formData: FormData) {
 
   if (error) {
     redirect(`/register?error=${encodeURIComponent(authErrorEs(error.message))}`);
+  }
+
+  // Aviso interno al fundador: cada registro cuenta en esta etapa. Nunca debe
+  // bloquear ni romper el registro del usuario, por eso se tolera el fallo.
+  try {
+    await sendMail(
+      FOUNDER_EMAIL,
+      `🎉 Nuevo registro en Zentro: ${email}`,
+      brandedEmail(
+        "Nuevo registro en Zentro",
+        `<p><b>${escapeHtml(full_name || "(sin nombre)")}</b> acaba de crear una cuenta con <b>${escapeHtml(email)}</b>.</p>
+         <p>Buen momento para saludarle por el chat de soporte cuando entre.</p>`,
+      ),
+    );
+  } catch (e) {
+    report("register.notifyFounder", e);
   }
 
   // Si el proyecto exige confirmación por correo, no habrá sesión todavía.

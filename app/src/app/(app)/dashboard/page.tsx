@@ -37,8 +37,14 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const month = new Date().toISOString().slice(0, 7); // YYYY-MM
   const monthStart = `${month}-01`;
+  // Mes anterior, para comparar "a esta misma fecha" (día equivalente).
+  const nowD = new Date();
+  const prevMonthStart = new Date(Date.UTC(nowD.getUTCFullYear(), nowD.getUTCMonth() - 1, 1))
+    .toISOString()
+    .slice(0, 10);
 
   const today = new Date().toISOString().slice(0, 10);
+  const dayOfMonth = today.slice(8, 10);
   // Todo el tablero en UNA sola tanda paralela (antes eran dos tandas
   // secuenciales: cada una costaba un round-trip completo a Supabase).
   const [
@@ -52,13 +58,13 @@ export default async function DashboardPage() {
     supabase
       .from("payment_allocations")
       .select("amount_minor, payments!inner(paid_at), invoices(subtotal_minor, total_minor)")
-      .gte("payments.paid_at", monthStart),
+      .gte("payments.paid_at", prevMonthStart),
     supabase.from("expenses").select("amount_minor, expense_date").gte("expense_date", monthStart),
     supabase.from("accounts").select("current_balance_minor").eq("is_active", true),
     supabase.from("tasks").select("due_date, status").not("status", "in", "(done,cancelled)"),
     supabase.from("opportunities").select("amount_minor, stages(probability_bps)").eq("status", "open"),
     supabase.from("projects").select("*", { count: "exact", head: true }).in("status", ["planning", "active", "on_hold"]),
-    supabase.from("quick_sales").select("amount_minor, tax_rate_bps").gte("sold_at", monthStart),
+    supabase.from("quick_sales").select("amount_minor, tax_rate_bps, sold_at").gte("sold_at", prevMonthStart),
     getPurchasesOverview(),
     getActivation(org?.business_type),
     supabase.from("academy_progress").select("kind, item_slug"),
@@ -72,20 +78,38 @@ export default async function DashboardPage() {
     (i) => i.balance_minor > 0 && i.due_date < today && i.status !== "paid" && i.status !== "void",
   ).length;
 
-  const monthAllocs = (payments ?? []) as unknown as {
+  const allAllocs = (payments ?? []) as unknown as {
     amount_minor: number;
+    payments: { paid_at: string } | null;
     invoices: { subtotal_minor: number; total_minor: number } | null;
   }[];
-  const invoiceNetMonth = monthAllocs.reduce((s, a) => {
-    const inv = a.invoices;
-    const ratio = inv && inv.total_minor > 0 ? inv.subtotal_minor / inv.total_minor : 1;
-    return s + Math.round((a.amount_minor ?? 0) * ratio);
-  }, 0);
-  const incomeMonth = invoiceNetMonth + (qsRows ?? []).reduce((s, v) => s + netOfTaxInclusive(v.amount_minor ?? 0, v.tax_rate_bps), 0);
+  const monthAllocs = allAllocs.filter((a) => (a.payments?.paid_at ?? "") >= monthStart);
+  // Mes pasado "a esta misma fecha": solo movimientos hasta el día equivalente,
+  // para comparar peras con peras (mes completo vs mes parcial engaña).
+  const prevAllocs = allAllocs.filter((a) => {
+    const d = a.payments?.paid_at ?? "";
+    return d < monthStart && d.slice(8, 10) <= dayOfMonth;
+  });
+  const netOfAllocs = (rows: typeof allAllocs) =>
+    rows.reduce((s, a) => {
+      const inv = a.invoices;
+      const ratio = inv && inv.total_minor > 0 ? inv.subtotal_minor / inv.total_minor : 1;
+      return s + Math.round((a.amount_minor ?? 0) * ratio);
+    }, 0);
+  const invoiceNetMonth = netOfAllocs(monthAllocs);
+  const allQs = (qsRows ?? []) as { amount_minor: number; tax_rate_bps: number; sold_at: string }[];
+  const monthQs = allQs.filter((v) => v.sold_at >= monthStart);
+  const prevQs = allQs.filter((v) => v.sold_at < monthStart && v.sold_at.slice(8, 10) <= dayOfMonth);
+  const netOfQs = (rows: typeof allQs) =>
+    rows.reduce((s, v) => s + netOfTaxInclusive(v.amount_minor ?? 0, v.tax_rate_bps), 0);
+  const incomeMonth = invoiceNetMonth + netOfQs(monthQs);
+  const prevIncomeToDate = netOfAllocs(prevAllocs) + netOfQs(prevQs);
+  const incomeDeltaPct =
+    prevIncomeToDate > 0 ? Math.round(((incomeMonth - prevIncomeToDate) / prevIncomeToDate) * 100) : null;
   // ¿Hubo IVA este mes? (facturas con impuesto o ventas rápidas con tasa). Si no,
   // no etiquetamos "sin IVA" para no confundir a negocios que no cobran IVA.
   const invoiceGrossMonth = monthAllocs.reduce((s, a) => s + (a.amount_minor ?? 0), 0);
-  const qsTaxMonth = (qsRows ?? []).reduce((s, v) => s + ((v.amount_minor ?? 0) - netOfTaxInclusive(v.amount_minor ?? 0, v.tax_rate_bps)), 0);
+  const qsTaxMonth = monthQs.reduce((s, v) => s + ((v.amount_minor ?? 0) - netOfTaxInclusive(v.amount_minor ?? 0, v.tax_rate_bps)), 0);
   const hasTaxMonth = invoiceGrossMonth - invoiceNetMonth > 0 || qsTaxMonth > 0;
   const expenseMonth = (expenses ?? []).reduce((s, e) => s + (e.amount_minor ?? 0), 0);
   const profitMonth = incomeMonth - expenseMonth;
@@ -176,7 +200,17 @@ export default async function DashboardPage() {
         Este mes (cobrado vs. gastado)
       </h2>
       <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card title="Ingresos cobrados" value={formatMoney(incomeMonth, currency)} tone="good" hint={hasTaxMonth ? "Cobrado este mes, sin IVA" : "Cobrado este mes"} />
+        <Card
+          title="Ingresos cobrados"
+          value={formatMoney(incomeMonth, currency)}
+          tone="good"
+          hint={
+            (hasTaxMonth ? "Cobrado este mes, sin IVA" : "Cobrado este mes") +
+            (incomeDeltaPct !== null
+              ? ` · ${incomeDeltaPct >= 0 ? "↑" : "↓"} ${Math.abs(incomeDeltaPct)}% vs mes pasado a esta fecha`
+              : "")
+          }
+        />
         <Card title="Gastos" value={formatMoney(expenseMonth, currency)} tone="bad" hint="Salidas registradas este mes" />
         <Card
           title="Utilidad del mes"
