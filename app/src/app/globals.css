@@ -30,18 +30,18 @@
   --color-info: #2e90fa;
 }
 
-/* La app interna respeta el modo oscuro del SO; la landing fija sus propios fondos. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/*
+ * Zentro es una interfaz CLARA por diseño (tarjetas y campos blancos con
+ * text-slate-*). NO invertimos colores con el modo oscuro del SO: hacerlo
+ * volvía el texto de los formularios #ededed sobre fondo blanco (ilegible)
+ * en cualquier campo sin color explícito. Si algún día se hace dark mode,
+ * será tematizando componentes, no solo el body.
+ */
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  color-scheme: light;
 }
 
 html {
