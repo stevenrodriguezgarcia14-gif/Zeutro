@@ -53,13 +53,19 @@ export type ScriptSegment = {
   /** Segundos (inicio y fin) dentro del video final. */
   from: number;
   to: number;
-  /** Qué se ve en pantalla (🎥 tú / 📱 pantalla / 🖼️ inserto). */
+  /** Qué se ve en pantalla (tú / pantalla / inserto). */
   visual: string;
   /** Qué decir, palabra por palabra. */
   say: string;
   tone?: string;
   gesture?: string;
   gaze?: string;
+  /** Cuerpo y postura en este bloque. */
+  body?: string;
+  /** Plano / posición / movimiento de cámara en este bloque. */
+  camera?: string;
+  /** Nivel de energía y velocidad al hablar. */
+  energy?: string;
   /** Indicaciones de edición propias del segmento. */
   edit?: string;
 };

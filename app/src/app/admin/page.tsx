@@ -49,7 +49,7 @@ export default async function AdminDashboard({
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Dashboard de la plataforma</h1>
         <div className="flex items-center gap-2">
-          <Link href="/admin/marketing" className="rounded-lg border border-[#00C781]/50 px-3 py-2 text-sm text-[#2fe3a5] hover:bg-[#00C781]/10">
+          <Link href="/marketing-os" className="rounded-lg border border-[#00C781]/50 px-3 py-2 text-sm text-[#2fe3a5] hover:bg-[#00C781]/10">
             🎬 Marketing OS
           </Link>
           <Link href="/admin/support" className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800">

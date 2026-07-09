@@ -28,6 +28,7 @@ const PROTECTED_PREFIXES = [
   "/invoices", "/collections", "/expenses", "/accounts", "/cashflow",
   "/profitability", "/tasks", "/projects", "/calendar", "/documents",
   "/settings", "/onboarding", "/admin", "/export", "/print", "/alerts",
+  "/marketing-os",
 ];
 
 function isProtectedPath(path: string) {

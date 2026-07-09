@@ -14,6 +14,8 @@ export type MarketingState = {
   metrics: Map<number, VideoMetrics>;
   goal: { current: number; waitlist: number; registros: number };
   ideas: { key: string; idea: CustomIdea }[];
+  /** Reprogramaciones del calendario: taskId → nueva fecha YYYY-MM-DD. */
+  moves: Map<string, string>;
 };
 
 export async function loadMarketingState(): Promise<MarketingState> {
@@ -24,6 +26,7 @@ export async function loadMarketingState(): Promise<MarketingState> {
     metrics: new Map(),
     goal: { current: 0, waitlist: 0, registros: 0 },
     ideas: [],
+    moves: new Map(),
   };
 
   const supabase = await createClient();
@@ -50,6 +53,9 @@ export async function loadMarketingState(): Promise<MarketingState> {
       };
     } else if (key.startsWith("idea:")) {
       empty.ideas.push({ key, idea: value as unknown as CustomIdea });
+    } else if (key.startsWith("calmove:")) {
+      const date = value.date as string | undefined;
+      if (date) empty.moves.set(key.slice(8), date);
     }
   }
   empty.ideas.sort((a, b) => (a.key < b.key ? 1 : -1));
