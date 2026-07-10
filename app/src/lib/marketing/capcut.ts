@@ -1,171 +1,194 @@
 // ============================================================================
-// RECETARIO CAPCUT (versión GRATUITA, app de celular, interfaz en español).
-// Cada receta: dónde está el botón, qué tocar en orden, qué configurar,
-// alternativa gratis si algo es de pago (corona 👑) y cómo verificar.
-// Es el "editor profesional sentado al lado": cero pasos implícitos.
+// RECETARIO CAPCUT — **versión de ESCRITORIO para Windows (gratuita)**.
+// El usuario edita en el PC (los archivos de OneDrive ya están locales en
+// C:\Users\...\OneDrive\...\Marketing-Assets-Zentro\Biblioteca\).
+//
+// Anatomía de CapCut Desktop (para ubicarte SIEMPRE):
+// · Arriba-izquierda: pestañas de contenido (Multimedia, Audio, Texto,
+//   Stickers, Efectos, Transiciones, Filtros...).
+// · Centro-derecha: el REPRODUCTOR (vista previa).
+// · Derecha: PANEL DE PROPIEDADES del clip seleccionado (Video, Audio,
+//   Velocidad, Animación...). Si no lo ves, haz click en un clip.
+// · Abajo: la LÍNEA DE TIEMPO (pistas apiladas; la de más abajo es la
+//   principal, lo que pongas encima se superpone).
+// · El CABEZAL es la línea vertical blanca de la línea de tiempo: marca el
+//   fotograma que estás viendo. Se mueve haciendo click o arrastrando.
+// Atajos que usarás mil veces: Ctrl+B divide en el cabezal · Supr elimina ·
+// Ctrl+Z deshace · barra espaciadora reproduce/pausa · Ctrl+rueda hace zoom
+// a la línea de tiempo.
 // ============================================================================
 
 export type CapcutRecipe = {
   id: string;
   title: string;
-  /** Dónde se encuentra (menú/ruta exacta). */
+  /** Dónde se encuentra (panel/menú exacto en Desktop). */
   where: string;
   steps: string[];
-  /** Alternativa si la función es de pago o no aparece. */
+  /** Alternativa si la función es de pago (corona 👑) o no aparece. */
   freeAlt?: string;
   /** Cómo comprobar que quedó bien. */
   verify: string;
-  /** Palabras del guion que disparan esta receta (para vincularla automáticamente). */
+  /** Palabras de los guiones que disparan esta receta. */
   keywords: string[];
 };
 
 export const CAPCUT_RECIPES: CapcutRecipe[] = [
   {
     id: "proyecto",
-    title: "Crear el proyecto e importar clips",
-    where: "Pantalla inicial de CapCut → botón grande “+ Nuevo proyecto”",
+    title: "Crear el proyecto e importar TODO de una vez",
+    where: "Pantalla de inicio → botón “Crear proyecto”. Luego pestaña “Multimedia” (arriba-izquierda) → “Importar”",
     steps: [
-      "Abre CapCut y toca “+ Nuevo proyecto” (el rectángulo grande arriba).",
-      "Se abre tu galería: toca los clips EN EL ORDEN del guion (a cada uno le sale un número al seleccionarlo).",
-      "Toca “Añadir” (abajo a la derecha). Se abre el editor con los clips ya en fila.",
-      "Orientación: si un clip salió girado, tócalo en la línea de tiempo → desliza el menú inferior hasta “Rotar”.",
+      "Abre CapCut y haz click en “Crear proyecto” (el rectángulo grande).",
+      "FORMATO 9:16 (hazlo primero): en el panel derecho, con nada seleccionado, busca “Proporción” (o click derecho en el fondo del reproductor → Proporción) → elige 9:16. El lienzo queda vertical.",
+      "Pestaña “Multimedia” → botón “Importar” → navega a tu carpeta de OneDrive: Documentos/OneDrive → sistema para emprendedores → Marketing-Assets-Zentro → Biblioteca → clips-app.",
+      "Selecciona con Ctrl+click TODOS los archivos que pide el guion (tus bloques grabados + los clips de app + cortinilla_9x16.mp4) → “Abrir”. Quedan como tarjetas en el panel Multimedia.",
+      "Tus bloques grabados: impórtalos desde donde los pasaste del teléfono (recomendado: guárdalos también en Biblioteca/ para tener todo junto).",
     ],
-    verify: "En la línea de tiempo (la tira de abajo) los clips aparecen en el mismo orden del guion.",
+    verify: "En el panel Multimedia ves TODAS las tarjetas (bloques + clips de app + cortinilla) y el lienzo del reproductor es vertical.",
     keywords: ["importa", "proyecto", "orden"],
   },
   {
-    id: "cortes",
-    title: "Cortar silencios y errores (jump cuts)",
-    where: "Línea de tiempo → botón “Dividir” (icono de tijeras en el menú inferior)",
+    id: "pista-principal",
+    title: "Montar la pista principal (tus bloques en orden)",
+    where: "Arrastrar desde el panel Multimedia a la línea de tiempo (abajo)",
     steps: [
-      "Reproduce el video con ▶. Cuando llegue un silencio o un error, PAUSA.",
-      "Arrastra la línea de tiempo hasta que la barra vertical blanca (el “cabezal”) quede JUSTO donde empieza lo que sobra.",
-      "Toca el clip (se pone con borde blanco) → toca “Dividir” en el menú de abajo.",
-      "Mueve el cabezal a donde TERMINA lo que sobra → “Dividir” otra vez.",
-      "Toca el pedazo del medio (queda seleccionado) → botón “Eliminar” (papelera, en el mismo menú).",
-      "Repite en cada pausa/error. Tarda 10-15 min por video y es el paso que más calidad aporta.",
-      "IMPORTANTE: respeta los silencios que el guion marca como dramáticos — están contados en el tiempo del video.",
+      "Arrastra tu PRIMER bloque grabado a la línea de tiempo, pegado al inicio (posición 0).",
+      "Arrastra el segundo bloque a la DERECHA del primero (CapCut lo imanta al borde: suéltalo cuando aparezca la línea de ajuste). Repite con todos, en el orden del guion.",
+      "Los clips de pantalla y la cortinilla NO van todavía: primero se limpia la pista principal.",
+      "Si un bloque quedó en el lugar equivocado: arrástralo (los demás se reacomodan solos).",
     ],
-    verify: "Reproduce completo: el video salta de frase a frase sin aire, EXCEPTO en los silencios marcados por el guion.",
+    verify: "Reproduce con la barra espaciadora: se oyen tus bloques en el orden del guion, aunque con pausas y errores (eso se limpia ahora).",
+    keywords: ["pista", "arrastra", "orden"],
+  },
+  {
+    id: "cortes",
+    title: "Limpiar silencios y errores (¡sin tocar las pausas del guion!)",
+    where: "Línea de tiempo → cabezal + Ctrl+B (dividir) + Supr (eliminar)",
+    steps: [
+      "Haz zoom a la línea de tiempo con Ctrl+rueda del ratón hasta ver bien la ONDA DE AUDIO de cada clip (las partes planas = silencio).",
+      "Reproduce (barra espaciadora). Cuando llegue un error o un silencio muerto, PAUSA.",
+      "Coloca el cabezal JUSTO donde empieza lo que sobra (afina con las flechas ← → del teclado, que mueven fotograma a fotograma).",
+      "Pulsa Ctrl+B: el clip se divide en dos.",
+      "Cabezal JUSTO donde termina lo que sobra → Ctrl+B otra vez.",
+      "Click en el pedazo del medio (queda resaltado) → tecla Supr. Los clips se cierran solos sin dejar hueco.",
+      "REGLA DE ORO: las pausas que el guion marca como “+ silencio de X s” se CONSERVAN — están contadas en el tiempo del video y son las que crean la tensión. Solo borras errores, muletillas y aire no planeado.",
+      "Repite hasta el final. 10-15 min por video: es el paso que más calidad aporta.",
+    ],
+    verify: "Reproduce completo: salta de frase a frase sin aire muerto, PERO los silencios dramáticos del guion siguen ahí.",
     keywords: ["limpieza", "corte", "cortes", "dividir", "silencios"],
   },
   {
-    id: "subtitulos",
-    title: "Subtítulos automáticos (y corregirlos)",
-    where: "Menú inferior → “Texto” → “Subtítulos automáticos”",
+    id: "inserto",
+    title: "Insertar un clip de pantalla o imagen ENCIMA (pista superior)",
+    where: "Arrastrar desde Multimedia a una pista ARRIBA de la principal",
     steps: [
-      "Con el cabezal al inicio, toca “Texto” en el menú inferior (icono T).",
-      "Toca “Subtítulos automáticos”.",
-      "En “Idioma de sonido” elige Español → toca “Generar” (o “Continuar”). Espera unos segundos.",
-      "Aparecen los subtítulos como clips naranjas debajo del video. LÉELOS TODOS: toca cada uno y corrige errores con el teclado (escribirá “centro” o “Sentro” en vez de “Zentro”).",
-      "Estilo: toca cualquier subtítulo → pestaña “Estilo” → fuente en Negrita → color Blanco → activa “Trazo” (borde) en Negro.",
-      "Tamaño: que nunca ocupen más de 2 líneas (baja el tamaño si pasa).",
-      "Posición: arrastra el texto con el dedo hasta el centro-bajo de la pantalla (a un tercio del borde inferior). NUNCA pegado al borde: los botones de TikTok lo tapan.",
+      "Coloca el cabezal en la FRASE exacta donde el guion dice que entra el recurso (la sección “Recursos de este video” te da la frase y el archivo).",
+      "Arrastra el clip de app (p. ej. dashboard-principal_9x16.mp4) desde Multimedia y suéltalo ENCIMA del clip principal, alineado con el cabezal. CapCut crea una pista superior automáticamente.",
+      "Tamaño: los clips de la Biblioteca ya son 1080×1920 — llenan la pantalla solos. Si quedara pequeño: selecciónalo → panel derecho → “Escala” al 100%, Posición X=0 Y=0.",
+      "Duración: arrastra el BORDE derecho del clip insertado hasta los segundos que pide el guion (el contador aparece mientras arrastras).",
+      "Si el clip dura más de lo que necesitas (p. ej. el b-roll de 41 s): recorta con Ctrl+B el tramo bueno y borra el resto — o arrastra sus bordes.",
+      "Tu voz sigue sonando debajo: la pista superior solo tapa la IMAGEN, no el audio de la principal.",
     ],
-    freeAlt: "Si “Subtítulos automáticos” pide Pro en tu versión: usa “Texto” → “Añadir texto” y escribe cada frase a mano (más lento pero gratis), o prueba la app CapCut actualizada — la función es gratuita en la versión estándar.",
-    verify: "Mira 10 s con el volumen a cero: cada palabra dicha aparece escrita, sin errores, y se lee completa.",
+    verify: "En la frase indicada se VE la pantalla de la app y se OYE tu voz. Al terminar los segundos indicados, vuelves a verte tú.",
+    keywords: ["inserto", "superposición", "captura", "pantalla", "flash", "clip de app"],
+  },
+  {
+    id: "subtitulos",
+    title: "Subtítulos automáticos + estilo de marca",
+    where: "Pestaña “Texto” (arriba-izquierda) → “Subtítulos automáticos”",
+    steps: [
+      "Pestaña “Texto” → subpestaña “Subtítulos automáticos” → idioma: Español → “Generar”. Espera: aparecen como una pista propia sobre el video.",
+      "CORRÍGELOS TODOS: doble click en cada subtítulo en el reproductor (o usa la lista del panel derecho) y arregla errores — escribirá “centro” o “Sentro” en vez de “Zentro”.",
+      "ESTILO DE MARCA (se define UNA vez): selecciona un subtítulo → panel derecho → pestaña “Texto”: fuente en Negrita, color Blanco, activa “Contorno/Borde” en Negro grosor medio. Tamaño: que nunca pase de 2 líneas.",
+      "Aplica a todos: busca el botón “Aplicar a todos” del panel de texto (aparece al editar el estilo de un subtítulo generado).",
+      "POSICIÓN: arrastra el subtítulo en el reproductor hasta el centro-bajo (a un tercio del borde inferior). Nunca pegado al borde: los botones de TikTok/IG lo tapan.",
+    ],
+    freeAlt: "Si “Subtítulos automáticos” pidiera Pro en tu versión: pestaña Texto → “Texto predeterminado”, arrastra un texto por frase y escríbela a mano (lento pero gratis). Suele ser gratuito en Desktop.",
+    verify: "Mira 10 s con el volumen a cero: cada palabra dicha aparece escrita, sin errores, legible y sin que la UI de TikTok la tape.",
     keywords: ["subtítulos", "subtitulos"],
   },
   {
     id: "palabra-verde",
     title: "Resaltar UNA palabra en verde Zentro (#00C781)",
-    where: "Toca el subtítulo → pestaña “Estilo” → selección de palabra",
+    where: "Doble click en el subtítulo → seleccionar la palabra → panel derecho → color",
     steps: [
-      "Toca el clip del subtítulo que tiene la palabra clave.",
-      "Toca el texto en la vista previa para editar → selecciona SOLO esa palabra (mantén el dedo sobre ella y ajusta los topes azules).",
-      "Con la palabra seleccionada, pestaña “Estilo” → “Color de texto”.",
-      "Desliza los colores hasta el selector con cuentagotas/arcoíris → tócalo → en “Valor hexadecimal” escribe 00C781 → OK.",
-      "Si tu versión no deja escribir el código: elige el verde esmeralda más parecido de la paleta.",
+      "Doble click sobre el subtítulo en el reproductor: entra en modo edición de texto.",
+      "Selecciona SOLO la palabra clave con el ratón (como en Word).",
+      "Panel derecho → “Color de texto” → click en el selector personalizado (la ruedita de color) → en el campo hexadecimal escribe 00C781 → Enter.",
       "Máximo 1-3 palabras verdes por pantalla: si todo es verde, nada resalta.",
     ],
-    verify: "Solo la palabra clave quedó verde; el resto del subtítulo sigue blanco con borde negro.",
+    verify: "Solo la palabra clave quedó verde; el resto sigue blanco con borde negro.",
     keywords: ["verde", "resalta", "palabra"],
   },
   {
     id: "texto-grande",
     title: "Texto grande (titular) con animación",
-    where: "Menú inferior → “Texto” → “Añadir texto”",
+    where: "Pestaña “Texto” → “Texto predeterminado” → arrastrar a la línea de tiempo",
     steps: [
-      "Pon el cabezal donde el guion dice que aparece el titular.",
-      "Toca “Texto” → “Añadir texto” → escribe el titular EXACTO del guion.",
-      "Pestaña “Estilo”: Negrita, color Blanco, “Trazo” en Negro.",
-      "Arrastra el texto con el dedo al TERCIO SUPERIOR de la pantalla (el guion dice el lugar exacto).",
-      "Pestaña “Animación” → “Entrada” → elige “Emerger” (o “Rebote” si el guion lo pide) → duración de la animación: ~0.3 s (el deslizador pequeño).",
-      "Duración total del texto: en la línea de tiempo, arrastra los bordes blancos de la barrita del texto para que dure lo que dura el bloque del guion.",
+      "Cabezal en la frase donde el guion dice que aparece el titular.",
+      "Pestaña “Texto” → arrastra “Texto predeterminado” a una pista ENCIMA de todo, alineado con el cabezal.",
+      "Doble click y escribe el titular EXACTO del guion.",
+      "Panel derecho: Negrita, Blanco, Contorno negro. Arrastra el texto en el reproductor al TERCIO SUPERIOR.",
+      "Animación: panel derecho → pestaña “Animación” → “Entrada” → elige “Emerger/Fade” (o “Rebote” si el guion lo pide) → duración ~0.3 s con el deslizador.",
+      "Cuánto dura en pantalla: arrastra los bordes de su barrita en la línea de tiempo hasta cubrir el rango de segundos que dice el guion.",
     ],
-    verify: "El titular entra con su animación justo en la frase indicada y desaparece cuando el guion lo dice (no se queda pegado al bloque siguiente).",
+    verify: "El titular entra con su animación en la frase indicada y desaparece cuando el guion lo dice — no se queda pegado al bloque siguiente.",
     keywords: ["texto grande", "titular", "texto:"],
   },
   {
     id: "zoom",
-    title: "Zoom de énfasis con keyframes (fotogramas clave)",
-    where: "Selecciona el clip de video → icono de rombo ◇ (aparece a la derecha del panel, sobre la línea de tiempo)",
+    title: "Zoom de énfasis con fotogramas clave (keyframes)",
+    where: "Selecciona el clip → panel derecho → rombo ◇ junto a “Escala”",
     steps: [
-      "Toca el clip de video en la línea de tiempo (borde blanco).",
-      "Mueve el cabezal JUSTO ANTES de la palabra a enfatizar.",
-      "Toca el rombo ◇ (keyframe). Se pone rojo: acabas de marcar “aquí empieza el cambio”.",
-      "Avanza el cabezal ~0.2 s (un pelín a la derecha).",
-      "En la vista previa, agranda la imagen con dos dedos (pellizco hacia afuera) hasta ~110% — un 10% más grande, apenas notorio. CapCut crea el segundo keyframe SOLO.",
-      "Para volver al tamaño normal: avanza el cabezal a donde termina el énfasis → toca ◇ → avanza 0.2 s más → pellizca hacia adentro al tamaño original.",
-      "El guion dice exactamente EN QUÉ PALABRA va cada zoom y cuánto sostenerlo. No añadas zooms extra.",
+      "Click en el clip de video en la línea de tiempo (borde resaltado).",
+      "Cabezal JUSTO ANTES de la palabra a enfatizar.",
+      "Panel derecho → sección “Básico” → localiza “Escala”. A su derecha hay un ROMBO ◇: haz click. Se enciende: primer keyframe puesto (“aquí empieza el cambio”).",
+      "Avanza el cabezal ~0.2 s (flecha → unas 6 veces).",
+      "Sube “Escala” a 110% (escribe 110 o arrastra el deslizador). CapCut crea el segundo keyframe SOLO. Ya está el zoom de entrada.",
+      "Para volver al tamaño normal: cabezal donde termina el énfasis → click al rombo ◇ → avanza 0.2 s → Escala a 100%.",
+      "El guion dice EN QUÉ PALABRA va cada zoom y cuánto sostenerlo. No añadas zooms extra: cada uno debe dirigir la mirada, no marear.",
     ],
-    freeAlt: "Si los keyframes te abruman la primera vez: sáltate el zoom — un buen corte vale más que un zoom mal hecho. (El “Zoom automático” con corona 👑 es Pro: no lo necesitas.)",
-    verify: "Reproduce: la imagen se acerca suave EXACTAMENTE en la palabra indicada y regresa; no “salta” de golpe (si salta, los keyframes están muy juntos: sepáralos).",
+    freeAlt: "Si te abruma la primera vez: sáltate el zoom — un buen corte vale más que un zoom mal hecho.",
+    verify: "La imagen se acerca suave EXACTAMENTE en la palabra indicada y regresa. Si “salta” de golpe, los keyframes están muy juntos: arrastra el segundo rombo un poco más a la derecha (se ven sobre el clip).",
     keywords: ["zoom", "keyframe"],
   },
   {
-    id: "inserto",
-    title: "Insertar una imagen o grabación de pantalla encima (superposición)",
-    where: "Menú inferior → “Superposición” → “Añadir superposición”",
-    steps: [
-      "Pon el cabezal donde el guion dice que aparece la captura/pantalla.",
-      "Vuelve al menú principal (flecha ← abajo a la izquierda si estás dentro de otro menú) → toca “Superposición”.",
-      "Toca “Añadir superposición” → elige la imagen o video de pantalla en tu galería → “Añadir”.",
-      "Aparece pequeña sobre el video: agrándala con dos dedos hasta llenar la pantalla completa (o el tamaño que pida el guion).",
-      "Duración: arrastra los bordes de su barrita en la línea de tiempo — el guion dice cuántos segundos exactos se ve.",
-      "Para que se OIGA tu voz debajo mientras se ve la pantalla: no toques nada más — la superposición no borra el audio del clip principal.",
-    ],
-    verify: "La captura aparece en la frase exacta, dura lo que dice el guion, y tu voz se sigue oyendo debajo.",
-    keywords: ["inserto", "superposición", "captura", "pantalla #", "flash"],
-  },
-  {
     id: "voz-off",
-    title: "Voz en off debajo de una grabación de pantalla",
-    where: "Toca el clip que tiene tu voz → “Extraer audio” (o menú “Audio” → “Grabar”)",
+    title: "Voz en off sobre una grabación de pantalla",
+    where: "Click derecho en el clip con tu voz → “Separar audio”",
     steps: [
-      "Si grabaste tu voz como VIDEO (cámara tapada): añade ese clip al proyecto → tócalo → desliza el menú inferior hasta “Extraer audio” → tócalo. El audio queda como pista aparte; borra el video (tócalo → Eliminar).",
-      "Arrastra la pista de audio (barrita azul) hasta alinearla con la grabación de pantalla.",
-      "Alternativa: graba directo en CapCut — menú “Audio” → “Grabar” → botón rojo mientras lees el bloque → detén.",
-      "Ajusta: reproduce y mueve la pista hasta que cada frase coincida con lo que se ve (el guion dice qué se ve en cada frase).",
+      "Si grabaste la voz como VIDEO (cámara tapada): arrastra ese clip a la línea de tiempo → click derecho sobre él → “Separar audio”. El audio queda en su propia pista; borra la parte de video (click → Supr).",
+      "Arrastra la pista de audio hasta alinearla con la grabación de pantalla que debe acompañar.",
+      "Alternativa: graba directo en el PC — pestaña “Audio” → “Grabar” (icono de micrófono) → botón rojo mientras lees el bloque.",
+      "Sincroniza: reproduce y mueve la pista de audio hasta que cada frase coincida con lo que se ve (cuando nombras algo, ESO está en pantalla).",
     ],
-    verify: "Lo que dices coincide con lo que se ve: cuando nombras algo, ESO está en pantalla.",
-    keywords: ["voz en off", "extraer audio"],
+    verify: "Lo que dices coincide con lo que se ve, frase por frase.",
+    keywords: ["voz en off", "separar audio", "extraer audio"],
   },
   {
     id: "musica",
-    title: "Música de fondo con el volumen correcto",
-    where: "Menú inferior → “Audio” → “Sonidos”",
+    title: "Música de fondo con el volumen correcto (y sus subidas/bajadas)",
+    where: "Pestaña “Audio” (arriba-izquierda) → “Música”",
     steps: [
-      "Cabezal al inicio del video (o donde el guion dice que entra la música).",
-      "Toca “Audio” → “Sonidos” → usa el buscador con el término EXACTO del guion (ej: “lofi tension”, “emotional piano”, “upbeat lofi”).",
-      "Escucha con ▶ junto a cada resultado → toca “+” en el elegido. Se añade como pista azul.",
-      "VOLUMEN (lo más importante): toca la pista de música → “Volumen” → baja a 15-20 (el guion da el número). Tu voz SIEMPRE por encima.",
-      "Subidas/bajadas que pide el guion (ej: “a cero en el bloque serio”): divide la pista de música con “Dividir” en ese punto y cambia el volumen solo a ese pedazo.",
-      "Recorta la música al final del video: cabezal al final → “Dividir” → elimina el sobrante.",
+      "Pestaña “Audio” → buscador → escribe el término EXACTO del guion (ej. “lofi tension”, “emotional piano”, “upbeat lofi”).",
+      "Pre-escucha con el ▶ de cada resultado → arrastra el elegido a una pista DEBAJO de tu voz, desde el inicio (o desde donde el guion diga que entra).",
+      "VOLUMEN (lo más importante): click en la pista de música → panel derecho → “Audio” → “Volumen”. CapCut Desktop lo mide en dB: pon ≈ −25 dB para “volumen 15-20” del guion (tu voz SIEMPRE por encima; si compite, baja más).",
+      "SUBIDAS Y BAJADAS que pide el guion (ej. “a cero en el bloque serio”): coloca el cabezal donde cambia → Ctrl+B sobre la pista de música → ajusta el volumen SOLO de ese pedazo. Repite al salir del bloque.",
+      "Recorta la música al final del video: cabezal al final → Ctrl+B → Supr al sobrante.",
     ],
-    verify: "Cierra los ojos y reproduce: entiendes cada palabra sin esfuerzo. Si la música compite, bájala 5 puntos más.",
+    verify: "Cierra los ojos y reproduce: entiendes cada palabra sin esfuerzo. En los bloques marcados “sin música”, hay silencio real.",
     keywords: ["música", "musica", "volumen", "lofi", "piano"],
   },
   {
     id: "sfx",
     title: "Efectos de sonido (pop, whoosh, cha-ching, teclas)",
-    where: "Menú inferior → “Audio” → “Efectos”",
+    where: "Pestaña “Audio” → “Efectos de sonido”",
     steps: [
-      "Pon el cabezal EXACTO donde va el efecto (ej: donde aparece un texto).",
-      "Toca “Audio” → “Efectos” → busca en inglés: “pop” (textos), “whoosh” (transición a pantalla), “cash register” (momento dinero), “keyboard typing” (teclas), “notification”.",
-      "Escucha → “+” para añadir. Queda como pista corta.",
-      "Ajusta su posición arrastrando la pista hasta que suene AL FRAME con lo visual (el cha-ching debe sonar exactamente cuando aparece “Cobraste $X”).",
-      "Volumen del efecto: tócalo → “Volumen” → 60-80 (deben oírse claros pero no asustar).",
+      "Cabezal EXACTO donde va el efecto (ej. donde aparece un texto grande).",
+      "Pestaña “Audio” → subpestaña “Efectos de sonido” → busca en inglés: “pop” (textos), “whoosh” (paso a pantalla), “cash register” (momento dinero), “keyboard typing” (teclas), “notification”.",
+      "Pre-escucha → arrastra el elegido a una pista de audio, alineado al cabezal.",
+      "Afina la posición arrastrando la pista hasta que suene AL FRAME con lo visual (el cha-ching debe sonar exactamente cuando aparece “Cobraste $X”).",
+      "Volumen del efecto: panel derecho → ≈ −12 a −8 dB (claro pero sin asustar).",
       "Máximo 4-5 efectos por video: más se vuelve ruido.",
     ],
     verify: "Cada efecto suena exactamente con su evento visual, ni antes ni después.",
@@ -174,82 +197,81 @@ export const CAPCUT_RECIPES: CapcutRecipe[] = [
   {
     id: "ruido",
     title: "Reducir ruido de fondo de tu voz",
-    where: "Toca el clip con tu voz → desliza el menú inferior → “Reducir ruido”",
+    where: "Click en el clip con tu voz → panel derecho → “Audio” → “Reducción de ruido”",
     steps: [
-      "Toca el clip de video (o la pista de audio extraída) en la línea de tiempo.",
-      "Desliza el menú inferior hacia la izquierda hasta encontrar “Reducir ruido” (icono de onda).",
-      "Actívalo (interruptor). CapCut procesa unos segundos.",
-      "Escucha el antes/después: si tu voz suena “robótica” o “bajo el agua”, DESACTÍVALO — mejor un poco de ruido que una voz procesada.",
+      "Click en el clip (o pista de audio separada) con tu voz.",
+      "Panel derecho → pestaña “Audio” → activa el interruptor “Reducción de ruido”.",
+      "Escucha el antes/después: si la voz suena “robótica” o “bajo el agua”, DESACTÍVALO — mejor un poco de ruido que una voz procesada.",
     ],
-    freeAlt: "Si no aparece la opción: graba más cerca del micrófono (10-15 cm) y en el cuarto con cortinas/cama — prevenir el ruido vale más que quitarlo.",
-    verify: "La voz se oye limpia y natural, sin efecto “robot”.",
+    freeAlt: "Si no aparece: graba más cerca del micrófono (10-15 cm) y en el cuarto con cortinas — prevenir vale más que quitar.",
+    verify: "La voz se oye limpia y natural, sin efecto robot.",
     keywords: ["ruido"],
   },
   {
     id: "velocidad",
-    title: "Cambiar la velocidad de un clip (timelapse casero)",
-    where: "Toca el clip → “Velocidad” → “Normal”",
+    title: "Cambiar velocidad de un clip (timelapse casero)",
+    where: "Click en el clip → panel derecho → pestaña “Velocidad”",
     steps: [
-      "Toca el clip en la línea de tiempo → “Velocidad” en el menú inferior.",
-      "Elige “Normal” → mueve el deslizador (2x, 5x... para timelapse de pantalla/código).",
-      "Para tus bloques hablados NUNCA cambies la velocidad: se nota y suena falso.",
+      "Click en el clip → panel derecho → “Velocidad” → “Normal” → sube el multiplicador (2x, 5x… para timelapse de pantalla/código).",
+      "Silencia su audio si quedó chillón: panel “Audio” → Volumen al mínimo (o click derecho → Silenciar).",
+      "Tus bloques hablados NUNCA cambian de velocidad: se nota y suena falso.",
     ],
-    verify: "El clip acelerado se ve fluido y sin audio chillón (silencia su audio si quedó raro: clip → Volumen → 0).",
+    verify: "El clip acelerado se ve fluido y sin audio raro.",
     keywords: ["velocidad", "timelapse"],
   },
   {
     id: "mascara",
-    title: "Pantalla dividida (dos videos a la vez, con máscara)",
-    where: "Clip principal + “Superposición” → toca la superposición → “Máscara”",
+    title: "Pantalla dividida (dos videos a la vez)",
+    where: "Clip B en pista superior → panel derecho → “Máscara”",
     steps: [
-      "Añade el video A como clip principal y el video B como superposición (receta de insertar).",
-      "Toca la superposición (video B) → desliza el menú → “Máscara”.",
-      "Elige la máscara “Dividir” (línea recta) → arrástrala para que B ocupe la mitad inferior y A la superior.",
-      "Ajusta el tamaño/posición de cada video con dos dedos hasta que ambos se vean bien en su mitad.",
-      "Para “congelar” un lado mientras el otro corre: toca ese clip → “Congelar” (icono de fotograma) en el punto deseado.",
+      "Video A en la pista principal; arrastra el video B a la pista de ENCIMA (mismo rango de tiempo).",
+      "Click en B → panel derecho → pestaña “Máscara” → elige “Lineal” (línea recta).",
+      "En el reproductor, arrastra y ROTA la línea de la máscara para que B ocupe la mitad inferior y A la superior.",
+      "Ajusta escala/posición de cada video (panel “Básico”) hasta que ambos se vean bien en su mitad.",
+      "Para “congelar” un lado mientras el otro corre: click derecho en ese clip → “Congelar” en el punto deseado (crea un fotograma fijo).",
     ],
     verify: "Se ven los dos videos a la vez, cada uno en su mitad, sin bordes negros raros.",
     keywords: ["dividida", "máscara", "mitades"],
   },
   {
     id: "cortinilla",
-    title: "Crear la cortinilla de cierre (una sola vez) y reutilizarla",
-    where: "Proyecto nuevo → “Añadir” sin clips → fondo negro",
+    title: "Poner la cortinilla oficial al final (ya está creada)",
+    where: "Panel Multimedia → cortinilla_9x16.mp4 → arrastrar al final",
     steps: [
-      "Crea un proyecto nuevo. Si te exige un clip: usa cualquier foto y luego tócala → “Reemplazar” → “Color” → Negro (o añade “Fondo” negro).",
-      "Recórtalo a 1.5 segundos (bordes del clip).",
-      "“Superposición” → añade el logo Z (PNG transparente de Marketing-Assets-Zentro/png/) → centrado, tamaño mediano.",
-      "“Texto” → “El centro de control de tu negocio” debajo del logo (blanco, mediano) y “@zentronegocios” más pequeño abajo.",
-      "Exporta (receta de exportar). Guarda el MP4 en tu galería como “cortinilla”.",
-      "En CADA video: al final de la línea de tiempo, toca “+” → añade el MP4 de la cortinilla.",
+      "La cortinilla YA EXISTE (se generó automáticamente): Marketing-Assets-Zentro/Biblioteca/clips-app/cortinilla_9x16.mp4 — negro + Z + claim + @zentronegocios, con fundidos.",
+      "Impórtala con el resto de archivos (receta “Crear el proyecto”).",
+      "Arrástrala a la pista principal, pegada al FINAL del último bloque.",
+      "No le añadas transición: ella trae su propio fundido de entrada.",
+      "La música debe terminar ANTES de la cortinilla o desvanecerse sobre ella: Ctrl+B en la música al inicio de la cortinilla → panel Audio → activa “Fundido de salida” ~0.5 s en el último pedazo.",
     ],
-    verify: "Todos tus videos terminan con el mismo cierre de 1.5 s: negro + Z + claim + @zentronegocios.",
+    verify: "El video termina en el cierre de marca (2 s) y la música no se corta de golpe.",
     keywords: ["cortinilla"],
   },
   {
     id: "marca-agua",
-    title: "Quitar la marca de agua de CapCut (gratis)",
-    where: "Al FINAL de la línea de tiempo",
+    title: "Exportar SIN marca de agua (gratis)",
+    where: "Final de la línea de tiempo + ajustes de exportación",
     steps: [
-      "Desliza la línea de tiempo hasta el final del video.",
-      "Si hay un clip extra que dice “CapCut” (el logo animado): tócalo → “Eliminar”. Es un clip normal, se borra gratis.",
-      "OJO: evita la pestaña “Plantillas” de la pantalla inicial — muchas plantillas SÍ fuerzan marca de agua o funciones Pro. Trabaja siempre desde “Nuevo proyecto”.",
+      "Desliza hasta el final de la línea de tiempo: si hay un clip extra con el logo “CapCut” añadido automáticamente, click sobre él → Supr (es un clip normal).",
+      "Evita las PLANTILLAS de la pantalla de inicio: muchas fuerzan marca de agua o funciones Pro. Trabaja siempre desde “Crear proyecto”.",
+      "Cualquier función con corona 👑 es de pago: este recetario siempre da la alternativa gratis.",
     ],
-    verify: "El video exportado termina en tu cortinilla, sin el logo de CapCut.",
+    verify: "El video exportado termina en TU cortinilla, sin logo de CapCut.",
     keywords: ["marca de agua"],
   },
   {
     id: "exportar",
     title: "Exportar en calidad correcta",
-    where: "Flecha hacia arriba ↑ (esquina superior derecha)",
+    where: "Botón “Exportar” (arriba-derecha)",
     steps: [
-      "Toca la flecha ↑ arriba a la derecha.",
-      "Toca el texto de resolución (ej. “1080P”) si quieres ajustar: Resolución 1080p · Fotogramas 30 (o 60 si tus clips son 60).",
-      "NO toques “Tasa de bits inteligente/alta” si aparece con corona 👑: la estándar es suficiente.",
-      "Toca “Exportar” y espera sin salir de la app. Se guarda en tu galería.",
-      "Prueba final: reproduce el exportado EN SILENCIO. ¿Se entiende todo sin sonido? Si no, faltan textos.",
+      "Click en “Exportar” (arriba a la derecha).",
+      "Nombre: el del video (ej. “zentro-01-pena-de-cobrar”). Carpeta: donde lo encuentres fácil.",
+      "Resolución: 1080p · Fotogramas: 30 fps (o 60 si tus bloques son 60) · Tasa de bits: “Recomendada” · Formato: MP4 · Códec: H.264.",
+      "Click en “Exportar” y espera la barra de progreso.",
+      "PRUEBA FINAL: abre el archivo y míralo completo EN SILENCIO. ¿Se entiende toda la historia sin sonido? Si no, faltan textos (el 85% lo verá así).",
+      "Pásalo al teléfono para publicar (OneDrive o cable): TikTok/IG/FB se publican desde sus apps.",
     ],
-    verify: "El archivo está en la galería, se ve nítido en pantalla completa y se entiende en silencio.",
+    verify: "El archivo se ve nítido a pantalla completa, pesa razonable (20-60 MB) y se entiende en silencio.",
     keywords: ["exporta", "exportar"],
   },
 ];
@@ -257,7 +279,7 @@ export const CAPCUT_RECIPES: CapcutRecipe[] = [
 /** Recetas relevantes para un guion, detectadas por sus pasos de edición. */
 export function recipesForScript(editSteps: string[], segmentEdits: (string | undefined)[]): CapcutRecipe[] {
   const text = (editSteps.join(" ") + " " + segmentEdits.filter(Boolean).join(" ")).toLowerCase();
-  const base = new Set(["proyecto", "cortes", "subtitulos", "palabra-verde", "texto-grande", "musica", "marca-agua", "exportar"]);
+  const base = new Set(["proyecto", "pista-principal", "cortes", "subtitulos", "palabra-verde", "texto-grande", "musica", "cortinilla", "marca-agua", "exportar"]);
   for (const r of CAPCUT_RECIPES) {
     if (base.has(r.id)) continue;
     if (r.keywords.some((k) => text.includes(k))) base.add(r.id);

@@ -75,7 +75,7 @@ export default async function BibliotecaPage() {
     <div>
       <PageHeader
         title="Biblioteca Multimedia"
-        sub={`${listos.length} recursos listos · ${pendientes.length} pendientes. Los archivos viven en OneDrive (${MEDIA_ROOT}/) — desde el teléfono se insertan en CapCut con la app de OneDrive. Los clips de app se generan solos y llegan recortados, en 1080×1920, listos para usar.`}
+        sub={`${listos.length} recursos listos · ${pendientes.length} pendientes. Los archivos viven en OneDrive y ya están LOCALES en tu PC (Documentos/OneDrive → sistema para emprendedores → ${MEDIA_ROOT}) — en CapCut Desktop: Multimedia → Importar → esa carpeta. Los clips se generan solos y llegan en 1080×1920, listos para arrastrar.`}
       />
       <MigrationNotice show={state.unavailable} />
 

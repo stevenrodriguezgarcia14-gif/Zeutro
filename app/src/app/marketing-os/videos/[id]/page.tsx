@@ -4,6 +4,7 @@ import { getVideo } from "@/lib/marketing/videos";
 import { getScript } from "@/lib/marketing/scripts";
 import { CHECKLISTS, HASHTAG_SETS } from "@/lib/marketing/plan";
 import { MEDIA_ROOT, assetsForVideo } from "@/lib/marketing/media";
+import { buildEditPlan } from "@/lib/marketing/editplan";
 import { recipesForScript } from "@/lib/marketing/capcut";
 import { fmtSeconds, scriptTimeline, scriptTotalSeconds } from "@/lib/marketing/timing";
 import { loadMarketingState, statusOf } from "@/lib/marketing/state";
@@ -35,6 +36,7 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ id
   const fmtRange = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace(".", ","));
   const recipes = script ? recipesForScript(script.editSteps, script.segments.map((s) => s.edit)) : [];
   const assets = assetsForVideo(id);
+  const editPlan = script ? buildEditPlan(script, assets) : [];
 
   const hashtagSet =
     HASHTAG_SETS.find((h) =>
@@ -151,7 +153,7 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ id
           {/* Recursos multimedia exactos de este video */}
           {assets.length > 0 && (
             <>
-              <SectionTitle sub="Cada recurso con su archivo, su carpeta en OneDrive y la FRASE exacta del guion en la que entra. Desde el teléfono: app de OneDrive → carpeta → insertar en CapCut. Nada que recortar: llegan preparados.">
+              <SectionTitle sub="Cada recurso con su archivo, su carpeta (ya local en tu PC vía OneDrive) y la FRASE exacta del guion en la que entra. En CapCut Desktop: Multimedia → Importar → esa carpeta. Nada que recortar: llegan preparados.">
                 Recursos de este video · listos para insertar
               </SectionTitle>
               <div className="grid gap-3 lg:grid-cols-2">
@@ -241,25 +243,53 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ id
             ))}
           </div>
 
-          {/* Edición + textos */}
-          <SectionTitle>Edición en CapCut · este video</SectionTitle>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card>
-              <ol className="space-y-2.5 text-sm text-zinc-300">
-                {script.editSteps.map((s, i) => (
-                  <li key={i} className="flex gap-3">
-                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-white/[0.06] font-display text-[11px] font-bold text-[#3ee6a8]">{i + 1}</span>
-                    <span className="leading-relaxed">{s}</span>
-                  </li>
-                ))}
-              </ol>
-              <p className="mt-4 border-t border-white/[0.06] pt-3 text-[11px] text-zinc-600">
-                La receta base (subtítulos, zooms, música, marca de agua) vive en el <Link href="/marketing-os/manual" className="text-[#3ee6a8] underline decoration-dotted">Manual</Link>.
-              </p>
-            </Card>
+          {/* Plan de edición generado del guion */}
+          <SectionTitle sub="Generado de ESTE guion para CapCut Desktop (Windows): sigue los pasos en orden y el video sale solo. Cada paso dice el porqué — así aprendes mientras editas. El botón por botón de cada herramienta está en las recetas de abajo.">
+            Plan de edición paso a paso · CapCut Desktop
+          </SectionTitle>
+          <div className="space-y-3">
+            {editPlan.map((step, i) => (
+              <div key={i} className={`rounded-2xl p-4 ring-1 ${step.title.startsWith("⚠️") ? "bg-amber-400/[0.05] ring-amber-400/25" : "bg-white/[0.03] ring-white/[0.07]"}`}>
+                <div className="flex items-start gap-3">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#00C781]/12 font-display text-sm font-bold text-[#3ee6a8] ring-1 ring-[#00C781]/25">
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-display text-sm font-bold text-white">{step.title}</p>
+                      {step.recipeId && (
+                        <a href={`#receta-${step.recipeId}`} className="rounded-md bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-zinc-400 ring-1 ring-white/[0.06] transition hover:text-[#3ee6a8]">
+                          ver receta tap por tap ↓
+                        </a>
+                      )}
+                    </div>
+                    <p className="mt-1 text-sm leading-relaxed text-zinc-300">{step.action}</p>
+                    {step.items && (
+                      <ul className="mt-2 space-y-1.5">
+                        {step.items.map((it, j) => (
+                          <li key={j} className="flex gap-2 rounded-lg bg-white/[0.02] px-2.5 py-1.5 text-xs leading-relaxed text-zinc-300 ring-1 ring-white/[0.05]">
+                            <span className="text-[#3ee6a8]">·</span>
+                            <span className="min-w-0">{it}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {step.why && (
+                      <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+                        <span className="font-semibold text-zinc-400">Por qué:</span> {step.why}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Textos en pantalla (referencia del paso de titulares) */}
+          <div className="mt-4">
             <Card>
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Textos en pantalla · capas que conviven</p>
-              <div className="mt-2.5 space-y-2">
+              <div className="mt-2.5 grid gap-2 lg:grid-cols-2">
                 {script.screenTexts.map((t, i) => (
                   <div key={i} className="rounded-xl bg-white/[0.02] p-3 ring-1 ring-white/[0.06]">
                     <div className="flex flex-wrap items-center gap-1.5">
@@ -281,12 +311,12 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ id
           </div>
 
           {/* Guía CapCut tap por tap (solo lo que ESTE video usa) */}
-          <SectionTitle sub="Cada acción de edición que pide este guion, explicada botón por botón en CapCut GRATIS. Abre la que necesites mientras editas.">
-            Cómo se hace cada cosa en CapCut · tap por tap
+          <SectionTitle sub="Cada herramienta que usa el plan de arriba, explicada botón por botón en CapCut DESKTOP (Windows, versión gratuita): dónde está, qué click dar, atajo de teclado y cómo verificar.">
+            Recetas CapCut Desktop · botón por botón
           </SectionTitle>
           <div className="space-y-2">
             {recipes.map((r) => (
-              <details key={r.id} className="group rounded-2xl bg-white/[0.03] ring-1 ring-white/[0.07] open:ring-[#00C781]/25">
+              <details key={r.id} id={`receta-${r.id}`} className="group scroll-mt-24 rounded-2xl bg-white/[0.03] ring-1 ring-white/[0.07] open:ring-[#00C781]/25">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-4">
                   <span className="flex items-center gap-2.5 text-sm font-semibold text-zinc-200">
                     <IconScissors className="h-4 w-4 text-zinc-500 group-open:text-[#3ee6a8]" />

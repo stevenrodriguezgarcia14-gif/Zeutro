@@ -69,8 +69,8 @@ export default function ManualPage() {
       </div>
 
       {/* Recetario CapCut tap por tap */}
-      <SectionTitle sub="Cada herramienta de CapCut GRATIS explicada botón por botón: dónde está, qué tocar, qué configurar, la alternativa gratis si algo pide Pro (👑) y cómo verificar que quedó bien. Las mismas recetas aparecen dentro de cada guion.">
-        Recetario CapCut · tap por tap
+      <SectionTitle sub="Cada herramienta de CapCut DESKTOP (Windows, gratis) explicada botón por botón: en qué panel está, qué click dar, el atajo de teclado, la alternativa gratis si algo pide Pro (👑) y cómo verificar que quedó bien. Las mismas recetas aparecen dentro de cada guion, junto al plan de edición generado.">
+        Recetario CapCut Desktop · botón por botón
       </SectionTitle>
       <div className="grid gap-2 lg:grid-cols-2">
         {CAPCUT_RECIPES.map((r) => (

@@ -340,20 +340,19 @@ export const MEDIA: MediaAsset[] = [
   // ————————————————————— PENDIENTES (lo único que falta grabar/crear) —————————————————————
   {
     id: "cortinilla",
-    name: "Cortinilla de cierre (1.5 s)",
+    name: "Cortinilla oficial de cierre (animada)",
+    file: "cortinilla_9x16.mp4",
     path: "Biblioteca/clips-app",
     kind: "clip",
-    category: "Grabaciones de pantalla",
-    tags: ["cierre", "marca"],
-    status: "pendiente",
-    notes: "Negro + isotipo Z + “El centro de control de tu negocio” + @zentronegocios.",
-    usedIn: [{ videoId: 0, cue: "el final de TODOS los videos", purpose: "Cierre estándar de marca" }],
-    capture: {
-      priority: "alta",
-      estMin: 10,
-      batch: "CapCut (una sola vez)",
-      how: "Receta “Crear la cortinilla” del Manual: proyecto nuevo en CapCut → fondo negro 1.5 s → superposición del isotipo (png/10_isotipo_zentro.png desde OneDrive) → 2 textos → exportar y guardar en Biblioteca/clips-app como cortinilla_9x16.mp4.",
-    },
+    category: "Identidad",
+    tags: ["cierre", "marca", "handle"],
+    durationSec: 2,
+    resolution: "1080×1920",
+    orientation: "vertical",
+    status: "listo",
+    notes:
+      "Generada automáticamente (video-build/build-cortinilla.mjs): base negra + glow verde + isotipo Z + claim + @zentronegocios, con zoom sutil y fundidos. Sin QR a propósito (en 2 s nadie escanea; el CTA vive en el video hablado). Se arrastra al final de CADA proyecto: es la firma de marca.",
+    usedIn: [{ videoId: 0, cue: "el final de TODOS los videos", purpose: "Cierre estándar: reconocimiento de marca + handle" }],
   },
   {
     id: "correo-recordatorio",
