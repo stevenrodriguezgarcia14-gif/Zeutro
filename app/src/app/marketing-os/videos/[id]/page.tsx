@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getVideo } from "@/lib/marketing/videos";
 import { getScript } from "@/lib/marketing/scripts";
 import { CHECKLISTS, HASHTAG_SETS } from "@/lib/marketing/plan";
+import { MEDIA_ROOT, assetsForVideo } from "@/lib/marketing/media";
 import { recipesForScript } from "@/lib/marketing/capcut";
 import { fmtSeconds, scriptTimeline, scriptTotalSeconds } from "@/lib/marketing/timing";
 import { loadMarketingState, statusOf } from "@/lib/marketing/state";
@@ -33,6 +34,7 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ id
   const totalSec = script ? scriptTotalSeconds(script) : video.durationSec;
   const fmtRange = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace(".", ","));
   const recipes = script ? recipesForScript(script.editSteps, script.segments.map((s) => s.edit)) : [];
+  const assets = assetsForVideo(id);
 
   const hashtagSet =
     HASHTAG_SETS.find((h) =>
@@ -145,6 +147,53 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ id
               </div>
             </Card>
           </div>
+
+          {/* Recursos multimedia exactos de este video */}
+          {assets.length > 0 && (
+            <>
+              <SectionTitle sub="Cada recurso con su archivo, su carpeta en OneDrive y la FRASE exacta del guion en la que entra. Desde el teléfono: app de OneDrive → carpeta → insertar en CapCut. Nada que recortar: llegan preparados.">
+                Recursos de este video · listos para insertar
+              </SectionTitle>
+              <div className="grid gap-3 lg:grid-cols-2">
+                {assets.map(({ asset, use }, i) => (
+                  <div key={`${asset.id}-${i}`} className={`rounded-2xl p-4 ring-1 ${asset.status === "listo" ? "bg-white/[0.03] ring-white/[0.07]" : "bg-amber-400/[0.04] ring-amber-400/20"}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-semibold text-white">{asset.name}</p>
+                      <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-medium ring-1 ${asset.status === "listo" ? "bg-[#00C781]/12 text-[#3ee6a8] ring-[#00C781]/25" : "bg-amber-400/10 text-amber-300 ring-amber-400/25"}`}>
+                        {asset.status === "listo" ? "✓ listo para usar" : "falta grabarlo"}
+                      </span>
+                    </div>
+                    {asset.file && (
+                      <p className="mt-1.5 select-all break-all font-mono text-[10px] text-zinc-500">
+                        📁 {MEDIA_ROOT}/{asset.path === "." ? "" : asset.path + "/"}{asset.file}
+                      </p>
+                    )}
+                    <div className="mt-2.5 space-y-1 text-xs leading-relaxed">
+                      <p className="text-zinc-300"><b className="text-zinc-500">Entra cuando dices:</b> {use.cue}</p>
+                      <p className="text-zinc-400"><b className="text-zinc-500">Para qué:</b> {use.purpose}</p>
+                      <p className="text-zinc-400">
+                        {use.holdSec && <><b className="text-zinc-500">Se muestra:</b> ~{use.holdSec} s</>}
+                        {asset.durationSec && <span className="text-zinc-600"> · el archivo dura {asset.durationSec} s: usa el tramo que necesites</span>}
+                      </p>
+                      {asset.status === "pendiente" && asset.capture && (
+                        <p className="mt-1 rounded-lg bg-amber-400/[0.07] px-2 py-1.5 text-amber-300/90 ring-1 ring-amber-400/15">
+                          <b>Cómo conseguirlo ({asset.capture.estMin} min):</b> {asset.capture.how}
+                        </p>
+                      )}
+                    </div>
+                    <div className="mt-2 flex items-center justify-between border-t border-white/[0.05] pt-2">
+                      <Link href="/marketing-os/recursos" className="text-[11px] text-zinc-500 transition hover:text-[#3ee6a8]">Ver en la Biblioteca →</Link>
+                      {asset.usedIn.filter((u) => u.videoId !== 0 && u.videoId !== id).length > 0 && (
+                        <span className="text-[10px] text-zinc-600" title="Este mismo archivo se reutiliza en otros guiones — no lo grabes dos veces.">
+                          ♻ también en {asset.usedIn.filter((u) => u.videoId !== 0 && u.videoId !== id).map((u) => `#${u.videoId}`).join(", ")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
           {/* Timeline de dirección */}
           <SectionTitle sub="Tiempos REALES calculados de lo que dices (2.3 palabras/seg + tus pausas): dilo a ritmo natural y el total cuadra solo. Cada bloque se graba POR SEPARADO (pausa de 2 s entre bloques; los errores se repiten sin cortar y se limpian en edición).">

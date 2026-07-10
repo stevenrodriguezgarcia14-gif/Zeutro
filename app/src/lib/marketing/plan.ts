@@ -86,26 +86,10 @@ export const CHECKLISTS: ChecklistDef[] = [
   },
 ];
 
+// Las grabaciones de pantalla y recursos visuales viven ahora en el catálogo
+// de la Biblioteca Multimedia (media.ts) con metadatos completos y usos por
+// guion. Aquí queda solo lo físico y las referencias de audio.
 export const RESOURCES: ResourceItem[] = [
-  // Grabaciones de pantalla (sprint único, se recortan mil veces)
-  { id: "sc1", group: "Grabaciones de pantalla", label: "#1 Abrir app → dashboard + Centro de Prioridades del día", detail: "La base de #5 y #2. Lenta y con dedo firme." },
-  { id: "sc2", group: "Grabaciones de pantalla", label: "#2 Venta rápida desde el botón “+” móvil (3 taps)", detail: "Para #34 y #10." },
-  { id: "sc3", group: "Grabaciones de pantalla", label: "#3 Factura vencida → recordatorio automático enviado", detail: "La joya: correo real con nombre del negocio. Para #1 y #36." },
-  { id: "sc4", group: "Grabaciones de pantalla", label: "#4 “Cobraste $X de <cliente>” + ¡Factura saldada!", detail: "El momento dinero. Para #9." },
-  { id: "sc5", group: "Grabaciones de pantalla", label: "#5 Ganancia real del mes (número verde)", detail: "Para #6, #14, #38." },
-  { id: "sc6", group: "Grabaciones de pantalla", label: "#6 “Quién te debe” — cuentas por cobrar con montos", detail: "Para #5 y #35." },
-  { id: "sc7", group: "Grabaciones de pantalla", label: "#7 Instalar la PWA (pantalla /guide → ícono en el home)", detail: "Para #33." },
-  { id: "sc8", group: "Grabaciones de pantalla", label: "#8 Centro de Orientación / Academia", detail: "Para videos de “no sabes por dónde empezar”." },
-  { id: "sc9", group: "Grabaciones de pantalla", label: "#9 Scroll rápido de TODO (30 s, b-roll genérico)", detail: "Para #4 (flash “ya funciona”)." },
-  { id: "sc10", group: "Grabaciones de pantalla", label: "#10 Editor de código con el proyecto abierto (20-30 s)", detail: "Para build in public (#7, #26)." },
-  // Recursos visuales (una sola vez)
-  { id: "rv1", group: "Recursos visuales", label: "Cortinilla de cierre 1.5 s", detail: "Negro + Z + “El centro de control de tu negocio” + @zentronegocios. Se crea una vez en CapCut y se reutiliza siempre." },
-  { id: "rv2", group: "Recursos visuales", label: "Logo Z en PNG transparente", path: "Marketing-Assets-Zentro/png/" },
-  { id: "rv3", group: "Recursos visuales", label: "Captura de chat “Holaa, disculpa que te moleste 🙈”", detail: "Créala en un chat contigo mismo. Para #1." },
-  { id: "rv4", group: "Recursos visuales", label: "Capturas del caos: cuaderno, Excel, chats de WhatsApp", detail: "El “antes”. Para #2, #3, #10." },
-  { id: "rv5", group: "Recursos visuales", label: "3-4 fotos tuyas trabajando (laptop, café, teléfono)", detail: "B-roll de historias (#3, #43)." },
-  { id: "rv6", group: "Recursos visuales", label: "PNGs de campaña F1-F5 como insertos", path: "Marketing-Assets-Zentro/png/campana-fundadores/" },
-  { id: "rv7", group: "Recursos visuales", label: "Screenshot del primer feedback real (nombre censurado)", detail: "Para #11 y #55 — solo cuando exista." },
   // Equipo físico
   { id: "eq1", group: "Equipo", label: "Soporte casero: pila de libros + apoyo firme, altura de ojos" },
   { id: "eq2", group: "Equipo", label: "Audífonos de cable con micrófono (mic a 10-15 cm de la boca)" },

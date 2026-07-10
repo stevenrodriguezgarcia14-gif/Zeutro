@@ -138,6 +138,43 @@ export type ResourceItem = {
   path?: string;
 };
 
+// ————— Biblioteca Multimedia —————
+
+export type MediaKind = "clip" | "video" | "grafico" | "logo" | "qr" | "fisico";
+
+export type MediaStatus = "listo" | "pendiente" | "archivado";
+
+/** Dónde y para qué se usa un recurso dentro de un guion. */
+export type MediaUse = {
+  videoId: number;
+  /** El momento exacto: la frase del guion en la que entra. */
+  cue: string;
+  purpose: string;
+  /** Cuántos segundos se recomienda mostrarlo. */
+  holdSec?: number;
+};
+
+export type MediaAsset = {
+  id: string;
+  name: string;
+  /** Nombre de archivo (si existe). */
+  file?: string;
+  /** Carpeta dentro de OneDrive (repositorio principal de archivos). */
+  path: string;
+  kind: MediaKind;
+  category: string;
+  tags: string[];
+  durationSec?: number;
+  resolution?: string;
+  orientation?: "vertical" | "horizontal" | "cuadrado";
+  status: MediaStatus;
+  notes?: string;
+  usedIn: MediaUse[];
+  campaigns?: string[];
+  /** Solo para pendientes: cómo conseguirlo, agrupado en lotes de captura. */
+  capture?: { priority: "alta" | "media" | "baja"; estMin: number; batch: string; how: string };
+};
+
 export type GlossaryEntry = {
   term: string;
   meaning: string;

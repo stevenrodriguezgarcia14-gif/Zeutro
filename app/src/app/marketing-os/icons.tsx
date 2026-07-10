@@ -30,6 +30,9 @@ export const IconCalendar = (p: IconProps) => (
 export const IconFilm = (p: IconProps) => (
   <Base {...p} d="M7 3v18M17 3v18M3 8h4M3 16h4M17 8h4M17 16h4" extra={<rect x="3" y="3" width="18" height="18" rx="2.5" />} />
 );
+export const IconImage = (p: IconProps) => (
+  <Base {...p} d="m4 17 4.5-4.5a1.5 1.5 0 0 1 2.1 0L17 19M14 15l2-2a1.5 1.5 0 0 1 2.1 0L21 15.9" extra={<><rect x="3" y="4" width="18" height="16" rx="2.5" /><circle cx="9" cy="9" r="1.6" /></>} />
+);
 export const IconBulb = (p: IconProps) => (
   <Base {...p} d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.7 1 1.6 1 2.5h6c0-.9.2-1.8 1-2.5A6 6 0 0 0 12 3Z" />
 );
