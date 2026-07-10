@@ -39,6 +39,17 @@ export async function setStatus(videoId: number, status: VideoStatus): Promise<A
   return status === "pendiente" ? removeKey(`video:${videoId}`) : upsert(`video:${videoId}`, { status });
 }
 
+/**
+ * Replanificar: borra TODOS los movimientos manuales del calendario. El plan
+ * en sí se regenera solo en cada carga (desde hoy + estados reales), así que
+ * esto devuelve el calendario al plan óptimo calculado.
+ */
+export async function replanCalendar(): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("marketing_state").delete().like("key", "calmove:%");
+  return error ? { ok: false, error: safeError(error) } : { ok: true };
+}
+
 /** Reprograma una tarea del calendario (drag & drop). null = volver a su fecha original. */
 export async function moveTask(taskId: string, date: string | null): Promise<ActionResult> {
   if (!taskId || (date !== null && !/^\d{4}-\d{2}-\d{2}$/.test(date))) {

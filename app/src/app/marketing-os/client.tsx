@@ -1,9 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import type { CustomIdea, Pillar, VideoMetrics, VideoStatus } from "@/lib/marketing/types";
 import { STATUS_ORDER } from "@/lib/marketing/types";
-import { addIdea, deleteIdea, resetChecklist, saveGoal, saveMetrics, setStatus, toggleKey } from "./actions";
+import { addIdea, deleteIdea, replanCalendar, resetChecklist, saveGoal, saveMetrics, setStatus, toggleKey } from "./actions";
 import { IconCheck, IconPlus, IconRefresh, IconTrash } from "./icons";
 import { PILLAR_THEME, STATUS_THEME } from "./theme";
 
@@ -405,6 +406,33 @@ export function IdeasBoard({ initial, disabled }: { initial: IdeaRow[]; disabled
         ))}
       </div>
     </div>
+  );
+}
+
+/* --------------------------------------------------- Replanificar */
+
+export function ReplanButton({ disabled }: { disabled?: boolean }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [done, setDone] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={disabled || pending}
+      onClick={() =>
+        start(async () => {
+          await replanCalendar();
+          router.refresh();
+          setDone(true);
+          setTimeout(() => setDone(false), 2500);
+        })
+      }
+      className="inline-flex items-center gap-1.5 rounded-xl bg-[#00C781] px-3.5 py-2 text-xs font-semibold text-black transition hover:brightness-110 active:scale-[0.97] disabled:opacity-50"
+      title="Reorganiza todo el plan desde hoy según el estado real de cada video (y descarta los movimientos manuales)."
+    >
+      <IconRefresh className={`h-3.5 w-3.5 ${pending ? "animate-spin" : ""}`} />
+      {pending ? "Replanificando…" : done ? "Plan al día ✓" : "Replanificar"}
+    </button>
   );
 }
 

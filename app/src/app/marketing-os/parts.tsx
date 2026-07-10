@@ -96,7 +96,7 @@ export function VideoCard({ video, status }: { video: Video; status: VideoStatus
       <div className="mt-4 flex flex-wrap items-center gap-1.5">
         <PillarChip pillar={video.pillar} small />
         <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-zinc-400 ring-1 ring-white/[0.06]">
-          <IconClock className="h-3 w-3" /> {video.durationSec} s
+          <IconClock className="h-3 w-3" /> ≈{video.durationSec} s reales
         </span>
         <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-zinc-400 ring-1 ring-white/[0.06]">
           <IconCamera className="h-3 w-3" /> ~{video.effortMin} min

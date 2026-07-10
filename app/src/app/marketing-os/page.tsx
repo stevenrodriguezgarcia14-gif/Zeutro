@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { CALENDAR, DAILY_HABITS, FOUNDERS_TARGET, REF_LINK } from "@/lib/marketing/plan";
+import { DAILY_HABITS, FOUNDERS_TARGET, REF_LINK } from "@/lib/marketing/plan";
+import { applyMoves, buildSchedule } from "@/lib/marketing/schedule";
 import { VIDEOS } from "@/lib/marketing/videos";
 import { loadMarketingState, statusOf } from "@/lib/marketing/state";
 import type { VideoStatus } from "@/lib/marketing/types";
@@ -15,12 +16,11 @@ export default async function PanelPage() {
   const state = await loadMarketingState();
   const today = todayISO();
 
-  const effDate = (t: (typeof CALENDAR)[number]) => state.moves.get(t.id) ?? t.date;
-  const todayTasks = CALENDAR.filter((t) => effDate(t) === today);
-  const overdue = CALENDAR.filter(
-    (t) => effDate(t) < today && !state.checks.has(`cal:${t.date}:${t.id}`) && t.kind !== "campaña" && t.kind !== "comunidad",
-  ).slice(0, 5);
-  const upcoming = CALENDAR.filter((t) => effDate(t) > today).slice(0, 4);
+  // Mismo planificador dinámico que el Calendario: siempre desde hoy.
+  const schedule = applyMoves(buildSchedule(today, (id) => statusOf(state, id)), state.moves, today);
+  const todayTasks = schedule.tasks.filter((t) => t.date === today);
+  const todayLoad = schedule.loadByDate.get(today) ?? 0;
+  const upcoming = schedule.tasks.filter((t) => t.date > today && !state.checks.has(`cal:${t.id}`)).slice(0, 4);
 
   const counts: Record<VideoStatus, number> = { pendiente: 0, grabado: 0, editado: 0, publicado: 0 };
   for (const v of VIDEOS) counts[statusOf(state, v.id)]++;
@@ -39,7 +39,7 @@ export default async function PanelPage() {
     <div>
       <PageHeader
         title="Hoy"
-        sub="Abre esto cada mañana: qué hacer hoy, en qué va la meta y cuál es el siguiente video."
+        sub="Abre esto cada mañana: el plan se genera solo desde la fecha de hoy y el estado real de cada video."
       />
       <MigrationNotice show={state.unavailable} />
 
@@ -73,14 +73,17 @@ export default async function PanelPage() {
               );
             })}
           </div>
-          <Link href="/marketing-os/videos" className="mt-4 inline-flex items-center gap-1 text-xs text-zinc-400 transition hover:text-[#3ee6a8]">
+          <p className="mt-3 border-t border-white/[0.06] pt-2 text-[11px] text-zinc-500">
+            Al marcar un estado aquí o en un video, el calendario se replanifica solo.
+          </p>
+          <Link href="/marketing-os/videos" className="mt-2 inline-flex items-center gap-1 text-xs text-zinc-400 transition hover:text-[#3ee6a8]">
             Ver los 60 videos <IconArrowR className="h-3.5 w-3.5" />
           </Link>
         </Card>
       </div>
 
       {/* Hoy + próximos */}
-      <SectionTitle sub={`Marca cada tarea al completarla. Hábito diario: ${DAILY_HABITS[0].toLowerCase()}.`}>
+      <SectionTitle sub={`Carga estimada de hoy: ≈${todayLoad} min. Hábito diario: ${DAILY_HABITS[0].toLowerCase()}.`}>
         Tu día
       </SectionTitle>
       <div className="grid gap-4 lg:grid-cols-2">
@@ -89,7 +92,7 @@ export default async function PanelPage() {
           <div className="mt-2 space-y-0.5">
             {todayTasks.length === 0 && (
               <p className="py-3 text-sm text-zinc-600">
-                Sin tareas fechadas hoy — revisa el <Link href="/marketing-os/calendario" className="text-[#3ee6a8] underline decoration-dotted">calendario</Link>.
+                Día libre según el plan — revisa el <Link href="/marketing-os/calendario" className="text-[#3ee6a8] underline decoration-dotted">calendario</Link> o adelanta el siguiente video.
               </p>
             )}
             {todayTasks.map((t) => (
@@ -97,8 +100,8 @@ export default async function PanelPage() {
                 <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${KIND_THEME[t.kind].dot}`} />
                 <div className="flex-1">
                   <CheckItem
-                    k={`cal:${t.date}:${t.id}`}
-                    initial={state.checks.has(`cal:${t.date}:${t.id}`)}
+                    k={`cal:${t.id}`}
+                    initial={state.checks.has(`cal:${t.id}`)}
                     label={t.label}
                     detail={t.detail}
                     disabled={state.unavailable}
@@ -109,34 +112,20 @@ export default async function PanelPage() {
           </div>
         </Card>
         <Card>
-          {overdue.length > 0 && (
-            <>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-400/90">Atrasadas</p>
-              <div className="mt-1 space-y-0.5">
-                {overdue.map((t) => (
-                  <CheckItem
-                    key={`${t.date}-${t.id}`}
-                    k={`cal:${t.date}:${t.id}`}
-                    initial={false}
-                    label={`${fmtShort(effDate(t))} · ${t.label}`}
-                    disabled={state.unavailable}
-                  />
-                ))}
-              </div>
-              <div className="my-3 h-px bg-white/[0.06]" />
-            </>
-          )}
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Próximos días</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Próximos días (plan automático)</p>
           <ul className="mt-2 space-y-2">
             {upcoming.map((t) => (
-              <li key={`${t.date}-${t.id}`} className="flex items-start gap-2.5 text-sm text-zinc-300">
+              <li key={t.id} className="flex items-start gap-2.5 text-sm text-zinc-300">
                 <span className="mt-0.5 shrink-0 rounded-md bg-white/[0.05] px-1.5 py-0.5 text-[10px] tabular-nums text-zinc-500 ring-1 ring-white/[0.06]">
-                  {fmtShort(effDate(t))}
+                  {fmtShort(t.date)}
                 </span>
                 <span className="leading-snug">{t.label}</span>
               </li>
             ))}
           </ul>
+          <p className="mt-3 border-t border-white/[0.06] pt-2 text-[11px] text-zinc-600">
+            ¿Te atrasaste o adelantaste? No pasa nada: mañana el plan sale recalculado desde mañana.
+          </p>
         </Card>
       </div>
 

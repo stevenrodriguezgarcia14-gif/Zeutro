@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getVideo } from "@/lib/marketing/videos";
 import { getScript } from "@/lib/marketing/scripts";
 import { CHECKLISTS, HASHTAG_SETS } from "@/lib/marketing/plan";
+import { recipesForScript } from "@/lib/marketing/capcut";
+import { fmtSeconds, scriptTimeline, scriptTotalSeconds } from "@/lib/marketing/timing";
 import { loadMarketingState, statusOf } from "@/lib/marketing/state";
 import { ChecklistCard, CheckItem, MetricsEditor, StatusStepper } from "../../client";
 import { IconAlert, IconCamera, IconChevronL, IconChevronR, IconClock, IconEye, IconMic, IconScissors, IconSparkle, IconTag, IconUser } from "../../icons";
@@ -24,6 +26,13 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ id
   const status = statusOf(state, id);
   const metrics = state.metrics.get(id) ?? {};
   const pt = PILLAR_THEME[video.pillar];
+
+  // Tiempos REALES: los calcula el motor (2.3 palabras/seg + pausas + acción),
+  // nunca están escritos a mano en el guion.
+  const tl = script ? scriptTimeline(script) : [];
+  const totalSec = script ? scriptTotalSeconds(script) : video.durationSec;
+  const fmtRange = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace(".", ","));
+  const recipes = script ? recipesForScript(script.editSteps, script.segments.map((s) => s.edit)) : [];
 
   const hashtagSet =
     HASHTAG_SETS.find((h) =>
@@ -80,7 +89,7 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ id
         </div>
 
         <div className="mt-5 grid gap-x-8 gap-y-2.5 border-t border-white/[0.06] pt-4 text-sm sm:grid-cols-2">
-          <p className="text-zinc-300"><span className="text-zinc-500">Gancho (3 s): </span>{video.hook}</p>
+          <p className="text-zinc-300"><span className="text-zinc-500">Gancho (primeros {script && tl.length > 0 ? fmtRange(tl[0].seconds) : "3-5"} s): </span>{video.hook}</p>
           <p className="text-zinc-300"><span className="text-zinc-500">CTA: </span>{video.cta}</p>
           <p className="text-zinc-300"><span className="text-zinc-500">Emociones: </span>{video.emotions.join(" → ")}</p>
           {video.audience && <p className="text-zinc-300"><span className="text-zinc-500">Público: </span>{video.audience}</p>}
@@ -89,7 +98,9 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ id
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px]">
-          <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.05] px-2 py-1 text-zinc-400 ring-1 ring-white/[0.06]"><IconClock className="h-3.5 w-3.5" /> {video.durationSec} s final</span>
+          <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.05] px-2 py-1 text-zinc-400 ring-1 ring-white/[0.06]" title={script ? "Calculado del guion a velocidad real de habla (2.3 palabras/seg + pausas)" : "Estimación a velocidad real de habla"}>
+            <IconClock className="h-3.5 w-3.5" /> ≈{fmtSeconds(totalSec)} reales{script ? " · calculado del guion" : ""}
+          </span>
           <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.05] px-2 py-1 text-zinc-400 ring-1 ring-white/[0.06]"><IconCamera className="h-3.5 w-3.5" /> ~{video.effortMin} min de grabación</span>
           <span className="rounded-md bg-white/[0.05] px-2 py-1 text-zinc-400 ring-1 ring-white/[0.06]">{FUNNEL_LABEL[video.funnel]}</span>
           <span className="rounded-md bg-white/[0.05] px-2 py-1 text-zinc-400 ring-1 ring-white/[0.06]">TikTok · Reels · FB</span>
@@ -136,18 +147,30 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ id
           </div>
 
           {/* Timeline de dirección */}
-          <SectionTitle sub="Cada bloque se graba POR SEPARADO (pausa de 2 s entre bloques; los errores se repiten sin cortar y se limpian en edición).">
+          <SectionTitle sub="Tiempos REALES calculados de lo que dices (2.3 palabras/seg + tus pausas): dilo a ritmo natural y el total cuadra solo. Cada bloque se graba POR SEPARADO (pausa de 2 s entre bloques; los errores se repiten sin cortar y se limpian en edición).">
             Guion dirigido · segundo a segundo
           </SectionTitle>
           <div className="relative space-y-4 before:absolute before:top-3 before:bottom-3 before:left-[34px] before:w-px before:bg-white/[0.08]">
             {script.segments.map((seg, i) => (
               <article key={i} className="relative flex gap-4">
-                <div className="z-[1] flex h-[68px] w-[68px] shrink-0 flex-col items-center justify-center rounded-2xl bg-[#101513] ring-1 ring-white/[0.09]">
-                  <span className="font-display text-base font-bold tabular-nums text-[#3ee6a8]">{seg.from}–{seg.to}</span>
+                <div className="z-[1] flex h-[68px] w-[68px] shrink-0 flex-col items-center justify-center rounded-2xl bg-[#101513] ring-1 ring-white/[0.09]" title={`Bloque de ${fmtRange(tl[i].seconds)} s (calculado del texto)`}>
+                  <span className="font-display text-sm font-bold tabular-nums text-[#3ee6a8]">{fmtRange(tl[i].from)}–{fmtRange(tl[i].to)}</span>
                   <span className="text-[10px] text-zinc-600">seg</span>
                 </div>
                 <div className="min-w-0 flex-1 rounded-2xl bg-white/[0.03] p-5 ring-1 ring-white/[0.07]">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">{seg.visual}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">{seg.visual}</p>
+                    {seg.pauseAfterSec && (
+                      <span className="rounded-md bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-zinc-400 ring-1 ring-white/[0.08]" title="Silencio deliberado al final del bloque, ya contado en el tiempo. No lo recortes en edición.">
+                        + silencio de {fmtRange(seg.pauseAfterSec)} s
+                      </span>
+                    )}
+                    {seg.actionSec && (
+                      <span className="rounded-md bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-zinc-400 ring-1 ring-white/[0.08]" title="Tiempo visual sin hablar (pantalla/acción), ya contado en el tiempo.">
+                        + {fmtRange(seg.actionSec)} s de acción/pantalla
+                      </span>
+                    )}
+                  </div>
                   <p className="mt-2 border-l-2 border-[#00C781] pl-3.5 font-display text-[15px] font-semibold leading-relaxed text-white">
                     “{seg.say}”
                   </p>
@@ -196,7 +219,9 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ id
                       }`}>
                         {t.layer === "titulo" ? "TEXTO GRANDE" : t.layer === "chip" ? "CHIPS" : "SUBTÍTULOS"}
                       </span>
-                      <span className="text-[11px] tabular-nums text-zinc-600">seg {t.from} → {t.to === "fin" ? "fin" : t.to} · {t.place}</span>
+                      <span className="text-[11px] tabular-nums text-zinc-600">
+                        seg {fmtRange(tl[t.fromSeg]?.from ?? 0)} → {t.toSeg === "fin" ? "fin" : fmtRange(tl[t.toSeg]?.to ?? 0)} · {t.place}
+                      </span>
                     </div>
                     <p className="mt-1.5 text-sm font-medium text-white">{t.text}</p>
                     <p className="mt-0.5 text-[11px] text-zinc-500">{t.style}</p>
@@ -204,6 +229,45 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ id
                 ))}
               </div>
             </Card>
+          </div>
+
+          {/* Guía CapCut tap por tap (solo lo que ESTE video usa) */}
+          <SectionTitle sub="Cada acción de edición que pide este guion, explicada botón por botón en CapCut GRATIS. Abre la que necesites mientras editas.">
+            Cómo se hace cada cosa en CapCut · tap por tap
+          </SectionTitle>
+          <div className="space-y-2">
+            {recipes.map((r) => (
+              <details key={r.id} className="group rounded-2xl bg-white/[0.03] ring-1 ring-white/[0.07] open:ring-[#00C781]/25">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-4">
+                  <span className="flex items-center gap-2.5 text-sm font-semibold text-zinc-200">
+                    <IconScissors className="h-4 w-4 text-zinc-500 group-open:text-[#3ee6a8]" />
+                    {r.title}
+                  </span>
+                  <span className="text-xs text-zinc-600 transition group-open:rotate-90"><IconChevronR className="h-4 w-4" /></span>
+                </summary>
+                <div className="px-4 pb-4">
+                  <p className="rounded-lg bg-white/[0.04] px-2.5 py-1.5 text-[11px] text-zinc-400 ring-1 ring-white/[0.06]">
+                    <b className="text-zinc-300">Dónde está:</b> {r.where}
+                  </p>
+                  <ol className="mt-3 space-y-2 text-sm text-zinc-300">
+                    {r.steps.map((s, i) => (
+                      <li key={i} className="flex gap-3">
+                        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-white/[0.06] font-display text-[11px] font-bold text-[#3ee6a8]">{i + 1}</span>
+                        <span className="leading-relaxed">{s}</span>
+                      </li>
+                    ))}
+                  </ol>
+                  {r.freeAlt && (
+                    <p className="mt-3 rounded-lg bg-amber-400/[0.06] px-2.5 py-2 text-xs leading-relaxed text-amber-300/90 ring-1 ring-amber-400/15">
+                      <b>Si es de pago (👑) o no aparece:</b> {r.freeAlt}
+                    </p>
+                  )}
+                  <p className="mt-3 text-xs leading-relaxed text-zinc-500">
+                    <b className="text-[#3ee6a8]">Verifica:</b> {r.verify}
+                  </p>
+                </div>
+              </details>
+            ))}
           </div>
 
           <div className="mt-4 grid gap-4 lg:grid-cols-2">

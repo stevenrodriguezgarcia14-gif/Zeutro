@@ -104,7 +104,7 @@ export function VideoExplorer({ rows }: { rows: Row[] }) {
                   <span className={`h-1.5 w-1.5 rounded-full ${pt.dot}`} /> {v.pillar} · {pt.name}
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-zinc-400 ring-1 ring-white/[0.06]">
-                  <IconClock className="h-3 w-3" /> {v.durationSec} s
+                  <IconClock className="h-3 w-3" /> ≈{v.durationSec} s
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-zinc-400 ring-1 ring-white/[0.06]">
                   <IconCamera className="h-3 w-3" /> ~{v.effortMin} min

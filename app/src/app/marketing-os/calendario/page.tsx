@@ -1,5 +1,7 @@
-import { CALENDAR, DAILY_HABITS, WEEKLY_RHYTHM } from "@/lib/marketing/plan";
-import { loadMarketingState } from "@/lib/marketing/state";
+import { DAILY_HABITS, WEEKLY_RHYTHM } from "@/lib/marketing/plan";
+import { buildSchedule } from "@/lib/marketing/schedule";
+import { loadMarketingState, statusOf } from "@/lib/marketing/state";
+import { ReplanButton } from "../client";
 import { Card, MigrationNotice, PageHeader, SectionTitle } from "../parts";
 import { todayISO } from "../theme";
 import { CalendarBoard } from "./calendar";
@@ -10,24 +12,29 @@ export default async function CalendarioPage() {
   const state = await loadMarketingState();
   const today = todayISO();
 
+  // El plan se genera SIEMPRE desde hoy + el estado real de cada video:
+  // nunca hay fechas vencidas ni "empieza el lunes" de un lunes que ya pasó.
+  const schedule = buildSchedule(today, (id) => statusOf(state, id));
+
   return (
     <div>
       <PageHeader
         title="Calendario"
-        sub="Mes para planear, semana para ejecutar, agenda para repasar. Arrastra una tarea a otro día para reprogramarla; en el teléfono usa el icono de mover."
+        sub="Se replanifica solo: cada día se genera desde HOY según qué videos ya grabaste, editaste o publicaste. Marca un video como grabado y el plan de mañana se reorganiza. Arrastra tareas para ajustes puntuales."
+        right={<ReplanButton disabled={state.unavailable} />}
       />
       <MigrationNotice show={state.unavailable} />
 
       <CalendarBoard
-        tasks={CALENDAR}
+        tasks={schedule.tasks}
         initialMoves={[...state.moves.entries()]}
         initialChecks={[...state.checks].filter((k) => k.startsWith("cal:"))}
         today={today}
         disabled={state.unavailable}
       />
 
-      <SectionTitle sub="Cuando el plan fechado termine, este ritmo se repite cada semana. Las métricas del domingo deciden QUÉ videos entran en cada hueco.">
-        Ritmo semanal permanente
+      <SectionTitle sub="La lógica detrás del plan automático. Las métricas del domingo deciden QUÉ videos entran en cada hueco.">
+        Ritmo semanal (la regla que sigue el planificador)
       </SectionTitle>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {WEEKLY_RHYTHM.map((d) => (
@@ -47,13 +54,15 @@ export default async function CalendarioPage() {
       </div>
 
       <Card className="mt-6">
-        <p className="font-display text-sm font-bold text-white">Horarios de publicación (hasta tener datos propios)</p>
-        <div className="mt-3 grid gap-2 text-xs text-zinc-400 sm:grid-cols-3">
-          <p><b className="text-zinc-200">TikTok:</b> 7-9 pm entre semana · 12-3 pm sábado</p>
-          <p><b className="text-zinc-200">Reels/IG:</b> 11 am-1 pm o 7-9 pm</p>
-          <p><b className="text-zinc-200">Facebook:</b> 11 am fijo · grupos mar-jue 8-10 pm</p>
-        </div>
-        <p className="mt-2 text-[11px] text-zinc-600">Tras 4 semanas, usa TU dato (hora de tus espectadores en las estadísticas de cada red).</p>
+        <p className="font-display text-sm font-bold text-white">Cómo replanifica el sistema</p>
+        <ul className="mt-2.5 space-y-1.5 text-xs leading-relaxed text-zinc-400">
+          <li>· <b className="text-zinc-300">Atraso:</b> lo no hecho no se queda en el pasado — reaparece planificado desde hoy.</li>
+          <li>· <b className="text-zinc-300">Adelanto:</b> ¿grabaste 5 videos hoy? Márcalos como grabados y mañana el plan salta directo a edición y publicación.</li>
+          <li>· <b className="text-zinc-300">Orden estratégico:</b> la secuencia de publicación de la campaña no se rompe (#1 abre, #4 se fija en perfiles, luego alternancia dolor/demo/historia).</li>
+          <li>· <b className="text-zinc-300">Videos con material real</b> (marcados en ámbar) no se auto-programan: entran cuando exista el material.</li>
+          <li>· <b className="text-zinc-300">Carga por día:</b> el chip “≈min” estima el trabajo; si un día pasa de 90 min se marca “pesado” — arrastra algo a un día libre.</li>
+          <li>· <b className="text-zinc-300">Horarios:</b> TikTok 7-9 pm · Reels/FB 11 am-1 pm · sábado TikTok 12-3 pm. Tras 4 semanas, usa TU dato de las estadísticas.</li>
+        </ul>
       </Card>
     </div>
   );

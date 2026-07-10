@@ -50,9 +50,6 @@ export type Video = {
 };
 
 export type ScriptSegment = {
-  /** Segundos (inicio y fin) dentro del video final. */
-  from: number;
-  to: number;
   /** Qué se ve en pantalla (tú / pantalla / inserto). */
   visual: string;
   /** Qué decir, palabra por palabra. */
@@ -68,13 +65,26 @@ export type ScriptSegment = {
   energy?: string;
   /** Indicaciones de edición propias del segmento. */
   edit?: string;
+  /**
+   * Tiempo visual SIN hablar dentro del bloque (navegación de pantalla,
+   * mostrar algo, acción), en segundos. Se suma al tiempo de habla.
+   */
+  actionSec?: number;
+  /** Silencio dramático al FINAL del bloque, en segundos. */
+  pauseAfterSec?: number;
 };
 
+/**
+ * Texto en pantalla anclado a BLOQUES del guion (no a segundos escritos a
+ * mano): los segundos reales se calculan con el motor de tiempos.
+ */
 export type ScreenText = {
   layer: "titulo" | "chip" | "subtitulos";
   text: string;
-  from: number;
-  to: number | "fin";
+  /** Índice del bloque (0 = primero) donde aparece. */
+  fromSeg: number;
+  /** Índice del bloque donde desaparece (inclusive), o "fin". */
+  toSeg: number | "fin";
   place: string;
   style: string;
 };

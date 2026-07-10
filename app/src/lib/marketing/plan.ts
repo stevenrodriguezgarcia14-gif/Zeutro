@@ -1,4 +1,4 @@
-import type { CalendarTask, ChecklistDef, GlossaryEntry, ManualSection, ResourceItem } from "./types";
+import type { ChecklistDef, GlossaryEntry, ManualSection, ResourceItem } from "./types";
 
 // Plan operativo del Marketing OS.
 // Fuente: Estrategia-Contenido-Organico-Zentro.md + PARTE C de los guiones (2026-07-07).
@@ -8,7 +8,7 @@ export const FOUNDERS_TARGET = 15;
 
 export const REF_LINK = "zentro-ten-phi.vercel.app/register?ref=fundadores";
 
-/** Ritmo semanal recurrente (se repite después del plan fechado). */
+/** Ritmo semanal recurrente (la regla que sigue el planificador dinámico). */
 export const WEEKLY_RHYTHM: { day: string; tasks: string[] }[] = [
   { day: "Domingo", tasks: ["🎬 Batch de grabación: 4-5 videos (90-120 min)", "Revisar métricas y decidir el mix de la semana"] },
   { day: "Lunes", tasks: ["✂️ Batch de edición en CapCut (2 h)", "Pieza de campaña FB+IG 11 am (si toca)"] },
@@ -24,46 +24,8 @@ export const DAILY_HABITS = [
   "Estado de WhatsApp + story de IG (repost del mejor contenido del día)",
 ];
 
-/** Plan fechado (julio 2026). El check de cada tarea se guarda como cal:<date>:<id>. */
-export const CALENDAR: CalendarTask[] = [
-  // Semana 1-2: campaña F1-F5 (ya programada en Meta Business Suite)
-  { id: "f1", date: "2026-07-06", kind: "campaña", label: "F1 “Te deben dinero” (FB+IG 11 am)", detail: "Ya programada. Tu trabajo: responder comentarios <1 h." },
-  { id: "f2", date: "2026-07-08", kind: "campaña", label: "F2 “Tu negocio vive en 6 lugares” (FB+IG 11 am)", detail: "Responder comentarios; repost a stories con sticker de pregunta." },
-  { id: "ses1", date: "2026-07-08", kind: "grabar", label: "SESIÓN 1: grabar #5 → #2 → #1 → #4 (90-120 min)", detail: "Orden de más fácil a más importante. Checklist “Antes de grabar” primero." },
-  { id: "edit1", date: "2026-07-09", kind: "editar", label: "Editar los 4 videos de la sesión 1 (2 h, receta 0.3)" },
-  { id: "pub1", date: "2026-07-09", kind: "publicar", label: "Publicar #1 en TikTok (7-9 pm)", videoId: 1, platform: "tiktok", time: "19:00-21:00", detail: "El mejor gancho frío del lote abre la cuenta." },
-  { id: "f3", date: "2026-07-10", kind: "campaña", label: "F3 “Zentro cobra por ti” (FB+IG 11 am)" },
-  { id: "pub2", date: "2026-07-10", kind: "publicar", label: "Publicar #1 en Reels + FB (7 pm)", videoId: 1, platform: "reels", time: "19:00", detail: "Misma promesa que F3: imagen de día + video de noche se refuerzan." },
-  { id: "pub3", date: "2026-07-11", kind: "publicar", label: "Publicar #4 en TikTok (mediodía) + Reels/FB (7 pm) y FIJARLO en los 3 perfiles", videoId: 4, platform: "tiktok", detail: "La campaña ya manda visitas a tu perfil: el pitch fijado las convierte." },
-  { id: "rev1", date: "2026-07-12", kind: "revisar", label: "Revisar métricas de la semana (retención 3 s, registros ?ref=fundadores)" },
-  { id: "f4", date: "2026-07-13", kind: "campaña", label: "F4 “15 Usuarios Fundadores” (FB+IG 11 am) — FIJAR el post" },
-  { id: "pub4", date: "2026-07-14", kind: "publicar", label: "Publicar #2 en TikTok (7-9 pm)", videoId: 2, platform: "tiktok", time: "19:00-21:00" },
-  { id: "pub5", date: "2026-07-15", kind: "publicar", label: "Publicar #2 en Reels + FB (11 am-1 pm)", videoId: 2, platform: "reels" },
-  { id: "f5", date: "2026-07-16", kind: "campaña", label: "F5 “Primero 15” (FB+IG 11 am)", detail: "Si ya hay inscritos: rellenar casillas del SVG y re-renderizar." },
-  { id: "pub6", date: "2026-07-16", kind: "publicar", label: "Publicar #5 en TikTok (7-9 pm)", videoId: 5, platform: "tiktok", detail: "Urgencia por la mañana (F5), deseo de calma por la noche (#5)." },
-  { id: "pub7", date: "2026-07-17", kind: "publicar", label: "Publicar #5 en Reels + FB", videoId: 5, platform: "reels" },
-  { id: "com1", date: "2026-07-16", kind: "comunidad", label: "Post de texto personal en FB + compartir en 3 grupos de emprendedores", detail: "En grupos: texto sin QR y link en comentario si lo prohíben." },
-
-  // Semana 3
-  { id: "ses2", date: "2026-07-19", kind: "grabar", label: "SESIÓN 2: grabar #3 → #7 → #6 → #13", detail: "#3 y #7 inauguran las series; #13 es el comodín de humor." },
-  { id: "rev2", date: "2026-07-19", kind: "revisar", label: "Métricas: ¿qué gancho tuvo mejor retención a 3 s? Duplicarlo esta semana" },
-  { id: "edit2", date: "2026-07-20", kind: "editar", label: "Editar los 4 videos de la sesión 2" },
-  { id: "pub8", date: "2026-07-21", kind: "publicar", label: "Publicar #7 “Semana 1 construyendo Zentro” en TikTok", videoId: 7, platform: "tiktok" },
-  { id: "pub9", date: "2026-07-22", kind: "publicar", label: "Publicar #7 en Reels + FB", videoId: 7, platform: "reels" },
-  { id: "pub10", date: "2026-07-23", kind: "publicar", label: "Publicar #6 en TikTok", videoId: 6, platform: "tiktok" },
-  { id: "pub11", date: "2026-07-24", kind: "publicar", label: "Publicar #6 en Reels + FB", videoId: 6, platform: "reels" },
-  { id: "pub12", date: "2026-07-25", kind: "publicar", label: "Publicar #3 “Cómo nació Zentro” en TikTok + Reels (sábado)", videoId: 3, platform: "tiktok", detail: "Fijarlo en IG junto al #4 si el perfil lo permite." },
-
-  // Semana 4
-  { id: "ses3", date: "2026-07-26", kind: "grabar", label: "SESIÓN 3: grabar #10 → #12 → #14 → #24 → #34", detail: "#24 se graba aquí por su timing de fin de mes. + regrabar el formato ganador." },
-  { id: "rev3", date: "2026-07-26", kind: "revisar", label: "Métricas semana 3: el mejor formato se graba 2 veces; el peor se elimina" },
-  { id: "edit3", date: "2026-07-27", kind: "editar", label: "Editar los videos de la sesión 3" },
-  { id: "pub13", date: "2026-07-28", kind: "publicar", label: "Publicar #14 en TikTok", videoId: 14, platform: "tiktok" },
-  { id: "pub14", date: "2026-07-29", kind: "publicar", label: "Publicar #14 en Reels + FB", videoId: 14, platform: "reels" },
-  { id: "pub15", date: "2026-07-30", kind: "publicar", label: "Publicar #24 “Cerraste el mes” (timing: 30-31 jul)", videoId: 24, platform: "tiktok" },
-  { id: "pub16", date: "2026-07-31", kind: "publicar", label: "Publicar #13 en TikTok + #24 en Reels/FB", videoId: 13, platform: "tiktok" },
-  { id: "rev4", date: "2026-08-02", kind: "revisar", label: "Cierre de fase 2: ¿1 video >10k views? ¿30 seguidores/sem? ¿cupos llenos?" },
-];
+// El plan fechado fijo se eliminó: el calendario lo genera schedule.ts
+// dinámicamente desde la fecha actual + el estado real de cada video.
 
 export const CHECKLISTS: ChecklistDef[] = [
   {
@@ -87,7 +49,7 @@ export const CHECKLISTS: ChecklistDef[] = [
     moment: "Al abrir CapCut",
     items: [
       "Clips importados en el orden del guion",
-      "Silencios y errores eliminados (jump cuts, receta 0.3 paso 2)",
+      "Silencios y errores eliminados (receta “Cortar silencios” del Manual) — SIN tocar los silencios dramáticos del guion",
       "Subtítulos automáticos generados Y corregidos (dice “Zentro”, no “centro”)",
       "Palabras clave en verde #00C781 (máx 1-3 por pantalla)",
       "Textos grandes con animación de entrada, en el tercio superior",
@@ -102,7 +64,7 @@ export const CHECKLISTS: ChecklistDef[] = [
     moment: "Con el video exportado, antes de subirlo",
     items: [
       "Visto completo en SILENCIO: ¿se entiende todo sin sonido?",
-      "Dura menos de 40 s (60 si es historia)",
+      "La duración cuadra con la calculada del guion (los tiempos reales ya incluyen tus pausas; no recortes silencios marcados)",
       "UNA sola instrucción final (no tres CTAs)",
       "Caption distinto por plataforma (TikTok corto · IG con CTA de comentario · FB narrativo)",
       "Hashtags del pilar correcto (nunca #fyp / #parati)",

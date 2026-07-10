@@ -11,8 +11,10 @@ import { DOW_LONG, DOW_SHORT, KIND_THEME, MONTHS, addDays, dayOfWeek } from "../
 // tarea, checks instantáneos y drag & drop para reprogramar (escritorio).
 // En móvil cada tarea tiene un selector de fecha (mismo resultado sin drag).
 
+type Task = CalendarTask & { loadMin?: number };
+
 type Props = {
-  tasks: CalendarTask[];
+  tasks: Task[];
   initialMoves: [string, string][];
   initialChecks: string[];
   today: string;
@@ -20,6 +22,17 @@ type Props = {
 };
 
 type View = "mes" | "semana" | "agenda";
+
+/** Chip de carga de trabajo estimada de un día (ámbar si pasa de 90 min). */
+function LoadChip({ min }: { min: number }) {
+  if (min === 0) return null;
+  const heavy = min > 90;
+  return (
+    <span className={`rounded-md px-1.5 py-0.5 text-[10px] tabular-nums ring-1 ${heavy ? "bg-amber-400/10 text-amber-300 ring-amber-400/25" : "bg-white/[0.05] text-zinc-500 ring-white/[0.06]"}`} title="Carga de trabajo estimada del día">
+      ≈{min} min{heavy ? " · pesado" : ""}
+    </span>
+  );
+}
 
 export function CalendarBoard({ tasks, initialMoves, initialChecks, today, disabled }: Props) {
   const [view, setView] = useState<View>("semana");
@@ -32,21 +45,22 @@ export function CalendarBoard({ tasks, initialMoves, initialChecks, today, disab
   const [, start] = useTransition();
 
   const effective = useMemo(() => {
-    const byDate = new Map<string, (CalendarTask & { date: string })[]>();
+    const byDate = new Map<string, Task[]>();
     for (const t of tasks) {
-      const date = moves.get(t.id) ?? t.date;
+      const moved = moves.get(t.id);
+      const date = moved && moved >= today ? moved : t.date;
       if (!byDate.has(date)) byDate.set(date, []);
       byDate.get(date)!.push({ ...t, date });
     }
     return byDate;
-  }, [tasks, moves]);
+  }, [tasks, moves, today]);
 
   const originalDate = useMemo(() => new Map(tasks.map((t) => [t.id, t.date])), [tasks]);
 
   /* ------------------------------- acciones optimistas */
 
-  function toggleTask(t: CalendarTask & { date: string }) {
-    const key = `cal:${originalDate.get(t.id)}:${t.id}`;
+  function toggleTask(t: Task) {
+    const key = `cal:${t.id}`;
     const next = !checks.has(key);
     setChecks((cur) => {
       const s = new Set(cur);
@@ -73,8 +87,8 @@ export function CalendarBoard({ tasks, initialMoves, initialChecks, today, disab
     });
   }
 
-  function isDone(t: CalendarTask & { date: string }) {
-    return checks.has(`cal:${originalDate.get(t.id)}:${t.id}`);
+  function isDone(t: Task) {
+    return checks.has(`cal:${t.id}`);
   }
 
   /* ------------------------------- helpers de fechas */
@@ -106,7 +120,7 @@ export function CalendarBoard({ tasks, initialMoves, initialChecks, today, disab
 
   /* ------------------------------- piezas visuales */
 
-  function TaskRow({ t, compact }: { t: CalendarTask & { date: string }; compact?: boolean }) {
+  function TaskRow({ t, compact }: { t: Task; compact?: boolean }) {
     const done = isDone(t);
     const kind = KIND_THEME[t.kind];
     const moved = moves.has(t.id);
@@ -192,6 +206,7 @@ export function CalendarBoard({ tasks, initialMoves, initialChecks, today, disab
 
   const dayTasks = (d: string) => effective.get(d) ?? [];
   const dayDone = (d: string) => dayTasks(d).filter((t) => isDone(t)).length;
+  const dayLoad = (d: string) => dayTasks(d).reduce((a, t) => a + (t.loadMin ?? 0), 0);
 
   /* ------------------------------- render */
 
@@ -282,9 +297,10 @@ export function CalendarBoard({ tasks, initialMoves, initialChecks, today, disab
 
           {/* Panel del día seleccionado */}
           <div className="mt-4 rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/[0.07]">
-            <p className="font-display text-sm font-bold capitalize tracking-tight text-white">
+            <p className="flex items-center gap-2 font-display text-sm font-bold capitalize tracking-tight text-white">
               {DOW_LONG[dayOfWeek(selected)]} {Number(selected.slice(8))} de {MONTHS[Number(selected.slice(5, 7)) - 1]}
-              {selected === today && <span className="ml-2 rounded-md bg-[#00C781]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[#3ee6a8]">HOY</span>}
+              {selected === today && <span className="rounded-md bg-[#00C781]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[#3ee6a8]">HOY</span>}
+              <LoadChip min={dayLoad(selected)} />
             </p>
             <div className="mt-3 space-y-2">
               {dayTasks(selected).length === 0 && <p className="text-sm text-zinc-600">Día libre. Arrastra aquí una tarea si quieres adelantarla.</p>}
@@ -303,9 +319,12 @@ export function CalendarBoard({ tasks, initialMoves, initialChecks, today, disab
             return (
               <DropZone key={d} date={d} className="rounded-xl">
                 <div className={`flex min-h-28 flex-col rounded-xl p-2 ring-1 transition-colors ${isToday ? "bg-[#00C781]/[0.05] ring-[#00C781]/30" : "bg-white/[0.02] ring-white/[0.05]"}`}>
-                  <p className={`px-1 pb-1.5 text-[11px] font-semibold capitalize ${isToday ? "text-[#3ee6a8]" : "text-zinc-500"}`}>
-                    {DOW_SHORT[dayOfWeek(d)]} {Number(d.slice(8))}
-                  </p>
+                  <div className="flex items-center justify-between px-1 pb-1.5">
+                    <p className={`text-[11px] font-semibold capitalize ${isToday ? "text-[#3ee6a8]" : "text-zinc-500"}`}>
+                      {DOW_SHORT[dayOfWeek(d)]} {Number(d.slice(8))}
+                    </p>
+                    <LoadChip min={dayLoad(d)} />
+                  </div>
                   <div className="flex-1 space-y-1.5">
                     {list.length === 0 && <p className="px-1 text-[11px] text-zinc-700">—</p>}
                     {list.map((t) => <TaskRow key={t.id} t={t} compact />)}
@@ -335,6 +354,7 @@ export function CalendarBoard({ tasks, initialMoves, initialChecks, today, disab
                     {isToday && <span className="rounded-md bg-[#00C781] px-1.5 py-0.5 text-[10px] font-bold text-black">HOY</span>}
                     {past && !allDone && <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-300">pendiente</span>}
                     {allDone && <span className="text-xs text-[#3ee6a8]">✓ completo</span>}
+                    <span className="ml-auto"><LoadChip min={dayLoad(d)} /></span>
                   </div>
                   <div className="mt-2.5 space-y-2">
                     {list.map((t) => <TaskRow key={t.id} t={t} />)}

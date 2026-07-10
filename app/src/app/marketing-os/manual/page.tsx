@@ -1,5 +1,7 @@
 import { GLOSSARY, HASHTAG_SETS, MANUAL_SECTIONS } from "@/lib/marketing/plan";
+import { CAPCUT_RECIPES } from "@/lib/marketing/capcut";
 import { GlossarySearch } from "./search";
+import { IconChevronR, IconScissors } from "../icons";
 import { Card, PageHeader, SectionTitle } from "../parts";
 
 // Contenido 100% estático — carga instantánea, sin consultas.
@@ -7,7 +9,8 @@ import { Card, PageHeader, SectionTitle } from "../parts";
 const PRINCIPLES: [string, string][] = [
   ["Documentar > crear", "No “haces marketing”: muestras lo que ya haces (construir, fallar, corregir). Programas Zentro todos los días — ese ES el contenido."],
   ["Gancho triple en el segundo 0", "Visual + verbal + texto, los tres a la vez. Nunca “hola, soy Steve y hoy...”."],
-  ["Retención = cambio cada ≤5 s", "Cortes cada 2-3 s + zoom, texto o pantalla cada 5. La completion rate es la métrica reina (por eso 20-40 s)."],
+  ["Claridad > cronómetro", "Los tiempos de todos los guiones se CALCULAN a velocidad real de habla (2.3 palabras/seg + pausas). Un gancho de 5-6 s que se entiende vale más que uno de 3 s imposible de decir."],
+  ["Retención = cambio cada ≤5 s", "Cortes cada 2-3 s + zoom, texto o pantalla cada 5. La completion rate es la métrica reina: ni un segundo más de lo que el guion necesita."],
   ["Autenticidad calculada", "Luz de ventana, hablar como nota de voz. Lo pulido parece anuncio; lo crudo-pero-nítido parece verdad. Nítido = buen audio SIEMPRE."],
   ["Un video = una idea", "Si necesitas “y además...”, son dos videos."],
   ["La primera hora manda", "Responder cada comentario en <60 min multiplica el alcance."],
@@ -63,6 +66,45 @@ export default function ManualPage() {
             ))}
           </ol>
         </Card>
+      </div>
+
+      {/* Recetario CapCut tap por tap */}
+      <SectionTitle sub="Cada herramienta de CapCut GRATIS explicada botón por botón: dónde está, qué tocar, qué configurar, la alternativa gratis si algo pide Pro (👑) y cómo verificar que quedó bien. Las mismas recetas aparecen dentro de cada guion.">
+        Recetario CapCut · tap por tap
+      </SectionTitle>
+      <div className="grid gap-2 lg:grid-cols-2">
+        {CAPCUT_RECIPES.map((r) => (
+          <details key={r.id} className="group h-fit rounded-2xl bg-white/[0.03] ring-1 ring-white/[0.07] open:ring-[#00C781]/25">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-4">
+              <span className="flex items-center gap-2.5 text-sm font-semibold text-zinc-200">
+                <IconScissors className="h-4 w-4 shrink-0 text-zinc-500 group-open:text-[#3ee6a8]" />
+                {r.title}
+              </span>
+              <span className="text-zinc-600 transition group-open:rotate-90"><IconChevronR className="h-4 w-4" /></span>
+            </summary>
+            <div className="px-4 pb-4">
+              <p className="rounded-lg bg-white/[0.04] px-2.5 py-1.5 text-[11px] text-zinc-400 ring-1 ring-white/[0.06]">
+                <b className="text-zinc-300">Dónde está:</b> {r.where}
+              </p>
+              <ol className="mt-3 space-y-2 text-sm text-zinc-300">
+                {r.steps.map((s, i) => (
+                  <li key={i} className="flex gap-3">
+                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-white/[0.06] font-display text-[11px] font-bold text-[#3ee6a8]">{i + 1}</span>
+                    <span className="leading-relaxed">{s}</span>
+                  </li>
+                ))}
+              </ol>
+              {r.freeAlt && (
+                <p className="mt-3 rounded-lg bg-amber-400/[0.06] px-2.5 py-2 text-xs leading-relaxed text-amber-300/90 ring-1 ring-amber-400/15">
+                  <b>Si es de pago (👑) o no aparece:</b> {r.freeAlt}
+                </p>
+              )}
+              <p className="mt-3 text-xs leading-relaxed text-zinc-500">
+                <b className="text-[#3ee6a8]">Verifica:</b> {r.verify}
+              </p>
+            </div>
+          </details>
+        ))}
       </div>
 
       {/* Errores */}
