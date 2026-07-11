@@ -351,7 +351,7 @@ export const MEDIA: MediaAsset[] = [
     orientation: "vertical",
     status: "listo",
     notes:
-      "v2 ligera (video-build/build-cortinilla.mjs): fondo negro plano + isotipo Z + claim + QR MEDIBLE (ref=fundadores) + “Escanea y empieza gratis” + @zentronegocios. Un solo mensaje jerárquico, zona inferior de TikTok libre. Se arrastra al final de CADA proyecto: es la firma de marca.",
+      "v3 ligera (video-build/build-cortinilla.mjs): fondo negro plano + isotipo Z + claim + QR MEDIBLE (→ registro con ref=fundadores) + “Escanea y empieza gratis” + @zentronegocios con TikTok·Instagram·Facebook (dónde encontrarnos). Duración verificada: 3.2 s exactos. Se arrastra al final de CADA proyecto: es la firma de marca.",
     usedIn: [{ videoId: 0, cue: "el final de TODOS los videos", purpose: "Cierre estándar: reconocimiento de marca + handle" }],
   },
   {
