@@ -346,12 +346,12 @@ export const MEDIA: MediaAsset[] = [
     kind: "clip",
     category: "Identidad",
     tags: ["cierre", "marca", "handle"],
-    durationSec: 2,
+    durationSec: 3.2,
     resolution: "1080×1920",
     orientation: "vertical",
     status: "listo",
     notes:
-      "Generada automáticamente (video-build/build-cortinilla.mjs): base negra + glow verde + isotipo Z + claim + @zentronegocios, con zoom sutil y fundidos. Sin QR a propósito (en 2 s nadie escanea; el CTA vive en el video hablado). Se arrastra al final de CADA proyecto: es la firma de marca.",
+      "v2 ligera (video-build/build-cortinilla.mjs): fondo negro plano + isotipo Z + claim + QR MEDIBLE (ref=fundadores) + “Escanea y empieza gratis” + @zentronegocios. Un solo mensaje jerárquico, zona inferior de TikTok libre. Se arrastra al final de CADA proyecto: es la firma de marca.",
     usedIn: [{ videoId: 0, cue: "el final de TODOS los videos", purpose: "Cierre estándar: reconocimiento de marca + handle" }],
   },
   {

@@ -52,7 +52,7 @@ export function scriptTimeline(script: Script): TimedSegment[] {
 
 /** Duración total realista del video (habla + pausas + acción + cortinilla). */
 export function scriptTotalSeconds(script: Script): number {
-  const CORTINILLA = 1.5;
+  const CORTINILLA = 3.2; // cortinilla oficial v2 (con QR)
   const body = script.segments.reduce((acc, s) => acc + segmentSeconds(s), 0);
   return Math.round(body + CORTINILLA);
 }

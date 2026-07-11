@@ -238,13 +238,13 @@ export const CAPCUT_RECIPES: CapcutRecipe[] = [
     title: "Poner la cortinilla oficial al final (ya está creada)",
     where: "Panel Multimedia → cortinilla_9x16.mp4 → arrastrar al final",
     steps: [
-      "La cortinilla YA EXISTE (se generó automáticamente): Marketing-Assets-Zentro/Biblioteca/clips-app/cortinilla_9x16.mp4 — negro + Z + claim + @zentronegocios, con fundidos.",
+      "La cortinilla YA EXISTE (se generó automáticamente): Marketing-Assets-Zentro/Biblioteca/clips-app/cortinilla_9x16.mp4 — Z + claim + QR medible + “Escanea y empieza gratis” + @zentronegocios, con fundidos (3.2 s).",
       "Impórtala con el resto de archivos (receta “Crear el proyecto”).",
       "Arrástrala a la pista principal, pegada al FINAL del último bloque.",
-      "No le añadas transición: ella trae su propio fundido de entrada.",
+      "No le añadas transición ni textos encima: trae su propio fundido y su CTA.",
       "La música debe terminar ANTES de la cortinilla o desvanecerse sobre ella: Ctrl+B en la música al inicio de la cortinilla → panel Audio → activa “Fundido de salida” ~0.5 s en el último pedazo.",
     ],
-    verify: "El video termina en el cierre de marca (2 s) y la música no se corta de golpe.",
+    verify: "El video termina en el cierre de marca (3 s) con el QR nítido y la música no se corta de golpe.",
     keywords: ["cortinilla"],
   },
   {
