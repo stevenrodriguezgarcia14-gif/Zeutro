@@ -13,6 +13,11 @@ type OrgRow = {
 type Plan = { id: string; name: string; notes: string | null; monthly_price_minor: number };
 type Audit = { action: string; target_org: string | null; detail: Record<string, unknown> | null; created_at: string };
 type UserRow = { id: string; email: string; created_at: string; last_sign_in: string | null; orgs: number; is_admin: boolean };
+type Growth = {
+  orgs_total: number; orgs_activated: number; activation_pct: number | null;
+  retention_base: number; retention_kept: number; retention_pct: number | null;
+  pwa_installed: number; pwa_active_7d: number;
+};
 
 function Metric({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
   return (
@@ -30,18 +35,20 @@ export default async function AdminDashboard({
 }) {
   const { error, ok } = await searchParams;
   const supabase = await createClient();
-  const [{ data: ov }, { data: orgs, error: orgsErr }, { data: plans }, { data: audit }, { data: users, error: usersErr }] = await Promise.all([
+  const [{ data: ov }, { data: orgs, error: orgsErr }, { data: plans }, { data: audit }, { data: users, error: usersErr }, { data: growth }] = await Promise.all([
     supabase.rpc("admin_overview"),
     supabase.rpc("admin_list_orgs"),
     supabase.from("plans").select("id, name, notes, monthly_price_minor").order("monthly_price_minor"),
     supabase.rpc("admin_recent_audit"),
     supabase.rpc("admin_list_users"),
+    supabase.rpc("admin_growth_metrics"),
   ]);
   const o = (ov ?? {}) as Overview;
   const orgList = (orgs ?? []) as OrgRow[];
   const planList = (plans ?? []) as Plan[];
   const auditList = (audit ?? []) as Audit[];
   const userList = (users ?? []) as UserRow[];
+  const g = (growth ?? null) as Growth | null;
   const loadErr = orgsErr?.message || usersErr?.message;
 
   return (
@@ -75,6 +82,26 @@ export default async function AdminDashboard({
         <Metric label="Nuevos usuarios (7d)" value={o.new_users_7d ?? 0} />
         <Metric label="Facturas (todas)" value={o.invoices ?? 0} />
         <Metric label="Clientes (todas)" value={o.customers ?? 0} />
+      </div>
+
+      <h2 className="mt-8 text-lg font-semibold">Los 3 números que importan</h2>
+      <p className="mt-1 text-xs text-slate-500">
+        North Star: el momento de cobro. Activación = empresas con su primer cobro registrado (pago o venta rápida).
+        Retención S2 = empresas con ≥14 días que volvieron entre su día 8 y 14. PWA = Zentro instalado en el teléfono.
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <Metric
+          label={`Activación (${g?.orgs_activated ?? 0} de ${g?.orgs_total ?? 0})`}
+          value={g?.activation_pct != null ? `${g.activation_pct}%` : "—"}
+          accent
+        />
+        <Metric
+          label={`Retención semana 2 (${g?.retention_kept ?? 0} de ${g?.retention_base ?? 0})`}
+          value={g?.retention_pct != null ? `${g.retention_pct}%` : "—"}
+          accent
+        />
+        <Metric label="Usuarios con PWA instalada" value={g?.pwa_installed ?? 0} />
+        <Metric label="Abrieron la PWA (7 días)" value={g?.pwa_active_7d ?? 0} />
       </div>
 
       <h2 className="mt-8 text-lg font-semibold">Planes y beneficios</h2>

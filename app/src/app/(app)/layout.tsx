@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
+import { PwaBeacon } from "@/components/PwaBeacon";
 import { getOrgContext } from "@/lib/org";
 import { getProfile, MODULES } from "@/lib/guide";
 
@@ -32,6 +33,7 @@ export default async function AppLayout({
 
   return (
     <AppShell orgName={org.name} orgs={orgs} activeId={org.id} isPlatformAdmin={!!isPlatformAdmin} priorityHrefs={priorityHrefs}>
+      <PwaBeacon />
       {children}
     </AppShell>
   );
