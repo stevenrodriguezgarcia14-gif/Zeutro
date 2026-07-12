@@ -194,6 +194,28 @@ html {
 }
 .zentro-coinflip { animation: zentro-coinflip 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both; transform-style: preserve-3d; }
 
+/* ---- Gráficos del dashboard (sutiles: crecen una sola vez al montar) ---- */
+@keyframes zchart-grow-y {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+@keyframes zchart-grow-x {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.zchart-col      { transform-origin: bottom; animation: zchart-grow-y 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.zchart-col-down { transform-origin: top;    animation: zchart-grow-y 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.zchart-bar      { transform-origin: left;   animation: zchart-grow-x 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .zchart-col,
+  .zchart-col-down,
+  .zchart-bar {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

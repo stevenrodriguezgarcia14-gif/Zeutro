@@ -8,6 +8,13 @@ import { getActivation } from "@/lib/activation";
 import { learnSummary } from "@/lib/academia";
 import { netOfTaxInclusive } from "@/lib/income";
 import { dismissActivation } from "../org-actions";
+import { StatTile } from "@/components/charts/StatTile";
+import { ChartCard, ChartEmpty, TwinTable } from "@/components/charts/ChartCard";
+import { MoneyColumns, type MonthMoney } from "@/components/charts/MoneyColumns";
+import { ProfitColumns } from "@/components/charts/ProfitColumns";
+import { TopBars, type TopBarRow } from "@/components/charts/TopBars";
+import { ReceivablesBar } from "@/components/charts/ReceivablesBar";
+import { CHART } from "@/components/charts/theme";
 
 function Card({
   title,
@@ -31,13 +38,20 @@ function Card({
   );
 }
 
+/** Agrupa y suma en un Map; devuelve el top-N como filas de barra. */
+function topN(map: Map<string, number>, n: number): TopBarRow[] {
+  return [...map.entries()]
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, n);
+}
+
 export default async function DashboardPage() {
   const org = await getCurrentOrg();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
   const month = new Date().toISOString().slice(0, 7); // YYYY-MM
   const monthStart = `${month}-01`;
-  // Mes anterior, para comparar "a esta misma fecha" (día equivalente).
   const nowD = new Date();
   const prevMonthStart = new Date(Date.UTC(nowD.getUTCFullYear(), nowD.getUTCMonth() - 1, 1))
     .toISOString()
@@ -45,82 +59,184 @@ export default async function DashboardPage() {
 
   const today = new Date().toISOString().slice(0, 10);
   const dayOfMonth = today.slice(8, 10);
-  // Todo el tablero en UNA sola tanda paralela (antes eran dos tandas
-  // secuenciales: cada una costaba un round-trip completo a Supabase).
+
+  // Últimos 6 meses (para las gráficas de evolución) y 90 días (rankings).
+  const fmtMonth = new Intl.DateTimeFormat("es", { month: "short", timeZone: "UTC" });
+  const months: { key: string; label: string }[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(Date.UTC(nowD.getUTCFullYear(), nowD.getUTCMonth() - i, 1));
+    months.push({ key: d.toISOString().slice(0, 7), label: fmtMonth.format(d).replace(".", "") });
+  }
+  const sixStart = `${months[0].key}-01`;
+  const d90 = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
+
+  // Todo el tablero en UNA sola tanda paralela.
   const [
-    { count: customersCount }, { data: invoices }, { data: payments }, { data: expenses }, { data: accounts },
+    { count: customersCount }, { data: invoices }, { data: allocRows }, { data: expenses }, { data: accounts },
     { data: tasks }, { data: opps }, { count: projectsCount }, { data: qsRows },
-    compras, activation, { data: acadProgress },
+    compras, activation, { data: acadProgress }, { data: payRows }, { data: itemRows },
   ] = await Promise.all([
     supabase.from("customers").select("*", { count: "exact", head: true }),
     supabase.from("invoices").select("balance_minor, status, due_date"),
-    // Cobrado del mes NETO de IVA: asignaciones de pago proporcionales al subtotal de su factura.
+    // Cobrado NETO de IVA: asignaciones de pago proporcionales al subtotal de su factura.
     supabase
       .from("payment_allocations")
       .select("amount_minor, payments!inner(paid_at), invoices(subtotal_minor, total_minor)")
-      .gte("payments.paid_at", prevMonthStart),
-    supabase.from("expenses").select("amount_minor, expense_date").gte("expense_date", monthStart),
+      .gte("payments.paid_at", sixStart),
+    supabase.from("expenses").select("amount_minor, expense_date, category").gte("expense_date", sixStart),
     supabase.from("accounts").select("current_balance_minor").eq("is_active", true),
     supabase.from("tasks").select("due_date, status").not("status", "in", "(done,cancelled)"),
     supabase.from("opportunities").select("amount_minor, stages(probability_bps)").eq("status", "open"),
     supabase.from("projects").select("*", { count: "exact", head: true }).in("status", ["planning", "active", "on_hold"]),
-    supabase.from("quick_sales").select("amount_minor, tax_rate_bps, sold_at").gte("sold_at", prevMonthStart),
+    supabase
+      .from("quick_sales")
+      .select("amount_minor, tax_rate_bps, sold_at, product_id, products(name)")
+      .gte("sold_at", sixStart),
     getPurchasesOverview(),
     getActivation(org?.business_type),
     supabase.from("academy_progress").select("kind, item_slug"),
+    // Rankings 90 días: quién paga y qué se vende.
+    supabase.from("payments").select("amount_minor, paid_at, customers(legal_name)").gte("paid_at", d90),
+    supabase
+      .from("invoice_items")
+      .select("line_total_minor, products(name), invoices!inner(issue_date, status)")
+      .not("product_id", "is", null)
+      .gte("invoices.issue_date", d90),
   ]);
 
   const inv = invoices ?? [];
-  const outstanding = inv
-    .filter((i) => i.status !== "paid" && i.status !== "void")
-    .reduce((s, i) => s + (i.balance_minor ?? 0), 0);
-  const overdueCount = inv.filter(
-    (i) => i.balance_minor > 0 && i.due_date < today && i.status !== "paid" && i.status !== "void",
-  ).length;
+  const openInvoices = inv.filter((i) => i.status !== "paid" && i.status !== "void" && (i.balance_minor ?? 0) > 0);
+  const outstanding = openInvoices.reduce((s, i) => s + (i.balance_minor ?? 0), 0);
+  const overdueCount = openInvoices.filter((i) => i.due_date < today).length;
 
-  const allAllocs = (payments ?? []) as unknown as {
+  const allAllocs = (allocRows ?? []) as unknown as {
     amount_minor: number;
     payments: { paid_at: string } | null;
     invoices: { subtotal_minor: number; total_minor: number } | null;
   }[];
+  const netOfAlloc = (a: (typeof allAllocs)[number]) => {
+    const i = a.invoices;
+    const ratio = i && i.total_minor > 0 ? i.subtotal_minor / i.total_minor : 1;
+    return Math.round((a.amount_minor ?? 0) * ratio);
+  };
   const monthAllocs = allAllocs.filter((a) => (a.payments?.paid_at ?? "") >= monthStart);
-  // Mes pasado "a esta misma fecha": solo movimientos hasta el día equivalente,
-  // para comparar peras con peras (mes completo vs mes parcial engaña).
+  // Mes pasado "a esta misma fecha": comparar peras con peras.
   const prevAllocs = allAllocs.filter((a) => {
     const d = a.payments?.paid_at ?? "";
-    return d < monthStart && d.slice(8, 10) <= dayOfMonth;
+    return d >= prevMonthStart && d < monthStart && d.slice(8, 10) <= dayOfMonth;
   });
-  const netOfAllocs = (rows: typeof allAllocs) =>
-    rows.reduce((s, a) => {
-      const inv = a.invoices;
-      const ratio = inv && inv.total_minor > 0 ? inv.subtotal_minor / inv.total_minor : 1;
-      return s + Math.round((a.amount_minor ?? 0) * ratio);
-    }, 0);
-  const invoiceNetMonth = netOfAllocs(monthAllocs);
-  const allQs = (qsRows ?? []) as { amount_minor: number; tax_rate_bps: number; sold_at: string }[];
+  const invoiceNetMonth = monthAllocs.reduce((s, a) => s + netOfAlloc(a), 0);
+
+  const allQs = (qsRows ?? []) as unknown as {
+    amount_minor: number;
+    tax_rate_bps: number;
+    sold_at: string;
+    product_id: string | null;
+    products: { name: string } | null;
+  }[];
+  const netOfQs = (v: (typeof allQs)[number]) => netOfTaxInclusive(v.amount_minor ?? 0, v.tax_rate_bps);
   const monthQs = allQs.filter((v) => v.sold_at >= monthStart);
-  const prevQs = allQs.filter((v) => v.sold_at < monthStart && v.sold_at.slice(8, 10) <= dayOfMonth);
-  const netOfQs = (rows: typeof allQs) =>
-    rows.reduce((s, v) => s + netOfTaxInclusive(v.amount_minor ?? 0, v.tax_rate_bps), 0);
-  const incomeMonth = invoiceNetMonth + netOfQs(monthQs);
-  const prevIncomeToDate = netOfAllocs(prevAllocs) + netOfQs(prevQs);
+  const prevQs = allQs.filter((v) => v.sold_at >= prevMonthStart && v.sold_at < monthStart && v.sold_at.slice(8, 10) <= dayOfMonth);
+
+  const incomeMonth = invoiceNetMonth + monthQs.reduce((s, v) => s + netOfQs(v), 0);
+  const prevIncomeToDate = prevAllocs.reduce((s, a) => s + netOfAlloc(a), 0) + prevQs.reduce((s, v) => s + netOfQs(v), 0);
   const incomeDeltaPct =
     prevIncomeToDate > 0 ? Math.round(((incomeMonth - prevIncomeToDate) / prevIncomeToDate) * 100) : null;
-  // ¿Hubo IVA este mes? (facturas con impuesto o ventas rápidas con tasa). Si no,
-  // no etiquetamos "sin IVA" para no confundir a negocios que no cobran IVA.
+
   const invoiceGrossMonth = monthAllocs.reduce((s, a) => s + (a.amount_minor ?? 0), 0);
-  const qsTaxMonth = monthQs.reduce((s, v) => s + ((v.amount_minor ?? 0) - netOfTaxInclusive(v.amount_minor ?? 0, v.tax_rate_bps)), 0);
+  const qsTaxMonth = monthQs.reduce((s, v) => s + ((v.amount_minor ?? 0) - netOfQs(v)), 0);
   const hasTaxMonth = invoiceGrossMonth - invoiceNetMonth > 0 || qsTaxMonth > 0;
-  const expenseMonth = (expenses ?? []).reduce((s, e) => s + (e.amount_minor ?? 0), 0);
+
+  const allExp = (expenses ?? []) as { amount_minor: number; expense_date: string; category: string | null }[];
+  const expenseMonth = allExp.filter((e) => e.expense_date >= monthStart).reduce((s, e) => s + (e.amount_minor ?? 0), 0);
   const profitMonth = incomeMonth - expenseMonth;
   const cashTotal = (accounts ?? []).reduce((s, a) => s + (a.current_balance_minor ?? 0), 0);
   const hideActivation = (await cookies()).get("zentro_hide_activation")?.value === "1";
 
+  // ---- Series de 6 meses: entra vs. sale, y utilidad ----
+  const byMonth = new Map(months.map((m) => [m.key, { ingresos: 0, gastos: 0 }]));
+  for (const a of allAllocs) {
+    const k = (a.payments?.paid_at ?? "").slice(0, 7);
+    const b = byMonth.get(k);
+    if (b) b.ingresos += netOfAlloc(a);
+  }
+  for (const v of allQs) {
+    const b = byMonth.get(v.sold_at.slice(0, 7));
+    if (b) b.ingresos += netOfQs(v);
+  }
+  for (const e of allExp) {
+    const b = byMonth.get(e.expense_date.slice(0, 7));
+    if (b) b.gastos += e.amount_minor ?? 0;
+  }
+  const moneySeries: MonthMoney[] = months.map((m) => ({ label: m.label, ...byMonth.get(m.key)! }));
+  const profitSeries = moneySeries.map((m) => ({ label: m.label, utilidad: m.ingresos - m.gastos }));
+  const hasSeries = moneySeries.some((m) => m.ingresos > 0 || m.gastos > 0);
+
+  // ---- Sparkline: ingresos cobrados por semana, últimas 12 semanas ----
+  const weeks = new Array<number>(12).fill(0);
+  const nowT = Date.parse(`${today}T00:00:00Z`);
+  const weekIdx = (d: string) => {
+    const i = Math.floor((nowT - Date.parse(`${d}T00:00:00Z`)) / (7 * 86400000));
+    return i >= 0 && i < 12 ? 11 - i : -1;
+  };
+  for (const a of allAllocs) {
+    const i = weekIdx(a.payments?.paid_at ?? "");
+    if (i >= 0) weeks[i] += netOfAlloc(a);
+  }
+  for (const v of allQs) {
+    const i = weekIdx(v.sold_at);
+    if (i >= 0) weeks[i] += netOfQs(v);
+  }
+
+  // ---- Estado de los cobros (facturas abiertas por urgencia) ----
+  const in7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+  const bucket = (rows: typeof openInvoices) => ({
+    total: rows.reduce((s, i) => s + (i.balance_minor ?? 0), 0),
+    count: rows.length,
+  });
+  const receivables = {
+    vencida: bucket(openInvoices.filter((i) => i.due_date < today)),
+    porVencer: bucket(openInvoices.filter((i) => i.due_date >= today && i.due_date <= in7)),
+    alDia: bucket(openInvoices.filter((i) => i.due_date > in7)),
+  };
+
+  // ---- Rankings 90 días ----
+  const payList = (payRows ?? []) as unknown as { amount_minor: number; customers: { legal_name: string } | null }[];
+  const custMap = new Map<string, number>();
+  for (const p of payList) {
+    const name = p.customers?.legal_name;
+    if (name) custMap.set(name, (custMap.get(name) ?? 0) + (p.amount_minor ?? 0));
+  }
+  const topClientes = topN(custMap, 5);
+
+  const itemList = (itemRows ?? []) as unknown as {
+    line_total_minor: number;
+    products: { name: string } | null;
+    invoices: { issue_date: string; status: string } | null;
+  }[];
+  const prodMap = new Map<string, number>();
+  for (const it of itemList) {
+    const st = it.invoices?.status;
+    if (!it.products?.name || st === "draft" || st === "void") continue;
+    prodMap.set(it.products.name, (prodMap.get(it.products.name) ?? 0) + (it.line_total_minor ?? 0));
+  }
+  for (const v of allQs) {
+    if (v.sold_at < d90 || !v.products?.name) continue;
+    prodMap.set(v.products.name, (prodMap.get(v.products.name) ?? 0) + (v.amount_minor ?? 0));
+  }
+  const topProductos = topN(prodMap, 5);
+
+  const catMap = new Map<string, number>();
+  for (const e of allExp) {
+    if (e.expense_date < d90) continue;
+    const cat = e.category?.trim() || "Sin categoría";
+    catMap.set(cat, (catMap.get(cat) ?? 0) + (e.amount_minor ?? 0));
+  }
+  const topCategorias = topN(catMap, 5);
+
   const acadPassed = new Set((acadProgress ?? []).filter((p) => p.kind === "challenge").map((p) => p.item_slug));
   const acadCerts = (acadProgress ?? []).filter((p) => p.kind === "certification").length;
   const learn = learnSummary(acadPassed, activation.data, acadCerts);
-  // Mismo conteo que muestra la Academia: escenarios aprobados + acciones
-  // aplicadas (antes el dashboard contaba solo escenarios y los números no coincidían).
   const learnDone = learn.scenariosPassed + learn.actionsDone;
   const learnTotal = learn.scenariosTotal + learn.actionsTotal;
   const learnPct = learnTotal ? Math.round((learnDone / learnTotal) * 100) : 0;
@@ -193,45 +309,182 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Dinero del mes: ¿gano o pierdo? */}
       {!isNewOrg && (
       <>
+      {/* KPIs del mes: la foto en 5 segundos */}
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-400">
         Este mes (cobrado vs. gastado)
       </h2>
-      <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card
-          title="Ingresos cobrados"
+      <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatTile
+          label="Ingresos cobrados"
           value={formatMoney(incomeMonth, currency)}
-          tone="good"
-          hint={
-            (hasTaxMonth ? "Cobrado este mes, sin IVA" : "Cobrado este mes") +
-            (incomeDeltaPct !== null
-              ? ` · ${incomeDeltaPct >= 0 ? "↑" : "↓"} ${Math.abs(incomeDeltaPct)}% vs mes pasado a esta fecha`
-              : "")
-          }
+          delta={incomeDeltaPct !== null ? `${incomeDeltaPct >= 0 ? "↑" : "↓"} ${Math.abs(incomeDeltaPct)}%` : undefined}
+          deltaGood={(incomeDeltaPct ?? 0) >= 0}
+          hint={(hasTaxMonth ? "Cobrado este mes, sin IVA" : "Cobrado este mes") + (incomeDeltaPct !== null ? " · vs mes pasado a esta fecha" : "")}
+          spark={weeks}
         />
-        <Card title="Gastos" value={formatMoney(expenseMonth, currency)} tone="bad" hint="Salidas registradas este mes" />
-        <Card
-          title="Utilidad del mes"
+        <StatTile label="Gastos" value={formatMoney(expenseMonth, currency)} hint="Salidas registradas este mes" />
+        <StatTile
+          label="Utilidad del mes"
           value={formatMoney(profitMonth, currency)}
-          tone={incomeMonth === 0 && expenseMonth === 0 ? "default" : profitMonth >= 0 ? "good" : "bad"}
-          hint={
-            incomeMonth === 0 && expenseMonth === 0
-              ? "Sin movimientos este mes todavía"
-              : profitMonth >= 0
-                ? "Vas ganando 🎉"
-                : "Vas en pérdida ⚠️"
-          }
+          delta={incomeMonth === 0 && expenseMonth === 0 ? undefined : profitMonth >= 0 ? "ganando 🎉" : "en pérdida ⚠️"}
+          deltaGood={profitMonth >= 0}
+          hint={incomeMonth === 0 && expenseMonth === 0 ? "Sin movimientos este mes todavía" : "Ingresos cobrados menos gastos"}
         />
+        <StatTile label="Dinero en cuentas" value={formatMoney(cashTotal, currency)} hint="Bancos + efectivo" />
       </div>
 
-      {/* Operación */}
+      {/* Evolución: ¿crezco y gano? */}
+      <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">Así va tu negocio</h2>
+      <div className="mt-2 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ChartCard
+          question="¿Entra más de lo que sale?"
+          period="Últimos 6 meses · cobrado real vs. gastos"
+          table={
+            hasSeries ? (
+              <TwinTable
+                headers={["Mes", "Ingresos", "Gastos"]}
+                rows={moneySeries.map((m) => [m.label, formatMoney(m.ingresos, currency), formatMoney(m.gastos, currency)])}
+              />
+            ) : undefined
+          }
+        >
+          {hasSeries ? (
+            <MoneyColumns data={moneySeries} currency={currency} />
+          ) : (
+            <ChartEmpty
+              message="Aún no hay movimientos para dibujar tu historia"
+              hint="Registra ventas y gastos; esta gráfica cobra vida sola."
+            />
+          )}
+        </ChartCard>
+
+        <ChartCard
+          question="¿Ganaste o perdiste cada mes?"
+          period="Últimos 6 meses · utilidad = cobrado − gastado"
+          table={
+            hasSeries ? (
+              <TwinTable
+                headers={["Mes", "Utilidad"]}
+                rows={profitSeries.map((m) => [m.label, `${m.utilidad < 0 ? "−" : ""}${formatMoney(Math.abs(m.utilidad), currency)}`])}
+              />
+            ) : undefined
+          }
+        >
+          {hasSeries ? (
+            <ProfitColumns data={profitSeries} currency={currency} />
+          ) : (
+            <ChartEmpty
+              message="Sin datos de utilidad todavía"
+              hint="Cuando registres cobros y gastos verás aquí tus meses en verde (o en rojo)."
+            />
+          )}
+        </ChartCard>
+      </div>
+
+      {/* Dinero por cobrar + en qué se va el dinero */}
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ChartCard
+          question="¿Cuánto te deben y cuánto peligra?"
+          period="Facturas abiertas hoy, por urgencia"
+          table={
+            outstanding > 0 ? (
+              <TwinTable
+                headers={["Estado", "Monto", "Facturas"]}
+                rows={[
+                  ["Al día", formatMoney(receivables.alDia.total, currency), receivables.alDia.count],
+                  ["Vence pronto (≤7 días)", formatMoney(receivables.porVencer.total, currency), receivables.porVencer.count],
+                  ["Vencido", formatMoney(receivables.vencida.total, currency), receivables.vencida.count],
+                ]}
+              />
+            ) : undefined
+          }
+        >
+          {outstanding > 0 ? (
+            <ReceivablesBar data={receivables} currency={currency} />
+          ) : (
+            <ChartEmpty
+              message="No tienes facturas abiertas por cobrar"
+              hint="Cuando emitas facturas, aquí verás cuáles están al día y cuáles peligran."
+            />
+          )}
+        </ChartCard>
+
+        <ChartCard
+          question="¿En qué se va el dinero?"
+          period="Gastos por categoría · últimos 90 días"
+          table={
+            topCategorias.length > 0 ? (
+              <TwinTable
+                headers={["Categoría", "Gastado"]}
+                rows={topCategorias.map((c) => [c.name, formatMoney(c.value, currency)])}
+              />
+            ) : undefined
+          }
+        >
+          {topCategorias.length > 0 ? (
+            <TopBars data={topCategorias} currency={currency} color={CHART.out} />
+          ) : (
+            <ChartEmpty
+              message="Sin gastos registrados en 90 días"
+              hint="Anota tus gastos con categoría y verás a dónde se va cada peso."
+            />
+          )}
+        </ChartCard>
+      </div>
+
+      {/* Rankings: a quién cuidar y qué empujar */}
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ChartCard
+          question="¿Quiénes son tus mejores clientes?"
+          period="Cobrado por cliente · últimos 90 días"
+          table={
+            topClientes.length > 0 ? (
+              <TwinTable
+                headers={["Cliente", "Cobrado"]}
+                rows={topClientes.map((c) => [c.name, formatMoney(c.value, currency)])}
+              />
+            ) : undefined
+          }
+        >
+          {topClientes.length > 0 ? (
+            <TopBars data={topClientes} currency={currency} color={CHART.in} />
+          ) : (
+            <ChartEmpty
+              message="Aún no hay cobros de clientes en 90 días"
+              hint="Registra pagos de facturas y sabrás a quién cuidar más."
+            />
+          )}
+        </ChartCard>
+
+        <ChartCard
+          question="¿Qué es lo que más vendes?"
+          period="Ingreso por producto · últimos 90 días"
+          table={
+            topProductos.length > 0 ? (
+              <TwinTable
+                headers={["Producto", "Vendido"]}
+                rows={topProductos.map((p) => [p.name, formatMoney(p.value, currency)])}
+              />
+            ) : undefined
+          }
+        >
+          {topProductos.length > 0 ? (
+            <TopBars data={topProductos} currency={currency} color={CHART.in} />
+          ) : (
+            <ChartEmpty
+              message="Sin ventas ligadas a productos todavía"
+              hint="Elige el producto al registrar ventas y verás cuál es tu estrella."
+            />
+          )}
+        </ChartCard>
+      </div>
+
+      {/* Pendientes */}
       <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">Pendientes</h2>
       <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card title="Dinero en cuentas" value={formatMoney(cashTotal, currency)} hint="Bancos + efectivo" />
-        <Card title="Por cobrar" value={formatMoney(outstanding, currency)} hint="Saldo de facturas abiertas" />
-        <Card title="Facturas vencidas" value={String(overdueCount)} hint="Requieren cobranza" />
+        <Card title="Por cobrar" value={formatMoney(outstanding, currency)} hint={overdueCount > 0 ? `${overdueCount} factura(s) vencida(s)` : "Saldo de facturas abiertas"} />
         {compras.count > 0 && (
           <Card title="Capital en mercancía" value={formatMoney(compras.capitalEnMercancia, currency)} hint="Compras por recuperar" />
         )}
