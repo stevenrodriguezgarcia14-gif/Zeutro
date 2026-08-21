@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createExpense } from "../actions";
+import { getOrgToday } from "@/lib/org";
 
 const CATEGORIES = [
   "Renta",
@@ -23,7 +24,7 @@ export default async function NewExpensePage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = await getOrgToday();
   const supabase = await createClient();
   const { data: accounts } = await supabase
     .from("accounts")

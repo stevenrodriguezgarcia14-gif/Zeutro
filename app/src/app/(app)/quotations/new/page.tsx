@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { QuotationForm } from "@/components/QuotationForm";
 import { createQuotation } from "../actions";
 import { defaultVatPct } from "@/lib/tax";
@@ -37,7 +37,7 @@ export default async function NewQuotationPage({
       <h1 className="mt-2 text-2xl font-bold text-slate-900">Nueva cotización</h1>
       {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       <div className="mt-6">
-        <QuotationForm customers={customers} products={products ?? []} currency={currency} action={createQuotation} defaultCustomerId={customer ?? ""} defaultTaxPct={defaultVatPct(org?.country)} />
+        <QuotationForm customers={customers} products={products ?? []} currency={currency} action={createQuotation} defaultCustomerId={customer ?? ""} defaultTaxPct={defaultVatPct(org?.country)} today={await getOrgToday()} />
       </div>
     </div>
   );

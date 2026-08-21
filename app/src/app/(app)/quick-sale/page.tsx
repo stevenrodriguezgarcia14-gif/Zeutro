@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { ModuleHelp } from "@/components/ModuleHelp";
 import { createQuickSale, deleteQuickSale } from "./actions";
@@ -13,7 +13,7 @@ export default async function QuickSalePage({ searchParams }: { searchParams: Pr
   const org = await getCurrentOrg();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = await getOrgToday();
   const monthStart = today.slice(0, 7) + "-01";
 
   const [{ data: sales }, { data: accounts }, { data: products }, { data: orgTax }] = await Promise.all([

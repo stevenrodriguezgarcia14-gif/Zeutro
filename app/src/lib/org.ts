@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { todayIn } from "@/lib/weeks";
 
 export type Organization = {
   id: string;
@@ -55,4 +56,17 @@ export async function getUserOrgs(): Promise<{ id: string; name: string }[]> {
  */
 export async function getCurrentOrg(): Promise<Organization | null> {
   return (await getOrgContext()).current;
+}
+
+/**
+ * El día de HOY del negocio activo, en SU zona horaria (`organizations.timezone`).
+ *
+ * Por qué no `new Date().toISOString().slice(0,10)`: eso da el día en UTC. Para
+ * un negocio en UTC−6, todo lo que se registre después de las 6 de la tarde
+ * quedaría fechado MAÑANA — la venta de hoy caería en la semana siguiente, el
+ * corte de caja no cuadraría y una factura aparecería vencida un día antes.
+ */
+export async function getOrgToday(): Promise<string> {
+  const org = await getCurrentOrg();
+  return todayIn(org?.timezone);
 }

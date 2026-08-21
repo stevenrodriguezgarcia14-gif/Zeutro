@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
+import { addDays } from "@/lib/weeks";
 import { toMinor } from "@/lib/money";
 import { decrementStockForInvoice } from "@/lib/stock";
 
@@ -28,7 +29,7 @@ function computeTotals(lines: LineInput[]) {
 
 export async function createQuotation(formData: FormData) {
   const customer_id = String(formData.get("customer_id") ?? "");
-  const issue_date = String(formData.get("issue_date") ?? "") || new Date().toISOString().slice(0, 10);
+  const issue_date = String(formData.get("issue_date") ?? "") || (await getOrgToday());
   const valid_until = String(formData.get("due_date") ?? "");
   const intent = String(formData.get("intent") ?? "draft");
   let lines: LineInput[] = [];
@@ -97,13 +98,14 @@ export async function convertToInvoice(formData: FormData) {
     p_org: org.id, p_type: "invoice", p_prefix: "F-", p_seed: count ?? 0,
   });
   if (numErr || !number) redirect(`/quotations/${id}?error=${encodeURIComponent(safeError(numErr, "No se pudo generar el folio."))}`);
-  const due = new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10);
+  const hoy = await getOrgToday();
+  const due = addDays(hoy, 15);
 
   const { data: invoice, error } = await supabase
     .from("invoices")
     .insert({
       organization_id: org.id, customer_id: q.customer_id, number, currency: q.currency,
-      issue_date: new Date().toISOString().slice(0, 10), due_date: due,
+      issue_date: hoy, due_date: due,
       subtotal_minor: q.subtotal_minor, tax_minor: q.tax_minor, total_minor: q.total_minor,
       status: "issued", created_by: user?.id,
     })

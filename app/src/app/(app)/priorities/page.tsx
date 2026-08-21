@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { getPurchasesOverview } from "@/lib/purchasesOverview";
+import { addDays } from "@/lib/weeks";
 
 type Signal = { sev: "high" | "warning" | "info"; title: string; detail: string; href: string };
 const SIGNAL_SEV: Record<Signal["sev"], { label: string; cls: string; rank: number }> = {
@@ -31,8 +32,8 @@ export default async function PrioritiesPage() {
   const org = await getCurrentOrg();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
-  const today = new Date().toISOString().slice(0, 10);
-  const in7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+  const today = await getOrgToday();
+  const in7 = addDays(today, 7);
   const days = (d: string) => Math.round((Date.now() - new Date(d).getTime()) / 86400000);
 
   const [{ data: invoices }, { data: opps }, { data: quotes }, { data: tasks }, { data: products }, compras] = await Promise.all([

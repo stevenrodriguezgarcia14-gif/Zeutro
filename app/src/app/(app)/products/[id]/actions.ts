@@ -7,6 +7,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { toMinor } from "@/lib/money";
+import { readSubtitle } from "@/lib/products";
 
 async function ensureSheet(supabase: SupabaseClient, orgId: string, productId: string): Promise<string | null> {
   const { data: existing } = await supabase
@@ -44,6 +45,7 @@ async function recompute(supabase: SupabaseClient, productId: string) {
 export async function updateProduct(formData: FormData) {
   const id = String(formData.get("product_id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
+  const subtitle = readSubtitle(formData);
   const description = String(formData.get("description") ?? "").trim() || null;
   const unit = String(formData.get("unit") ?? "unidad").trim() || "unidad";
   const sale_price_minor = toMinor(String(formData.get("sale_price") ?? "0"));
@@ -53,7 +55,7 @@ export async function updateProduct(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("products")
-    .update({ name, description, unit, sale_price_minor })
+    .update({ name, subtitle, description, unit, sale_price_minor })
     .eq("id", id);
   if (error) redirect(`/products/${id}?error=${encodeURIComponent(safeError(error))}`);
 

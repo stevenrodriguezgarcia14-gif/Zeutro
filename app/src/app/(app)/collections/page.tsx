@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { toWhatsappNumber } from "@/lib/phone";
 import { ModuleHelp } from "@/components/ModuleHelp";
@@ -24,7 +24,7 @@ export default async function CollectionsPage() {
   const currency = org?.base_currency ?? "MXN";
   const orgName = org?.name ?? "";
   const supabase = await createClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = await getOrgToday();
 
   const { data } = await supabase
     .from("invoices")

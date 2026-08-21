@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createPurchase } from "../actions";
+import { getOrgToday } from "@/lib/org";
 
 export default async function NewPurchasePage({
   searchParams,
@@ -7,7 +8,7 @@ export default async function NewPurchasePage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = await getOrgToday();
 
   return (
     <div className="mx-auto max-w-lg">

@@ -6,11 +6,13 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { toMinor } from "@/lib/money";
+import { readSubtitle } from "@/lib/products";
 
 export async function createProduct(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const type = String(formData.get("type") ?? "service");
   const unit = String(formData.get("unit") ?? "unidad").trim() || "unidad";
+  const subtitle = readSubtitle(formData);
   const description = String(formData.get("description") ?? "").trim() || null;
   const sku = String(formData.get("sku") ?? "").trim() || null;
   const priceRaw = String(formData.get("sale_price") ?? "").trim();
@@ -44,6 +46,7 @@ export async function createProduct(formData: FormData) {
       organization_id: org.id,
       type,
       name,
+      subtitle,
       unit,
       description,
       sku,

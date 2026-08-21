@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { formatMoney, fromMinor } from "@/lib/money";
 import { issueInvoice, registerPayment, reversePayment, setPaymentLink, voidInvoice } from "../actions";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
@@ -27,6 +27,7 @@ export default async function InvoiceDetailPage({
   const { id } = await params;
   const { error, paid, ok } = await searchParams;
   const org = await getCurrentOrg();
+  const hoyDelNegocio = await getOrgToday();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
 
@@ -226,7 +227,7 @@ export default async function InvoiceDetailPage({
                   <input
                     name="paid_at"
                     type="date"
-                    defaultValue={new Date().toISOString().slice(0, 10)}
+                    defaultValue={hoyDelNegocio}
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-900"
                   />
                 </div>

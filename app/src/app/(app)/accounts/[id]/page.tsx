@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { recordMovement } from "../actions";
 
@@ -23,6 +23,7 @@ export default async function AccountDetailPage({
   const { id } = await params;
   const { error } = await searchParams;
   const org = await getCurrentOrg();
+  const hoyDelNegocio = await getOrgToday();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
 
@@ -113,7 +114,7 @@ export default async function AccountDetailPage({
               </div>
               <div>
                 <label className="block text-slate-700">Fecha</label>
-                <input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-900" />
+                <input name="date" type="date" defaultValue={hoyDelNegocio} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-900" />
               </div>
               <div>
                 <label className="block text-slate-700">Descripción</label>

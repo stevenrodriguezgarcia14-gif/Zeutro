@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createProduct } from "../actions";
+import { SUBTITLE_MAX } from "@/lib/products";
 
 export default async function NewProductPage({
   searchParams,
@@ -126,6 +127,17 @@ export default async function NewProductPage({
               className="mt-1 w-32 rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-900"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700">Subtítulo (opcional)</label>
+          <input
+            name="subtitle"
+            maxLength={SUBTITLE_MAX}
+            placeholder="Ej. Productos elaborados para venta individual"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-900"
+          />
+          <p className="mt-1 text-xs text-slate-400">Una línea corta que acompaña al nombre. Solo es texto.</p>
         </div>
 
         <div>

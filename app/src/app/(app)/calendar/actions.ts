@@ -5,6 +5,7 @@ import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
+import { instantFromLocal } from "@/lib/weeks";
 
 export async function createAppointment(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
@@ -24,7 +25,8 @@ export async function createAppointment(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
 
   // Se guarda como timestamptz a partir de la fecha+hora local que escribe el usuario.
-  const starts_at = new Date(`${date}T${time}:00`).toISOString();
+  // La hora que escribe el usuario es hora de SU negocio, no del servidor.
+  const starts_at = instantFromLocal(date, time, org.timezone);
 
   const { error } = await supabase.from("appointments").insert({
     organization_id: org.id, title, customer_id, starts_at, duration_min, location, notes, created_by: user?.id,

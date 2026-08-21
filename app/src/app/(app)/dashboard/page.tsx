@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
+import { addDays, addMonths, firstOfMonth } from "@/lib/weeks";
 import { formatMoney } from "@/lib/money";
 import { getPurchasesOverview } from "@/lib/purchasesOverview";
 import { getActivation } from "@/lib/activation";
@@ -52,12 +53,9 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const month = new Date().toISOString().slice(0, 7); // YYYY-MM
   const monthStart = `${month}-01`;
-  const nowD = new Date();
-  const prevMonthStart = new Date(Date.UTC(nowD.getUTCFullYear(), nowD.getUTCMonth() - 1, 1))
-    .toISOString()
-    .slice(0, 10);
-
-  const today = new Date().toISOString().slice(0, 10);
+  const today = await getOrgToday();
+  const prevMonthStart = firstOfMonth(addMonths(today, -1));
+  const nowD = new Date(`${today}T00:00:00Z`);
   const dayOfMonth = today.slice(8, 10);
 
   // Últimos 6 meses (para las gráficas de evolución) y 90 días (rankings).
@@ -68,7 +66,7 @@ export default async function DashboardPage() {
     months.push({ key: d.toISOString().slice(0, 7), label: fmtMonth.format(d).replace(".", "") });
   }
   const sixStart = `${months[0].key}-01`;
-  const d90 = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
+  const d90 = addDays(today, -90);
 
   // Todo el tablero en UNA sola tanda paralela.
   const [
@@ -189,7 +187,7 @@ export default async function DashboardPage() {
   }
 
   // ---- Estado de los cobros (facturas abiertas por urgencia) ----
-  const in7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+  const in7 = addDays(today, 7);
   const bucket = (rows: typeof openInvoices) => ({
     total: rows.reduce((s, i) => s + (i.balance_minor ?? 0), 0),
     count: rows.length,

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { toMinor } from "@/lib/money";
 
 export async function createQuickSale(formData: FormData) {
@@ -12,7 +12,7 @@ export async function createQuickSale(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim() || null;
   const method = String(formData.get("method") ?? "cash");
   const account_id = String(formData.get("account_id") ?? "") || null;
-  const sold_at = String(formData.get("sold_at") ?? "") || new Date().toISOString().slice(0, 10);
+  const sold_at = String(formData.get("sold_at") ?? "") || (await getOrgToday());
   const product_id = String(formData.get("product_id") ?? "") || null;
   const qtyRaw = String(formData.get("qty") ?? "").trim();
   const qty = product_id && qtyRaw ? Number(qtyRaw) : null;

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { toMinor } from "@/lib/money";
 
 export async function createAccount(formData: FormData) {
@@ -44,7 +44,7 @@ export async function recordMovement(formData: FormData) {
   const account_id = String(formData.get("account_id") ?? "");
   const direction = String(formData.get("direction") ?? "in"); // 'in' | 'out'
   const amount = toMinor(String(formData.get("amount") ?? "0"));
-  const date = String(formData.get("date") ?? "") || new Date().toISOString().slice(0, 10);
+  const date = String(formData.get("date") ?? "") || (await getOrgToday());
   const description = String(formData.get("description") ?? "").trim() || null;
 
   const supabase = await createClient();
@@ -67,7 +67,7 @@ export async function transfer(formData: FormData) {
   const from = String(formData.get("from_account") ?? "");
   const to = String(formData.get("to_account") ?? "");
   const amount = toMinor(String(formData.get("amount") ?? "0"));
-  const date = String(formData.get("date") ?? "") || new Date().toISOString().slice(0, 10);
+  const date = String(formData.get("date") ?? "") || (await getOrgToday());
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("transfer_between_accounts", {

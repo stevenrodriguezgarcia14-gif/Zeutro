@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
+import { addDays } from "@/lib/weeks";
 import { toMinor } from "@/lib/money";
 
 export async function createProject(formData: FormData) {
@@ -73,12 +74,13 @@ export async function createProjectInvoice(formData: FormData) {
   if (numErr || !number) redirect(`/projects/${id}?error=${encodeURIComponent(safeError(numErr, "No se pudo generar el folio."))}`);
 
   const amount = p.budget_amount_minor ?? 0;
-  const due = new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10);
+  const hoy = await getOrgToday();
+  const due = addDays(hoy, 15);
   const { data: invoice, error } = await supabase
     .from("invoices")
     .insert({
       organization_id: org.id, customer_id: p.customer_id, number, currency: org.base_currency,
-      issue_date: new Date().toISOString().slice(0, 10), due_date: due,
+      issue_date: hoy, due_date: due,
       subtotal_minor: amount, tax_minor: 0, total_minor: amount, status: "draft",
       project_id: id, created_by: user?.id,
     })

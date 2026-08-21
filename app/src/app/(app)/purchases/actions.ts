@@ -4,12 +4,12 @@ import { revalidatePath } from "next/cache";
 import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { toMinor } from "@/lib/money";
 
 export async function createPurchase(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
-  const purchase_date = String(formData.get("purchase_date") ?? "") || new Date().toISOString().slice(0, 10);
+  const purchase_date = String(formData.get("purchase_date") ?? "") || (await getOrgToday());
   const description = String(formData.get("description") ?? "").trim() || null;
   const notes = String(formData.get("notes") ?? "").trim() || null;
 

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { formatMoney, toMinor } from "@/lib/money";
+import { addDays } from "@/lib/weeks";
 
 type CustomerOpt = { id: string; legal_name: string };
 type ProductOpt = { id: string; name: string; sale_price_minor: number };
@@ -25,6 +26,7 @@ export function InvoiceForm({
   action,
   defaultCustomerId = "",
   defaultTaxPct = 0,
+  today,
 }: {
   customers: CustomerOpt[];
   products: ProductOpt[];
@@ -32,12 +34,15 @@ export function InvoiceForm({
   action: (formData: FormData) => void;
   defaultCustomerId?: string;
   defaultTaxPct?: number;
+  /** Día de HOY del negocio (su zona horaria), calculado en el servidor. */
+  today: string;
 }) {
-  // Fechas por defecto calculadas UNA vez (inicializador perezoso): son
-  // valores iniciales del formulario y no deben cambiar entre re-renders.
-  const [{ today, in15 }] = useState(() => ({
-    today: new Date().toISOString().slice(0, 10),
-    in15: new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10),
+  // Fechas por defecto: el día del negocio llega ya resuelto desde el
+  // servidor (zona horaria de la organización). Calcularlo aquí con
+  // toISOString() daba el día en UTC: después de las 6 de la tarde en
+  // América la factura nacía fechada mañana.
+  const [{ in15 }] = useState(() => ({
+    in15: addDays(today, 15),
   }));
   const taxDefault = String(defaultTaxPct);
 

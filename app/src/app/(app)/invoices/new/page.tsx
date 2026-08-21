@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { InvoiceForm } from "@/components/InvoiceForm";
 import { createInvoice } from "../actions";
 import { defaultVatPct } from "@/lib/tax";
@@ -56,6 +56,7 @@ export default async function NewInvoicePage({
           action={createInvoice}
           defaultCustomerId={customer ?? ""}
           defaultTaxPct={defaultVatPct(org?.country)}
+          today={await getOrgToday()}
         />
       </div>
     </div>

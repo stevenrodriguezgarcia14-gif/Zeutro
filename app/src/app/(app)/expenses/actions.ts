@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { toMinor } from "@/lib/money";
 
 export async function createExpense(formData: FormData) {
@@ -13,7 +13,7 @@ export async function createExpense(formData: FormData) {
   const vendor = String(formData.get("vendor") ?? "").trim() || null;
   const amount = String(formData.get("amount") ?? "0");
   const tax = String(formData.get("tax") ?? "").trim();
-  const expense_date = String(formData.get("expense_date") ?? "") || new Date().toISOString().slice(0, 10);
+  const expense_date = String(formData.get("expense_date") ?? "") || (await getOrgToday());
   const payment_status = String(formData.get("payment_status") ?? "paid");
   const account_id = String(formData.get("account_id") ?? "") || null;
   const is_deductible = formData.get("is_deductible") === "on";
@@ -66,7 +66,7 @@ export async function markExpensePaid(formData: FormData) {
   const { error } = await supabase.rpc("set_expense_paid", {
     p_id: id,
     p_account_id: account_id,
-    p_paid_date: new Date().toISOString().slice(0, 10),
+    p_paid_date: (await getOrgToday()),
   });
   if (error) redirect(`/expenses?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath("/expenses");

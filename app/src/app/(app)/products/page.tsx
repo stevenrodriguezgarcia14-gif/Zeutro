@@ -18,7 +18,7 @@ export default async function ProductsPage({
   const supabase = await createClient();
   const { data: products } = await supabase
     .from("products")
-    .select("id, name, type, unit, sale_price_minor, cost_price_minor, is_active")
+    .select("id, name, subtitle, type, unit, sale_price_minor, cost_price_minor, is_active")
     .order("created_at", { ascending: false });
 
   // Filtro insensible a acentos ("cafe" encuentra "Café").
@@ -77,6 +77,17 @@ export default async function ProductsPage({
                     <Link href={`/products/${p.id}`} className="hover:underline">
                       {p.name}
                     </Link>
+                    {p.subtitle && (
+                      // Acotado y con truncado: en móvil la tabla ya hace scroll
+                      // horizontal, y un subtítulo largo empujaría Precio y Costo
+                      // fuera de la pantalla.
+                      <span
+                        title={p.subtitle}
+                        className="block max-w-56 truncate text-xs font-normal italic text-slate-500 sm:max-w-sm"
+                      >
+                        {p.subtitle}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-slate-600">
                     {p.type === "product" ? "Producto" : p.type === "bundle" ? "Paquete" : "Servicio"}

@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { getPurchasesOverview } from "@/lib/purchasesOverview";
 import { ModuleHelp } from "@/components/ModuleHelp";
+import { addDays } from "@/lib/weeks";
 
 function Card({ title, value, currency }: { title: string; value: number; currency: string }) {
   return (
@@ -17,7 +18,8 @@ export default async function CashflowPage() {
   const org = await getCurrentOrg();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
-  const horizonDate = (d: number) => new Date(Date.now() + d * 86400000).toISOString().slice(0, 10);
+  const hoy = await getOrgToday();
+  const horizonDate = (d: number) => addDays(hoy, d);
 
   const [{ data: accounts }, { data: invoices }, { data: opps }, { data: expenses }] = await Promise.all([
     supabase.from("accounts").select("current_balance_minor").eq("is_active", true),

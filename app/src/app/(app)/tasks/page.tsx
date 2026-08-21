@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createTask, toggleTask, deleteTask } from "./actions";
 import { ModuleHelp } from "@/components/ModuleHelp";
+import { getOrgToday } from "@/lib/org";
 
 const PRIO: Record<string, { label: string; cls: string }> = {
   urgent: { label: "Urgente", cls: "bg-red-100 text-red-700" },
@@ -64,7 +65,7 @@ function Group({ title, tasks, tone }: { title: string; tasks: Task[]; tone?: st
 
 export default async function TasksPage() {
   const supabase = await createClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = await getOrgToday();
   const [{ data: tasks }, { data: projects }] = await Promise.all([
     supabase.from("tasks").select("id, title, status, priority, due_date, recurrence, projects(name)").order("due_date", { ascending: true, nullsFirst: false }),
     supabase.from("projects").select("id, name").neq("status", "cancelled").order("name"),

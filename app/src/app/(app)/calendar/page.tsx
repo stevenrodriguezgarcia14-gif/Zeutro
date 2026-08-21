@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { ModuleHelp } from "@/components/ModuleHelp";
 import { createAppointment, deleteAppointment } from "./actions";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
+import { addDays, localDayTime } from "@/lib/weeks";
 
 type Ev = { date: string; kind: string; label: string; title: string; href: string; cls: string; time?: string; apptId?: string };
 
@@ -13,8 +14,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const org = await getCurrentOrg();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
-  const today = new Date().toISOString().slice(0, 10);
-  const horizon = new Date(Date.now() + 60 * 86400000).toISOString().slice(0, 10);
+  const today = await getOrgToday();
+  const horizon = addDays(today, 60);
   const horizonTs = new Date(Date.now() + 60 * 86400000).toISOString();
 
   const [{ data: tasks }, { data: invoices }, { data: quotes }, { data: opps }, { data: appts }, { data: customers }] = await Promise.all([
@@ -29,9 +30,9 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const custList = (customers ?? []) as { id: string; legal_name: string }[];
   const ev: Ev[] = [];
   for (const a of (appts ?? []) as unknown as { id: string; title: string; starts_at: string; duration_min: number; location: string | null; customers: { legal_name: string } | null }[]) {
-    const dt = new Date(a.starts_at);
-    const date = dt.toISOString().slice(0, 10);
-    const time = dt.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
+    // Día y hora en la zona del negocio: en UTC una cita de la tarde saltaba
+    // al día siguiente y se mostraba de madrugada.
+    const { date, time } = localDayTime(a.starts_at, org?.timezone);
     const who = a.customers?.legal_name ? ` · ${a.customers.legal_name}` : "";
     const where = a.location ? ` · ${a.location}` : "";
     ev.push({ date, time, kind: "cita", label: "Cita", title: `${a.title}${who}${where}`, href: "/calendar", cls: "bg-emerald-100 text-emerald-700", apptId: a.id });

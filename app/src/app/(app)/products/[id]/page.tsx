@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney, fromMinor } from "@/lib/money";
+import { SUBTITLE_MAX } from "@/lib/products";
 import { ProductImageUploader } from "@/components/ProductImageUploader";
 import { updateProduct, addComponent, deleteComponent, updateSheetSettings, applySuggestedPrice, updateInventorySettings } from "./actions";
 
@@ -130,11 +131,18 @@ export default async function ProductCostingPage({
         ← Productos y servicios
       </Link>
 
-      <div className="mt-2 flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold text-slate-900">{product.name}</h1>
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
-          {product.type === "product" ? "Producto" : product.type === "bundle" ? "Paquete" : "Servicio"}
-        </span>
+      <div className="mt-2">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h1 className="text-2xl font-bold text-slate-900">{product.name}</h1>
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+            {product.type === "product" ? "Producto" : product.type === "bundle" ? "Paquete" : "Servicio"}
+          </span>
+        </div>
+        {/* Subtítulo del emprendedor: solo se dibuja si escribió algo, para no
+            dejar un hueco vacío bajo el nombre. */}
+        {product.subtitle && (
+          <p className="mt-1 max-w-prose text-sm italic leading-snug text-slate-500">{product.subtitle}</p>
+        )}
       </div>
 
       {ok && <p className="mt-4 rounded-lg bg-green-50 p-3 text-sm text-green-700">Cambios guardados.</p>}
@@ -152,6 +160,19 @@ export default async function ProductCostingPage({
             <div>
               <label className="block text-slate-700">Nombre</label>
               <input name="name" defaultValue={product.name} required className={fieldCls} />
+            </div>
+            <div>
+              <label className="block text-slate-700">Subtítulo (opcional)</label>
+              <input
+                name="subtitle"
+                maxLength={SUBTITLE_MAX}
+                defaultValue={product.subtitle ?? ""}
+                placeholder="Ej. Productos elaborados para venta individual"
+                className={fieldCls}
+              />
+              <p className="mt-1 text-xs text-slate-400">
+                Aparece bajo el nombre. Es solo texto: no cambia costos, precios ni inventario.
+              </p>
             </div>
             <div>
               <label className="block text-slate-700">Descripción</label>

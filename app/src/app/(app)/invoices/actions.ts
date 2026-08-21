@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { toMinor } from "@/lib/money";
 import { decrementStockForInvoice } from "@/lib/stock";
 
@@ -42,7 +42,7 @@ function computeTotals(lines: LineInput[]) {
 
 export async function createInvoice(formData: FormData) {
   const customer_id = String(formData.get("customer_id") ?? "");
-  const issue_date = String(formData.get("issue_date") ?? "") || new Date().toISOString().slice(0, 10);
+  const issue_date = String(formData.get("issue_date") ?? "") || (await getOrgToday());
   const due_date = String(formData.get("due_date") ?? "");
   const intent = String(formData.get("intent") ?? "draft"); // 'draft' | 'issue'
   const linesRaw = String(formData.get("items") ?? "[]");
@@ -155,7 +155,7 @@ export async function registerPayment(formData: FormData) {
   const amount = String(formData.get("amount") ?? "0");
   const account_id = String(formData.get("account_id") ?? "") || null;
   const method = String(formData.get("method") ?? "transfer");
-  const paid_at = String(formData.get("paid_at") ?? "") || new Date().toISOString().slice(0, 10);
+  const paid_at = String(formData.get("paid_at") ?? "") || (await getOrgToday());
   const reference = String(formData.get("reference") ?? "") || null;
 
   const amount_minor = toMinor(amount);

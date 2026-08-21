@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { safeError } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
+import { addDays, addMonths } from "@/lib/weeks";
 
 const RECURRENCES = new Set(["none", "daily", "weekly", "monthly"]);
 
@@ -12,19 +13,20 @@ const RECURRENCES = new Set(["none", "daily", "weekly", "monthly"]);
  * Avanza una fecha (YYYY-MM-DD) según el periodo de recurrencia, repitiendo
  * hasta superar HOY. Así una tarea recurrente vencida no nace ya vencida.
  */
-function advanceDate(base: string | null, recurrence: string): string {
-  const d = base ? new Date(base + "T00:00:00") : new Date();
-  const today = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00");
-  const step = () => {
-    if (recurrence === "daily") d.setDate(d.getDate() + 1);
-    else if (recurrence === "weekly") d.setDate(d.getDate() + 7);
-    else if (recurrence === "monthly") d.setMonth(d.getMonth() + 1);
-  };
+function advanceDate(base: string | null, recurrence: string, today: string): string {
+  let d = base && /^\d{4}-\d{2}-\d{2}$/.test(base) ? base : today;
+  const step = (fecha: string) =>
+    recurrence === "daily" ? addDays(fecha, 1)
+      : recurrence === "weekly" ? addDays(fecha, 7)
+      : recurrence === "monthly" ? addMonths(fecha, 1)
+      : addDays(fecha, 1);
   // Al menos un paso; y seguir hasta que la siguiente ocurrencia sea futura.
-  do {
-    step();
-  } while (d <= today);
-  return d.toISOString().slice(0, 10);
+  // El tope evita un bucle infinito si llegara una recurrencia desconocida.
+  for (let i = 0; i < 400; i++) {
+    d = step(d);
+    if (d > today) break;
+  }
+  return d;
 }
 
 export async function createTask(formData: FormData) {
@@ -71,12 +73,13 @@ export async function toggleTask(formData: FormData) {
       .single();
     if (t && t.recurrence && t.recurrence !== "none") {
       const { data: { user } } = await supabase.auth.getUser();
+      const hoy = await getOrgToday();
       await supabase.from("tasks").insert({
         organization_id: t.organization_id,
         title: t.title,
         description: t.description,
         priority: t.priority,
-        due_date: advanceDate(t.due_date, t.recurrence),
+        due_date: advanceDate(t.due_date, t.recurrence, hoy),
         project_id: t.project_id,
         customer_id: t.customer_id,
         assignee_id: t.assignee_id,

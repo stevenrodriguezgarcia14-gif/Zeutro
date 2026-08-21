@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { setQuotationStatus, convertToInvoice } from "../actions";
 
@@ -43,7 +43,7 @@ export default async function QuotationDetailPage({
   ]);
   if (!q) notFound();
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = await getOrgToday();
   const isExpired = ["draft", "sent"].includes(q.status) && q.valid_until && q.valid_until < today;
   const st = isExpired ? STATUS.expired : (STATUS[q.status] ?? STATUS.draft);
 
