@@ -133,9 +133,11 @@ export default async function SettingsPage({
               className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 accent-slate-900"
             />
             <span className="text-sm">
-              <span className="font-medium text-slate-800">Resumen semanal por correo</span>
+              <span className="font-medium text-slate-800">Resúmenes de tu negocio por correo</span>
               <span className="block text-slate-500">
-                Cada lunes: cuánto cobraste, cuánto gastaste, cuánto te deben y qué priorizar.
+                Cada lunes, el resumen de la semana que cerró; y el día 1, el del mes anterior:
+                cuánto cobraste, cuánto gastaste, cuánto te deben y qué priorizar.
+                Si una semana no tuvo movimiento, no te escribimos.
               </span>
             </span>
           </label>

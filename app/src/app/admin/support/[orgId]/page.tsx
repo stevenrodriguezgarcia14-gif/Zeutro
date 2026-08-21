@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { founderReply } from "../actions";
 import { SubmitButton } from "@/components/SubmitButton";
+import { LocalTime } from "@/components/LocalTime";
 
 type Msg = { id: string; sender: "user" | "founder"; body: string; created_at: string };
 
@@ -55,7 +56,7 @@ export default async function AdminSupportThreadPage({
               {m.body}
               <span className={`mt-1 block text-[10px] ${m.sender === "founder" ? "text-emerald-100" : "text-slate-400"}`}>
                 {m.sender === "founder" ? "Tú · " : ""}
-                {new Date(m.created_at).toLocaleString("es")}
+                <LocalTime value={m.created_at} />
               </span>
             </div>
           </div>

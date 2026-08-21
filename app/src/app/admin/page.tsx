@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { setOrgStatus, setOrgPlan, deleteOrg } from "./actions";
+import { LocalTime } from "@/components/LocalTime";
 
 type Overview = {
   users: number; orgs: number; orgs_active: number; orgs_suspended: number;
@@ -205,7 +206,7 @@ export default async function AdminDashboard({
                 </td>
                 <td className="px-4 py-3 text-right text-slate-300">{u.orgs}</td>
                 <td className="px-4 py-3 text-slate-400">{new Date(u.created_at).toLocaleDateString("es")}</td>
-                <td className="px-4 py-3 text-slate-400">{u.last_sign_in ? new Date(u.last_sign_in).toLocaleString("es") : "—"}</td>
+                <td className="px-4 py-3 text-slate-400"><LocalTime value={u.last_sign_in} /></td>
               </tr>
             ))}
           </tbody>
@@ -223,7 +224,7 @@ export default async function AdminDashboard({
                 <tr key={i}>
                   <td className="px-4 py-2 text-slate-300">{a.action}</td>
                   <td className="px-4 py-2 text-slate-500">{a.detail ? JSON.stringify(a.detail) : ""}</td>
-                  <td className="px-4 py-2 text-right text-slate-500">{new Date(a.created_at).toLocaleString("es")}</td>
+                  <td className="px-4 py-2 text-right text-slate-500"><LocalTime value={a.created_at} /></td>
                 </tr>
               ))}
             </tbody>

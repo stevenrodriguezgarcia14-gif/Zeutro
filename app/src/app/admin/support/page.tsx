@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { LocalTime } from "@/components/LocalTime";
 
 type Row = {
   organization_id: string;
@@ -48,7 +49,7 @@ export default async function AdminSupportPage() {
                   {r.last_sender === "founder" ? "Tú: " : ""}{r.last_body}
                 </p>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  {r.owner_email ?? "sin correo"} · {new Date(r.last_at).toLocaleString("es")}
+                  {r.owner_email ?? "sin correo"} · <LocalTime value={r.last_at} />
                 </p>
               </div>
               <span className="shrink-0 text-slate-500">→</span>
