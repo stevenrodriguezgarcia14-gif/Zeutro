@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
 import { ModuleHelp } from "@/components/ModuleHelp";
+import { FiscalNotice } from "@/components/FiscalNotice";
 import { SearchBox } from "@/components/SearchBox";
 import { matches } from "@/lib/search";
 
@@ -52,6 +53,7 @@ export default async function InvoicesPage({
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Facturas</h1>
           <p className="mt-1 text-sm text-slate-500">{rows.length} factura(s)</p>
+          <div className="mt-1 max-w-2xl"><FiscalNotice /></div>
         </div>
         <div className="flex items-center gap-2">
           {/* Descarga CSV servida por un route handler: <a> es correcto (Link haría prefetch del archivo). */}

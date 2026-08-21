@@ -4,6 +4,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { OrgLocaleFields } from "@/components/OrgLocaleFields";
 import { BusinessTypePicker } from "@/components/BusinessTypePicker";
 import { SubmitButton } from "@/components/SubmitButton";
+import { FiscalNotice } from "@/components/FiscalNotice";
 
 export default async function OnboardingPage({
   searchParams,
@@ -48,6 +49,7 @@ export default async function OnboardingPage({
             <p className="mb-2 text-xs text-slate-500">Con esto Zentro te muestra primero lo que más te sirve. Podrás cambiarlo después.</p>
             <BusinessTypePicker />
           </div>
+          <FiscalNotice variant="card" />
           <SubmitButton pendingText="Creando tu negocio…">Crear y empezar</SubmitButton>
         </form>
       </div>

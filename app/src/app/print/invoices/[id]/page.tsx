@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
 import { PrintButton } from "@/components/PrintButton";
 import { LineItemsTable } from "@/components/LineItems";
+import { FISCAL_PRINT_NOTE } from "@/components/FiscalNotice";
 
 export default async function InvoicePrintPage({
   params,
@@ -110,6 +111,7 @@ export default async function InvoicePrintPage({
         )}
 
         <p className="mt-10 text-center text-xs text-slate-400">Gracias por su preferencia · Generado con Zentro</p>
+        <p className="mt-1 text-center text-[10px] text-slate-400">{FISCAL_PRINT_NOTE}</p>
       </div>
     </div>
   );

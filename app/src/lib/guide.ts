@@ -196,6 +196,8 @@ export type ModuleInfo = {
   cuandoNo: string;
   errores: string;
   relacion: string;
+  /** Lo que este módulo NO hace. Se declara, no se esconde. */
+  limitacion?: string;
 };
 
 export const MODULES: Record<ModuleSlug, ModuleInfo> = {
@@ -240,6 +242,7 @@ export const MODULES: Record<ModuleSlug, ModuleInfo> = {
     cuando: "Cada vez que vendes algo, de contado o a crédito.",
     cuandoNo: "Para una venta que aún no cierras (usa Cotización).",
     errores: "Dejar facturas en borrador y olvidarlas; un borrador no cobra ni descuenta stock.",
+    limitacion: "Zentro NO emite factura electrónica ante Hacienda ni ninguna autoridad tributaria. Estas facturas llevan folio propio y sirven para saber quién te debe; el comprobante fiscal lo seguís emitiendo con tu facturador autorizado.",
     relacion: "Genera Cobranzas, mueve Cuentas al pagarse y descuenta Inventario al emitirse." },
   quicksale: { slug: "quicksale", name: "Venta rápida", href: "/quick-sale", emoji: "⚡",
     queEs: "Registro de una venta de contado en segundos, sin factura ni cliente.",

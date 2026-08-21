@@ -4,6 +4,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { OrgLocaleFields } from "@/components/OrgLocaleFields";
 import { LogoUploader } from "@/components/LogoUploader";
 import { BusinessTypePicker } from "@/components/BusinessTypePicker";
+import { FiscalNotice } from "@/components/FiscalNotice";
 import {
   updateOrganization,
   updateBusinessType,
@@ -179,6 +180,7 @@ export default async function SettingsPage({
               />
             </div>
           </div>
+          <FiscalNotice variant="card" />
           <OrgLocaleFields defaultCountry={org.country ?? "MX"} />
           <div>
             <label className="block text-sm font-medium text-slate-700">IVA en ventas rápidas / de mostrador (%)</label>
