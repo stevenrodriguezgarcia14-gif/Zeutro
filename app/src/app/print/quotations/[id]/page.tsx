@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
 import { PrintButton } from "@/components/PrintButton";
+import { LineItemsTable } from "@/components/LineItems";
 
 export default async function QuotationPrintPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -17,7 +18,7 @@ export default async function QuotationPrintPage({ params }: { params: Promise<{
   if (!q) notFound();
 
   const [{ data: items }, { data: org }] = await Promise.all([
-    supabase.from("quotation_items").select("*").eq("quotation_id", id),
+    supabase.from("quotation_items").select("*").eq("quotation_id", id).order("position").order("created_at"),
     supabase.from("organizations").select("name, legal_name, tax_id, logo_url").eq("id", q.organization_id).single(),
   ]);
   const currency = q.currency;
@@ -53,26 +54,7 @@ export default async function QuotationPrintPage({ params }: { params: Promise<{
           {q.customers?.email && <p className="text-sm text-slate-500">{q.customers.email}</p>}
         </div>
 
-        <table className="mt-8 w-full text-sm">
-          <thead>
-            <tr className="border-b-2 border-slate-200 text-left text-slate-500">
-              <th className="py-2 font-medium">Concepto</th>
-              <th className="py-2 text-right font-medium">Cant.</th>
-              <th className="py-2 text-right font-medium">Precio</th>
-              <th className="py-2 text-right font-medium">Importe</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(items ?? []).map((it) => (
-              <tr key={it.id} className="border-b border-slate-100">
-                <td className="py-2 text-slate-800">{it.description}</td>
-                <td className="py-2 text-right text-slate-600">{it.quantity}</td>
-                <td className="py-2 text-right text-slate-600">{formatMoney(it.unit_price_minor, currency)}</td>
-                <td className="py-2 text-right text-slate-900">{formatMoney(it.line_total_minor, currency)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <LineItemsTable items={items ?? []} currency={currency} variant="print" />
 
         <div className="mt-6 flex justify-end">
           <div className="w-64 space-y-1 text-sm">
@@ -82,7 +64,7 @@ export default async function QuotationPrintPage({ params }: { params: Promise<{
           </div>
         </div>
 
-        {q.notes && <div className="mt-8 border-t border-slate-100 pt-4 text-sm text-slate-500"><p className="font-medium text-slate-700">Notas</p><p className="mt-1 whitespace-pre-wrap">{q.notes}</p></div>}
+        {q.notes && <div className="mt-8 border-t border-slate-100 pt-4 text-sm text-slate-500"><p className="font-medium text-slate-700">Alcance y condiciones</p><p className="mt-1 whitespace-pre-wrap">{q.notes}</p></div>}
         <p className="mt-10 text-center text-xs text-slate-400">Cotización generada con Zentro</p>
       </div>
     </div>

@@ -21,7 +21,7 @@ export default async function NewProjectPage({
       <form action={createProject} className="mt-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
         <div>
           <label className="block text-sm font-medium text-slate-700">Nombre *</label>
-          <input name="name" required placeholder="Ej. Página web para Juan" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-900" />
+          <input name="name" required placeholder="Ej. Remodelación de cocina — familia Jiménez" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-900" />
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700">Cliente (opcional)</label>
@@ -41,8 +41,16 @@ export default async function NewProjectPage({
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700">Presupuesto (opcional)</label>
+          <label className="block text-sm font-medium text-slate-700">Dirección del sitio (opcional)</label>
+          <input name="site_address" placeholder="Dónde se ejecuta el trabajo" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-900" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700">Costo estimado (opcional)</label>
           <input name="budget" type="number" step="0.01" min="0" placeholder="0.00" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-900" />
+          <p className="mt-1 text-xs text-slate-400">
+            Cuánto calculas que te va a <b>costar</b> hacerlo (materiales, mano de obra, subcontratos). <b>No</b> es el
+            precio que le cobras al cliente: ese sale solo de las cotizaciones que acepte.
+          </p>
         </div>
         <button className="w-full rounded-lg bg-slate-900 py-2.5 font-medium text-white hover:bg-slate-800">Crear proyecto</button>
       </form>

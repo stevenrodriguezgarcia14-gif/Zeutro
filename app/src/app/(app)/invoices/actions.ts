@@ -10,16 +10,21 @@ import { decrementStockForInvoice } from "@/lib/stock";
 
 type LineInput = {
   product_id?: string | null;
+  /** Capítulo/partida bajo el que se agrupa la línea. Null = sin agrupar. */
+  section?: string | null;
   description: string;
   quantity: number;
+  /** Unidad de medida: m², ml, día, punto… Null = sin unidad. */
+  unit?: string | null;
   unit_price: number; // en unidades mayores (lo que escribe el usuario)
   tax_pct: number; // porcentaje, ej. 16
+  position?: number;
 };
 
 function computeTotals(lines: LineInput[]) {
   let subtotal = 0;
   let tax = 0;
-  const items = lines.map((l) => {
+  const items = lines.map((l, i) => {
     const qty = Number(l.quantity) || 0;
     const unit = toMinor(l.unit_price); // centavos
     const net = Math.round(qty * unit);
@@ -29,12 +34,15 @@ function computeTotals(lines: LineInput[]) {
     tax += lineTax;
     return {
       product_id: l.product_id || null,
+      section: l.section?.trim() || null,
       description: l.description,
       quantity: qty,
+      unit: l.unit?.trim() || null,
       unit_price_minor: unit,
       discount_pct: 0,
       tax_rate_bps: taxBps,
       line_total_minor: net + lineTax,
+      position: Number.isFinite(l.position) ? Number(l.position) : i,
     };
   });
   return { subtotal, tax, total: subtotal + tax, items };
@@ -45,6 +53,8 @@ export async function createInvoice(formData: FormData) {
   const issue_date = String(formData.get("issue_date") ?? "") || (await getOrgToday());
   const due_date = String(formData.get("due_date") ?? "");
   const intent = String(formData.get("intent") ?? "draft"); // 'draft' | 'issue'
+  const notes = String(formData.get("notes") ?? "").trim() || null;
+  const project_id = String(formData.get("project_id") ?? "") || null;
   const linesRaw = String(formData.get("items") ?? "[]");
 
   let lines: LineInput[] = [];
@@ -90,6 +100,8 @@ export async function createInvoice(formData: FormData) {
       tax_minor: tax,
       total_minor: total,
       status: intent === "issue" ? "issued" : "draft",
+      notes,
+      project_id,
       created_by: user?.id,
     })
     .select("id")
@@ -109,6 +121,7 @@ export async function createInvoice(formData: FormData) {
 
   revalidatePath("/invoices");
   revalidatePath("/inventory");
+  if (project_id) revalidatePath(`/projects/${project_id}`);
   redirect(`/invoices/${invoice.id}`);
 }
 

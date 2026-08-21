@@ -5,6 +5,7 @@ import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { formatMoney, fromMinor } from "@/lib/money";
 import { issueInvoice, registerPayment, reversePayment, setPaymentLink, voidInvoice } from "../actions";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
+import { LineItemsTable } from "@/components/LineItems";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   draft: { label: "Borrador", cls: "bg-slate-100 text-slate-600" },
@@ -34,10 +35,10 @@ export default async function InvoiceDetailPage({
   const [{ data: invoice }, { data: items }, { data: allocations }, { data: accounts }] = await Promise.all([
     supabase
       .from("invoices")
-      .select("*, customers(legal_name, email)")
+      .select("*, customers(legal_name, email), projects(id, name)")
       .eq("id", id)
       .single(),
-    supabase.from("invoice_items").select("*").eq("invoice_id", id),
+    supabase.from("invoice_items").select("*").eq("invoice_id", id).order("position").order("created_at"),
     supabase
       .from("payment_allocations")
       .select("amount_minor, payments(id, paid_at, method, reference)")
@@ -67,6 +68,14 @@ export default async function InvoiceDetailPage({
           <p className="mt-1 text-sm text-slate-500">
             {invoice.customers?.legal_name} · emitida {invoice.issue_date} · vence {invoice.due_date}
           </p>
+          {invoice.projects && (
+            <p className="mt-1 text-sm text-slate-500">
+              📁 Trabajo:{" "}
+              <Link href={`/projects/${invoice.projects.id}`} className="font-medium text-slate-700 underline hover:text-slate-900">
+                {invoice.projects.name}
+              </Link>
+            </p>
+          )}
         </div>
         <div className="flex flex-col items-end gap-2">
           <span className={`rounded-full px-3 py-1 text-sm font-medium ${st.cls}`}>{st.label}</span>
@@ -127,26 +136,7 @@ export default async function InvoiceDetailPage({
         {/* Conceptos + totales */}
         <div className="lg:col-span-2">
           <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-slate-500">
-                <tr>
-                  <th className="px-4 py-2 font-medium">Concepto</th>
-                  <th className="px-4 py-2 font-medium text-right">Cant.</th>
-                  <th className="px-4 py-2 font-medium text-right">Precio</th>
-                  <th className="px-4 py-2 font-medium text-right">Importe</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {(items ?? []).map((it) => (
-                  <tr key={it.id}>
-                    <td className="px-4 py-2 text-slate-900">{it.description}</td>
-                    <td className="px-4 py-2 text-right text-slate-600">{it.quantity}</td>
-                    <td className="px-4 py-2 text-right text-slate-600">{formatMoney(it.unit_price_minor, currency)}</td>
-                    <td className="px-4 py-2 text-right text-slate-900">{formatMoney(it.line_total_minor, currency)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <LineItemsTable items={items ?? []} currency={currency} />
           </div>
 
           <div className="mt-4 flex flex-col items-end gap-1 text-sm">

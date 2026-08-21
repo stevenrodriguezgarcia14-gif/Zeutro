@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
 import { PrintButton } from "@/components/PrintButton";
+import { LineItemsTable } from "@/components/LineItems";
 
 export default async function InvoicePrintPage({
   params,
@@ -22,7 +23,7 @@ export default async function InvoicePrintPage({
   if (!invoice) notFound();
 
   const [{ data: items }, { data: org }] = await Promise.all([
-    supabase.from("invoice_items").select("*").eq("invoice_id", id),
+    supabase.from("invoice_items").select("*").eq("invoice_id", id).order("position").order("created_at"),
     supabase
       .from("organizations")
       .select("name, legal_name, tax_id, logo_url")
@@ -70,26 +71,7 @@ export default async function InvoicePrintPage({
           {invoice.customers?.email && <p className="text-sm text-slate-500">{invoice.customers.email}</p>}
         </div>
 
-        <table className="mt-8 w-full text-sm">
-          <thead>
-            <tr className="border-b-2 border-slate-200 text-left text-slate-500">
-              <th className="py-2 font-medium">Concepto</th>
-              <th className="py-2 text-right font-medium">Cant.</th>
-              <th className="py-2 text-right font-medium">Precio</th>
-              <th className="py-2 text-right font-medium">Importe</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(items ?? []).map((it) => (
-              <tr key={it.id} className="border-b border-slate-100">
-                <td className="py-2 text-slate-800">{it.description}</td>
-                <td className="py-2 text-right text-slate-600">{it.quantity}</td>
-                <td className="py-2 text-right text-slate-600">{formatMoney(it.unit_price_minor, currency)}</td>
-                <td className="py-2 text-right text-slate-900">{formatMoney(it.line_total_minor, currency)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <LineItemsTable items={items ?? []} currency={currency} variant="print" />
 
         <div className="mt-6 flex justify-end">
           <div className="w-64 space-y-1 text-sm">

@@ -37,6 +37,10 @@ async function loadData(): Promise<ActivationData> {
     projects: d.projects ?? 0,
     overdueInvoices: d.overdueInvoices ?? 0,
     openQuotations: d.openQuotations ?? 0,
+    // 0045. Con ?? 0 la app sigue funcionando aunque la migración todavía no
+    // esté aplicada: los pasos que dependen de ellos solo se ven pendientes.
+    projectExpenses: d.projectExpenses ?? 0,
+    projectInvoices: d.projectInvoices ?? 0,
   };
 }
 
@@ -60,6 +64,10 @@ export async function getActivation(businessType: string | null | undefined): Pr
     suggestions.push({ title: "Hay productos sin precio de venta", desc: "Sin precio no se calcula tu ganancia real.", href: "/products", cta: "Configurar precios", tone: "alert" });
   if (data.openQuotations > 0)
     suggestions.push({ title: `${data.openQuotations} cotización(es) sin cerrar`, desc: "Dales seguimiento o conviértelas en factura.", href: "/quotations", cta: "Ver cotizaciones", tone: "alert" });
+  // Un trabajo sin gastos ligados muestra una ganancia falsa: parece que todo
+  // lo facturado fue utilidad. Es el error más caro de este módulo.
+  if (data.projects > 0 && data.projectExpenses === 0 && data.expenses > 0)
+    suggestions.push({ title: "Tus gastos no están ligados a ningún trabajo", desc: "Sin eso, la ganancia que ves en cada proyecto está inflada.", href: "/expenses/new", cta: "Ligar un gasto", tone: "alert" });
 
   const nextStep = steps.find((s) => !s.done);
   if (nextStep)

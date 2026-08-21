@@ -6,6 +6,8 @@ import { formatMoney } from "@/lib/money";
 import { addInteraction } from "./actions";
 import { deleteCustomer } from "../actions";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
+import { DocUploader } from "@/components/DocUploader";
+import { deleteDocument } from "@/app/(app)/documents/actions";
 
 const INV_STATUS: Record<string, { label: string; cls: string }> = {
   draft: { label: "Borrador", cls: "bg-slate-100 text-slate-600" },
@@ -35,6 +37,14 @@ function Card({ title, value }: { title: string; value: string }) {
   );
 }
 
+const PROJ_STATUS: Record<string, string> = {
+  planning: "Planeación",
+  active: "Activo",
+  on_hold: "En pausa",
+  completed: "Completado",
+  cancelled: "Cancelado",
+};
+
 export default async function CustomerDetailPage({
   params,
   searchParams,
@@ -48,7 +58,7 @@ export default async function CustomerDetailPage({
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
 
-  const [{ data: customer }, { data: invoices }, { data: payments }, { data: interactions }] = await Promise.all([
+  const [{ data: customer }, { data: invoices }, { data: payments }, { data: interactions }, { data: projects }, { data: docs }] = await Promise.all([
     supabase.from("customers").select("*").eq("id", id).single(),
     supabase
       .from("invoices")
@@ -62,8 +72,26 @@ export default async function CustomerDetailPage({
       .eq("customer_id", id)
       .order("occurred_at", { ascending: false })
       .limit(50),
+    supabase
+      .from("projects")
+      .select("id, name, status, end_date")
+      .eq("customer_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("documents")
+      .select("id, name, file_path, created_at")
+      .eq("entity_type", "customer")
+      .eq("entity_id", id)
+      .order("created_at", { ascending: false }),
   ]);
   if (!customer) notFound();
+
+  const projs = (projects ?? []) as { id: string; name: string; status: string; end_date: string | null }[];
+  const documents = (docs ?? []) as { id: string; name: string; file_path: string; created_at: string }[];
+  // URLs firmadas temporales (el bucket de documentos es privado).
+  const signedDocs = await Promise.all(documents.map((d) => supabase.storage.from("documents").createSignedUrl(d.file_path, 3600)));
+  const docUrl = new Map(documents.map((d, i) => [d.id, signedDocs[i].data?.signedUrl ?? null]));
+  const back = `/customers/${id}`;
 
   const invs = invoices ?? [];
   const billed = invs
@@ -206,6 +234,58 @@ export default async function CustomerDetailPage({
           </ul>
         </div>
       </div>
+
+      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-semibold text-slate-900">Trabajos de este cliente</h2>
+          <Link href={`/projects/new`} className="text-sm font-medium text-slate-700 underline hover:text-slate-900">+ Nuevo trabajo</Link>
+        </div>
+        {projs.length === 0 ? (
+          <p className="mt-3 text-sm text-slate-500">Sin trabajos abiertos para este cliente.</p>
+        ) : (
+          <ul className="mt-3 divide-y divide-slate-100 text-sm">
+            {projs.map((p) => (
+              <li key={p.id} className="flex items-center justify-between py-2">
+                <Link href={`/projects/${p.id}`} className="font-medium text-slate-900 hover:underline">{p.name}</Link>
+                <span className="text-xs text-slate-400">{PROJ_STATUS[p.status] ?? p.status}{p.end_date ? ` · entrega ${p.end_date}` : ""}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="font-semibold text-slate-900">Documentos del cliente</h2>
+            <p className="mt-1 text-xs text-slate-400">Cédula, contrato marco, correos importantes. Lo que sea de un trabajo concreto va mejor en la ficha de ese trabajo.</p>
+          </div>
+          {org && <DocUploader orgId={org.id} entityType="customer" entityId={customer.id} label="+ Subir archivo" />}
+        </div>
+        {documents.length === 0 ? (
+          <p className="mt-3 text-sm text-slate-500">Sin archivos todavía.</p>
+        ) : (
+          <ul className="mt-3 divide-y divide-slate-100 text-sm">
+            {documents.map((d) => (
+              <li key={d.id} className="flex items-center justify-between gap-2 py-2">
+                <span className="min-w-0 flex-1 truncate">
+                  {docUrl.get(d.id) ? (
+                    <a href={docUrl.get(d.id)!} target="_blank" rel="noopener noreferrer" className="font-medium text-slate-900 hover:underline">{d.name}</a>
+                  ) : (
+                    <span className="text-slate-900">{d.name}</span>
+                  )}
+                </span>
+                <span className="shrink-0 text-xs text-slate-400">{new Date(d.created_at).toLocaleDateString("es")}</span>
+                <form action={deleteDocument} className="shrink-0">
+                  <input type="hidden" name="doc_id" value={d.id} />
+                  <input type="hidden" name="redirect_to" value={back} />
+                  <ConfirmSubmit message="¿Eliminar este archivo? No se puede deshacer." className="text-xs text-slate-300 hover:text-red-600">✕</ConfirmSubmit>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <form action={deleteCustomer} className="mt-8">
         <input type="hidden" name="id" value={customer.id} />

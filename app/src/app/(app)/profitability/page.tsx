@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
@@ -31,6 +32,15 @@ export default async function ProfitabilityPage() {
     supabase.from("invoice_items").select("product_id, quantity, unit_price_minor, invoices!inner(status)"),
     supabase.from("products").select("id, name, cost_price_minor"),
     supabase.from("quick_sales").select("amount_minor, sold_at, tax_rate_bps"),
+  ]);
+
+  // Rentabilidad por TRABAJO. Un negocio por encargo no gana ni pierde por
+  // producto: gana o pierde por trabajo. El costo real solo aparece si los
+  // gastos están ligados al proyecto, por eso se avisa cuando no lo están.
+  const [{ data: projList }, { data: projExps }, { data: projInvs }] = await Promise.all([
+    supabase.from("projects").select("id, name, status").order("created_at", { ascending: false }),
+    supabase.from("expenses").select("project_id, amount_minor").not("project_id", "is", null),
+    supabase.from("invoices").select("project_id, subtotal_minor, paid_minor, status").not("project_id", "is", null),
   ]);
 
   const compras = await getPurchasesOverview();
@@ -110,6 +120,29 @@ export default async function ProfitabilityPage() {
   }
   const cats = [...byCat.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
 
+  type ProjRow = { id: string; name: string; status: string; revenue: number; cost: number; profit: number; margin: number };
+  const projAgg = new Map<string, { revenue: number; cost: number }>();
+  const projBucket = (pid: string) => {
+    let a = projAgg.get(pid);
+    if (!a) { a = { revenue: 0, cost: 0 }; projAgg.set(pid, a); }
+    return a;
+  };
+  for (const e of (projExps ?? []) as { project_id: string; amount_minor: number }[]) {
+    projBucket(e.project_id).cost += e.amount_minor ?? 0;
+  }
+  for (const i of (projInvs ?? []) as { project_id: string; subtotal_minor: number; paid_minor: number; status: string }[]) {
+    if (i.status === "void") continue;
+    projBucket(i.project_id).revenue += i.subtotal_minor ?? 0;
+  }
+  const projRows: ProjRow[] = ((projList ?? []) as { id: string; name: string; status: string }[])
+    .map((p) => {
+      const a = projAgg.get(p.id) ?? { revenue: 0, cost: 0 };
+      const profit = a.revenue - a.cost;
+      return { id: p.id, name: p.name, status: p.status, revenue: a.revenue, cost: a.cost, profit, margin: a.revenue > 0 ? Math.round((profit / a.revenue) * 100) : 0 };
+    })
+    .filter((r) => r.revenue > 0 || r.cost > 0)
+    .sort((a, b) => b.profit - a.profit);
+
   const recovered = netTotal >= 0;
   // "Sin IVA" solo es relevante si el negocio realmente cobró IVA. Si no, la
   // etiqueta confunde (parece que falta algo), así que se muestra "Ingresos" a secas.
@@ -158,6 +191,48 @@ export default async function ProfitabilityPage() {
             <Card title="ROI" value={`${compras.roi}%`} tone={compras.roi >= 0 ? "good" : "bad"} />
             <Card title="Capital en mercancía" value={formatMoney(compras.capitalEnMercancia, currency)} hint="Invertido aún no recuperado" />
             <Card title="Sin vender" value={`${compras.mercanciaSinVender} u`} hint="Unidades en stock" />
+          </div>
+        </>
+      )}
+
+      {/* Rentabilidad por trabajo */}
+      {projRows.length > 0 && (
+        <>
+          <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">Rentabilidad por trabajo</h2>
+          <p className="mt-1 text-xs text-slate-400">
+            Lo facturado sin impuestos menos los gastos que ligaste a cada trabajo. Un trabajo con ganancia enorme y
+            costo cero casi siempre significa que faltan gastos por ligar, no que sea un gran negocio.
+          </p>
+          <div className="mt-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-left text-slate-500">
+                <tr>
+                  <th className="px-4 py-2 font-medium">Trabajo</th>
+                  <th className="px-4 py-2 font-medium text-right">Facturado</th>
+                  <th className="px-4 py-2 font-medium text-right">Costo</th>
+                  <th className="px-4 py-2 font-medium text-right">Ganancia</th>
+                  <th className="px-4 py-2 font-medium text-right">Margen</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {projRows.map((r) => (
+                  <tr key={r.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-2 text-slate-900">
+                      <Link href={`/projects/${r.id}`} className="hover:underline">{r.name}</Link>
+                      {r.cost === 0 && (
+                        <span className="ml-1 text-xs text-amber-600" title="Este trabajo no tiene gastos ligados: su ganancia está inflada">
+                          ⚠️ sin gastos ligados
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 text-right text-slate-600">{formatMoney(r.revenue, currency)}</td>
+                    <td className="px-4 py-2 text-right text-slate-600">{formatMoney(r.cost, currency)}</td>
+                    <td className={`px-4 py-2 text-right font-medium ${r.profit >= 0 ? "text-green-600" : "text-red-600"}`}>{formatMoney(r.profit, currency)}</td>
+                    <td className="px-4 py-2 text-right text-slate-600">{r.revenue > 0 ? `${r.margin}%` : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </>
       )}

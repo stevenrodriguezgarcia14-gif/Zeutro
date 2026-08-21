@@ -8,15 +8,18 @@ import { defaultVatPct } from "@/lib/tax";
 export default async function NewQuotationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; customer?: string }>;
+  searchParams: Promise<{ error?: string; customer?: string; project?: string }>;
 }) {
-  const { error, customer } = await searchParams;
+  const { error, customer, project } = await searchParams;
   const org = await getCurrentOrg();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
-  const [{ data: customers }, { data: products }] = await Promise.all([
+  const [{ data: customers }, { data: products }, { data: projects }] = await Promise.all([
     supabase.from("customers").select("id, legal_name").order("legal_name"),
-    supabase.from("products").select("id, name, sale_price_minor").eq("is_active", true).order("name"),
+    supabase.from("products").select("id, name, sale_price_minor, unit").eq("is_active", true).order("name"),
+    // Solo trabajos vivos: cotizar un adicional de un trabajo terminado o
+    // cancelado casi siempre es un error de dedo.
+    supabase.from("projects").select("id, name").in("status", ["planning", "active", "on_hold"]).order("created_at", { ascending: false }),
   ]);
 
   if (!customers || customers.length === 0) {
@@ -34,10 +37,25 @@ export default async function NewQuotationPage({
   return (
     <div>
       <Link href="/quotations" className="text-sm text-slate-500 hover:underline">← Cotizaciones</Link>
-      <h1 className="mt-2 text-2xl font-bold text-slate-900">Nueva cotización</h1>
+      <h1 className="mt-2 text-2xl font-bold text-slate-900">{project ? "Cotizar un cambio o adicional" : "Nueva cotización"}</h1>
+      {project && (
+        <p className="mt-1 text-sm text-slate-500">
+          Queda ligada al trabajo. Cuando el cliente la acepte, súmala a lo que le vas a cobrar.
+        </p>
+      )}
       {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       <div className="mt-6">
-        <QuotationForm customers={customers} products={products ?? []} currency={currency} action={createQuotation} defaultCustomerId={customer ?? ""} defaultTaxPct={defaultVatPct(org?.country)} today={await getOrgToday()} />
+        <QuotationForm
+          customers={customers}
+          products={products ?? []}
+          projects={projects ?? []}
+          currency={currency}
+          action={createQuotation}
+          defaultCustomerId={customer ?? ""}
+          defaultProjectId={project ?? ""}
+          defaultTaxPct={defaultVatPct(org?.country)}
+          today={await getOrgToday()}
+        />
       </div>
     </div>
   );

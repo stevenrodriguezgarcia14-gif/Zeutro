@@ -8,16 +8,17 @@ import { defaultVatPct } from "@/lib/tax";
 export default async function NewInvoicePage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; customer?: string }>;
+  searchParams: Promise<{ error?: string; customer?: string; project?: string }>;
 }) {
-  const { error, customer } = await searchParams;
+  const { error, customer, project } = await searchParams;
   const org = await getCurrentOrg();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
 
-  const [{ data: customers }, { data: products }] = await Promise.all([
+  const [{ data: customers }, { data: products }, { data: projects }] = await Promise.all([
     supabase.from("customers").select("id, legal_name").order("legal_name"),
-    supabase.from("products").select("id, name, sale_price_minor").eq("is_active", true).order("name"),
+    supabase.from("products").select("id, name, sale_price_minor, unit").eq("is_active", true).order("name"),
+    supabase.from("projects").select("id, name").in("status", ["planning", "active", "on_hold"]).order("created_at", { ascending: false }),
   ]);
 
   if (!customers || customers.length === 0) {
@@ -52,9 +53,11 @@ export default async function NewInvoicePage({
         <InvoiceForm
           customers={customers}
           products={products ?? []}
+          projects={projects ?? []}
           currency={currency}
           action={createInvoice}
           defaultCustomerId={customer ?? ""}
+          defaultProjectId={project ?? ""}
           defaultTaxPct={defaultVatPct(org?.country)}
           today={await getOrgToday()}
         />

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { DocUploader } from "@/components/DocUploader";
@@ -17,10 +18,34 @@ export default async function DocumentsPage() {
   const supabase = await createClient();
   const { data: docs } = await supabase
     .from("documents")
-    .select("id, name, file_path, mime_type, size_bytes, created_at")
+    .select("id, name, file_path, mime_type, size_bytes, created_at, entity_type, entity_id")
     .order("created_at", { ascending: false });
 
   const rows = docs ?? [];
+
+  // A qué pertenece cada archivo. `entity_id` es un uuid suelto (sin llave
+  // foránea, porque puede apuntar a varias tablas), así que se resuelven los
+  // nombres en dos consultas en vez de con un join.
+  const projectIds = [...new Set(rows.filter((d) => d.entity_type === "project" && d.entity_id).map((d) => d.entity_id as string))];
+  const customerIds = [...new Set(rows.filter((d) => d.entity_type === "customer" && d.entity_id).map((d) => d.entity_id as string))];
+  const [{ data: projs }, { data: custs }] = await Promise.all([
+    projectIds.length > 0 ? supabase.from("projects").select("id, name").in("id", projectIds) : Promise.resolve({ data: [] }),
+    customerIds.length > 0 ? supabase.from("customers").select("id, legal_name").in("id", customerIds) : Promise.resolve({ data: [] }),
+  ]);
+  const projName = new Map((projs ?? []).map((p) => [p.id, p.name]));
+  const custName = new Map((custs ?? []).map((c) => [c.id, c.legal_name]));
+
+  function pertenece(d: { entity_type: string | null; entity_id: string | null }) {
+    if (d.entity_type === "project" && d.entity_id) {
+      const n = projName.get(d.entity_id);
+      return n ? { href: `/projects/${d.entity_id}`, label: `📁 ${n}` } : null;
+    }
+    if (d.entity_type === "customer" && d.entity_id) {
+      const n = custName.get(d.entity_id);
+      return n ? { href: `/customers/${d.entity_id}`, label: `👤 ${n}` } : null;
+    }
+    return null;
+  }
   // URLs firmadas temporales para descarga (bucket privado)
   const signed = await Promise.all(
     rows.map((d) => supabase.storage.from("documents").createSignedUrl(d.file_path, 3600)),
@@ -48,6 +73,7 @@ export default async function DocumentsPage() {
             <thead className="bg-slate-50 text-left text-slate-500">
               <tr>
                 <th className="px-4 py-3 font-medium">Archivo</th>
+                <th className="px-4 py-3 font-medium">Pertenece a</th>
                 <th className="px-4 py-3 font-medium">Tamaño</th>
                 <th className="px-4 py-3 font-medium">Fecha</th>
                 <th className="px-4 py-3"></th>
@@ -62,6 +88,16 @@ export default async function DocumentsPage() {
                     ) : (
                       d.name
                     )}
+                  </td>
+                  <td className="px-4 py-3 text-slate-500">
+                    {(() => {
+                      const p = pertenece(d);
+                      return p ? (
+                        <Link href={p.href} className="hover:underline">{p.label}</Link>
+                      ) : (
+                        <span className="text-slate-300">General</span>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-3 text-slate-500">{fmtSize(d.size_bytes)}</td>
                   <td className="px-4 py-3 text-slate-500">{new Date(d.created_at).toLocaleDateString("es")}</td>

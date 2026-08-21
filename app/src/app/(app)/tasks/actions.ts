@@ -34,6 +34,9 @@ export async function createTask(formData: FormData) {
   const priority = String(formData.get("priority") ?? "medium");
   const due_date = String(formData.get("due_date") ?? "") || null;
   const project_id = String(formData.get("project_id") ?? "") || null;
+  // Responsable: si no se elige a nadie, la tarea es de quien la crea (que es
+  // como se comportaba antes de que existiera el selector).
+  const assignee_id = String(formData.get("assignee_id") ?? "") || null;
   const recurrenceRaw = String(formData.get("recurrence") ?? "none");
   const recurrence = RECURRENCES.has(recurrenceRaw) ? recurrenceRaw : "none";
   const redirectTo = String(formData.get("redirect_to") ?? "/tasks");
@@ -45,7 +48,8 @@ export async function createTask(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const { error } = await supabase.from("tasks").insert({
-    organization_id: org.id, title, priority, due_date, project_id, recurrence, assignee_id: user?.id, created_by: user?.id,
+    organization_id: org.id, title, priority, due_date, project_id, recurrence,
+    assignee_id: assignee_id ?? user?.id, created_by: user?.id,
   });
   if (error) redirect(`${redirectTo}?error=${encodeURIComponent(safeError(error))}`);
   revalidatePath(redirectTo);

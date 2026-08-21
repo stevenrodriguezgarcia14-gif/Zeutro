@@ -14,6 +14,8 @@ type Row = {
   amount_minor: number;
   expense_date: string;
   payment_status: string;
+  project_id: string | null;
+  projects: { name: string } | null;
 };
 
 export default async function ExpensesPage() {
@@ -23,13 +25,13 @@ export default async function ExpensesPage() {
   const [{ data }, { data: accData }] = await Promise.all([
     supabase
       .from("expenses")
-      .select("id, description, category, vendor, amount_minor, expense_date, payment_status")
+      .select("id, description, category, vendor, amount_minor, expense_date, payment_status, project_id, projects(name)")
       .order("expense_date", { ascending: false }),
     supabase.from("accounts").select("id, name").eq("is_active", true).order("created_at"),
   ]);
   const accounts = (accData ?? []) as { id: string; name: string }[];
 
-  const rows = (data ?? []) as Row[];
+  const rows = (data ?? []) as unknown as Row[];
   const month = new Date().toISOString().slice(0, 7);
   const totalMonth = rows
     .filter((r) => r.expense_date.startsWith(month))
@@ -94,6 +96,7 @@ export default async function ExpensesPage() {
                 <th className="px-4 py-3 font-medium">Descripción</th>
                 <th className="px-4 py-3 font-medium">Categoría</th>
                 <th className="px-4 py-3 font-medium">Proveedor</th>
+                <th className="px-4 py-3 font-medium">Trabajo</th>
                 <th className="px-4 py-3 font-medium">Estado</th>
                 <th className="px-4 py-3 font-medium text-right">Monto</th>
                 <th className="px-4 py-3 font-medium text-right">Acciones</th>
@@ -106,6 +109,13 @@ export default async function ExpensesPage() {
                   <td className="px-4 py-3 font-medium text-slate-900">{e.description}</td>
                   <td className="px-4 py-3 text-slate-600">{e.category ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600">{e.vendor ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {e.project_id && e.projects?.name ? (
+                      <Link href={`/projects/${e.project_id}`} className="hover:underline">📁 {e.projects.name}</Link>
+                    ) : (
+                      <span className="text-slate-300">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     {e.payment_status === "paid" ? (
                       <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Pagado</span>

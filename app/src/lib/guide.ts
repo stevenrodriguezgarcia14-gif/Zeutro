@@ -27,6 +27,10 @@ export type ActivationData = {
   projects: number;
   overdueInvoices: number;
   openQuotations: number;
+  // Operación REALMENTE ligada a un trabajo (0045). Es la diferencia entre
+  // "usa Zentro" y "sabe si el trabajo le está dejando dinero".
+  projectExpenses: number;
+  projectInvoices: number;
 };
 
 export type Step = {
@@ -67,6 +71,18 @@ const PLAYBOOKS: Record<string, Step[]> = {
     { key: "venta", label: "Registra tu primera venta", href: "/quick-sale", cta: "Venta rápida", done: (d) => d.invoices > 0 || d.payments > 0 || d.quickSales > 0 },
     { key: "rentabilidad", label: "Revisa tu rentabilidad", href: "/profitability", cta: "Ver rentabilidad", done: (d) => d.payments > 0 || d.quickSales > 0 },
   ],
+  // Trabajos por encargo que se ejecutan en sitio y duran semanas: obra,
+  // remodelación, instalaciones, montajes. Lo que los distingue de
+  // `services` es que el dinero se gana o se pierde DENTRO del trabajo, así
+  // que la ruta insiste en ligar gastos y facturas al proyecto.
+  obra: [
+    { key: "cliente", label: "Crea tu primer cliente", href: "/customers/new", cta: "Crear cliente", done: (d) => d.customers > 0 },
+    { key: "cotizacion", label: "Cotiza el trabajo (con tu costo por dentro)", href: "/quotations/new", cta: "Cotizar", done: (d) => d.quotations > 0 },
+    { key: "obra", label: "Abre el trabajo como proyecto", href: "/projects/new", cta: "Abrir el trabajo", done: (d) => d.projects > 0 },
+    { key: "gastos", label: "Liga los gastos al trabajo", href: "/expenses/new", cta: "Registrar gasto", done: (d) => d.projectExpenses > 0 },
+    { key: "avance", label: "Cobra el anticipo o un avance", href: "/projects", cta: "Facturar avance", done: (d) => d.projectInvoices > 0 },
+    { key: "ganancia", label: "Mira si el trabajo dejó ganancia", href: "/projects", cta: "Ver el trabajo", done: (d) => d.projectExpenses > 0 && d.payments > 0 },
+  ],
   general: [
     { key: "cliente", label: "Crea tu primer cliente", href: "/customers/new", cta: "Crear cliente", done: (d) => d.customers > 0 },
     { key: "producto", label: "Agrega un producto o servicio", href: "/products/new", cta: "Agregar", done: (d) => d.products > 0 },
@@ -105,6 +121,8 @@ export const PROFILES: Profile[] = [
     priority: ["customers", "quotations", "projects", "invoices"], recommended: ["tasks", "calendar", "profitability", "collections"], optional: ["purchases", "inventory"] },
   { slug: "agencia", label: "Agencia", emoji: "🏢", desc: "Equipo que atiende varios clientes.", playbook: "services",
     priority: ["customers", "sales", "quotations", "projects", "invoices"], recommended: ["tasks", "collections", "profitability", "cashflow"], optional: ["purchases", "inventory"] },
+  { slug: "construccion", label: "Construcción y remodelación", emoji: "🏗️", desc: "Obras y trabajos por encargo que se hacen en sitio.", playbook: "obra",
+    priority: ["customers", "quotations", "projects", "expenses", "invoices"], recommended: ["collections", "tasks", "documents", "cashflow", "accounts"], optional: ["products", "purchases", "inventory", "sales", "quicksale"] },
   { slug: "profesional", label: "Profesional independiente", emoji: "👩‍⚕️", desc: "Médico, abogado, contador, etc.", playbook: "services",
     priority: ["customers", "invoices", "calendar", "collections"], recommended: ["quotations", "expenses", "cashflow"], optional: ["purchases", "inventory", "projects", "sales"] },
   { slug: "restaurante", label: "Restaurante / Comida", emoji: "🍽️", desc: "Preparas y vendes alimentos.", playbook: "cash",
@@ -121,6 +139,50 @@ export function getProfile(slug: string | null | undefined): Profile {
 
 export function getPlaybook(profile: Profile): Step[] {
   return PLAYBOOKS[profile.playbook];
+}
+
+// ---- Categorías de gasto sugeridas ---------------------------------------
+// El campo "categoría" del gasto es texto libre; esto solo alimenta el
+// datalist que se le sugiere al usuario. Un contratista que ve "Renta,
+// Software, Marketing" y ninguna categoría de obra concluye, con razón, que
+// la herramienta no es para él.
+const EXPENSE_CATEGORIES_BASE = [
+  "Renta",
+  "Servicios (luz, agua, internet)",
+  "Sueldos",
+  "Insumos / Materia prima",
+  "Mercancía",
+  "Marketing / Publicidad",
+  "Software / Suscripciones",
+  "Transporte / Combustible",
+  "Comisiones bancarias",
+  "Impuestos",
+  "Honorarios",
+  "Otros",
+];
+
+const EXPENSE_CATEGORIES_BY_PROFILE: Record<string, string[]> = {
+  construccion: [
+    "Materiales de obra",
+    "Mano de obra",
+    "Subcontratos",
+    "Acarreo / transporte",
+    "Alquiler de equipo",
+    "Herramienta",
+    "Permisos y pólizas",
+    "Combustible",
+    "Renta",
+    "Servicios (luz, agua, internet)",
+    "Comisiones bancarias",
+    "Impuestos",
+    "Honorarios",
+    "Otros",
+  ],
+};
+
+/** Categorías de gasto sugeridas para el tipo de negocio (texto libre igual). */
+export function getExpenseCategories(businessType: string | null | undefined): string[] {
+  return EXPENSE_CATEGORIES_BY_PROFILE[businessType ?? ""] ?? EXPENSE_CATEGORIES_BASE;
 }
 
 // ---- Catálogo de módulos (la "guía") ------------------------------------
@@ -150,11 +212,11 @@ export const MODULES: Record<ModuleSlug, ModuleInfo> = {
     errores: "Dejar oportunidades estancadas sin mover de etapa.",
     relacion: "Alimenta el Flujo de caja (ventas probables) y se convierte en Cotización o Factura." },
   quotations: { slug: "quotations", name: "Cotizaciones", href: "/quotations", emoji: "📝",
-    queEs: "Presupuestos formales que envías al cliente antes de venderle.",
-    cuando: "Cuando el cliente necesita ver precio y alcance antes de aceptar.",
+    queEs: "Presupuestos formales que envías al cliente, agrupados por partidas y con tu costo calculado por dentro (eso el cliente no lo ve).",
+    cuando: "Cuando el cliente necesita ver precio y alcance antes de aceptar; y cada vez que te pida un cambio o un extra durante el trabajo.",
     cuandoNo: "Si ya hay acuerdo cerrado: pasa directo a Factura.",
-    errores: "No darles seguimiento; una cotización sin respuesta se enfría.",
-    relacion: "Se convierte en Factura con un clic y descuenta Inventario al hacerlo." },
+    errores: "Hacer un extra que pidió el cliente sin cotizarlo primero: después es casi imposible cobrarlo.",
+    relacion: "Se convierte en Factura con un clic, puede abrir un Proyecto, y sus adicionales suman al precio del trabajo." },
   products: { slug: "products", name: "Productos y servicios", href: "/products", emoji: "📦",
     queEs: "Tu catálogo de lo que vendes, con precio y costo.",
     cuando: "Antes de facturar, para no escribir lo mismo cada vez y medir rentabilidad.",
@@ -222,11 +284,11 @@ export const MODULES: Record<ModuleSlug, ModuleInfo> = {
     errores: "Llenar de tareas sin fecha; sin fecha no entran a tus prioridades.",
     relacion: "Se conecta con Proyectos y aparece en el Centro de Prioridades." },
   projects: { slug: "projects", name: "Proyectos", href: "/projects", emoji: "📁",
-    queEs: "Trabajos grandes con varias tareas, fechas y un cliente.",
-    cuando: "Cuando un encargo lleva varios pasos o semanas.",
+    queEs: "Un trabajo por encargo completo: cliente, cotización, gastos, facturas, tareas y documentos en un solo lugar, con la ganancia real calculada.",
+    cuando: "Cuando un encargo lleva varios pasos o semanas y quieres saber si te dejó dinero.",
     cuandoNo: "Para un pendiente simple (usa una Tarea).",
-    errores: "No ligar el proyecto a un cliente ni a sus tareas.",
-    relacion: "Agrupa Tareas y se puede facturar al cliente relacionado." },
+    errores: "Registrar los gastos del trabajo sin ligarlos al proyecto: entonces la ganancia que ves es falsa.",
+    relacion: "Nace de una Cotización aceptada, cobra por avances con Facturas, absorbe Gastos y Documentos, y agrupa Tareas." },
   calendar: { slug: "calendar", name: "Calendario", href: "/calendar", emoji: "📅",
     queEs: "Tu agenda: citas con hora más tareas y vencimientos por fecha.",
     cuando: "Para agendar citas con clientes y ver qué cae cada día.",
@@ -237,6 +299,6 @@ export const MODULES: Record<ModuleSlug, ModuleInfo> = {
     queEs: "Un lugar seguro para guardar archivos del negocio.",
     cuando: "Contratos, comprobantes, identificaciones, etc.",
     cuandoNo: "Para notas rápidas (usa la descripción del registro correspondiente).",
-    errores: "Subir todo sin nombrarlo bien y luego no encontrarlo.",
-    relacion: "Puedes asociarlos a clientes, facturas o proyectos." },
+    errores: "Subir todo al montón general en vez de subirlo desde la ficha del cliente o del proyecto al que pertenece.",
+    relacion: "Se asocian al cliente o al proyecto desde el que los subes, y desde ahí los vuelves a encontrar." },
 };

@@ -1,36 +1,30 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createExpense } from "../actions";
-import { getOrgToday } from "@/lib/org";
-
-const CATEGORIES = [
-  "Renta",
-  "Servicios (luz, agua, internet)",
-  "Sueldos",
-  "Insumos / Materia prima",
-  "Mercancía",
-  "Marketing / Publicidad",
-  "Software / Suscripciones",
-  "Transporte / Combustible",
-  "Comisiones bancarias",
-  "Impuestos",
-  "Honorarios",
-  "Otros",
-];
+import { getCurrentOrg, getOrgToday } from "@/lib/org";
+import { getExpenseCategories } from "@/lib/guide";
 
 export default async function NewExpensePage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; project?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, project } = await searchParams;
+  const org = await getCurrentOrg();
   const today = await getOrgToday();
   const supabase = await createClient();
-  const { data: accounts } = await supabase
-    .from("accounts")
-    .select("id, name")
-    .eq("is_active", true)
-    .order("name");
+  // Las categorías sugeridas dependen del tipo de negocio: un contratista que
+  // solo ve "Renta, Software, Marketing" concluye, con razón, que la
+  // herramienta no es para él. El campo sigue siendo texto libre.
+  const CATEGORIES = getExpenseCategories(org?.business_type);
+  const [{ data: accounts }, { data: projects }] = await Promise.all([
+    supabase.from("accounts").select("id, name").eq("is_active", true).order("name"),
+    supabase
+      .from("projects")
+      .select("id, name")
+      .in("status", ["planning", "active", "on_hold"])
+      .order("created_at", { ascending: false }),
+  ]);
 
   return (
     <div className="mx-auto max-w-lg">
@@ -122,6 +116,27 @@ export default async function NewExpensePage({
             </select>
           </div>
         </div>
+        {(projects ?? []).length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700">¿Es de algún trabajo? (opcional)</label>
+            <select
+              name="project_id"
+              defaultValue={project ?? ""}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-900"
+            >
+              <option value="">— Gasto general del negocio —</option>
+              {(projects ?? []).map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-slate-400">
+              Elígelo y este gasto se descuenta de la ganancia de ese trabajo. Si no lo ligas, el trabajo se ve más
+              rentable de lo que es.
+            </p>
+          </div>
+        )}
         <div>
           <label className="block text-sm font-medium text-slate-700">Pagado desde la cuenta (opcional)</label>
           <select
