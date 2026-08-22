@@ -36,4 +36,12 @@ describe("safeError", () => {
     expect(typeof safeError(null)).toBe("string");
     expect(typeof safeError(undefined)).toBe("string");
   });
+
+  it("muestra el aviso de comprobante duplicado tal cual (es mensaje nuestro)", () => {
+    // Lo lanza create_expense cuando ya se importó ese XML. Antes caía en el
+    // genérico "Ocurrió un error" y el usuario no entendía por qué no entraba.
+    expect(safeError({ code: "P0001", message: "Ese comprobante ya está registrado como gasto" })).toBe(
+      "Ese comprobante ya está registrado como gasto",
+    );
+  });
 });

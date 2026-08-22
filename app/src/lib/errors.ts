@@ -30,6 +30,8 @@ const SAFE_DOMAIN = [
   "no encontrada",
   "no encontrado",
   "ya existe",
+  "ya está registrad",
+  "comprobante",
   "excede",
   "negativo",
   "origen y destino",
