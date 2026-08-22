@@ -122,6 +122,11 @@ export function QuotationForm({
   }, [lines]);
 
   // Subtotal por partida, en el orden en que aparecen las partidas.
+  //
+  // Se suma CON impuestos, igual que la columna "Importe" de la tabla y que
+  // el subtotal por partida del PDF. Antes esta vista previa sumaba montos
+  // netos y la misma partida mostraba una cifra distinta aqui y en el
+  // documento guardado.
   const bySection = useMemo(() => {
     const map = new Map<string, number>();
     for (const l of lines) {
@@ -129,7 +134,8 @@ export function QuotationForm({
       if (!name) continue;
       const qty = parseFloat(l.quantity) || 0;
       const net = Math.round(qty * toMinor(l.unit_price || "0"));
-      map.set(name, (map.get(name) ?? 0) + net);
+      const lineTax = Math.round((net * Math.round((parseFloat(l.tax_pct) || 0) * 100)) / 10000);
+      map.set(name, (map.get(name) ?? 0) + net + lineTax);
     }
     return [...map.entries()];
   }, [lines]);
@@ -304,7 +310,7 @@ export function QuotationForm({
               </div>
             ))}
           </div>
-          <p className="mt-2 text-xs text-slate-400">Montos sin impuestos. Así es como el cliente verá agrupada la cotización.</p>
+          <p className="mt-2 text-xs text-slate-400">Impuestos incluidos. Así es como el cliente verá agrupada la cotización en el PDF.</p>
         </div>
       )}
 

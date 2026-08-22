@@ -1,5 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { FakeDb, type Row } from "@/test/fakeSupabase";
+import { formatMoney } from "@/lib/money";
+
+// Estas pruebas verifican QUE periodo se resume y con QUE cifras, no como se
+// escribe el dinero. Se compara contra formatMoney para no volver a fijar el
+// formato de una moneda concreta: los colones se escriben "₡1 000,00", no
+// "1,000.00", y tenerlo escrito a mano rompia estas pruebas al arreglarlo.
+const monto = (mayor: number) => formatMoney(mayor * 100, "CRC");
 
 /**
  * Pruebas del cron REAL (se importa la ruta, no una copia de su lógica)
@@ -174,8 +181,8 @@ describe("el período resumido es el correcto", () => {
     await runCron("2026-08-24T13:00:00Z"); // resume 17–23: la venta del 24 no va
     await runCron("2026-08-31T13:00:00Z"); // resume 24–30: aquí sí
     const semanas = sent.filter((m) => m.subject.includes("Tu semana"));
-    expect(semanas[0].html).not.toContain("1,000.00");
-    expect(semanas[1].html).toContain("1,000.00");
+    expect(semanas[0].html).not.toContain(monto(1000));
+    expect(semanas[1].html).toContain(monto(1000));
   });
 });
 
@@ -295,10 +302,10 @@ describe("consentimiento y aislamiento entre negocios", () => {
     await runCron("2026-08-24T13:00:00Z");
     const a = sent.find((m) => m.to === "a@x.com")!;
     const b = sent.find((m) => m.to === "b@x.com")!;
-    expect(a.html).toContain("1,111.00");
-    expect(a.html).not.toContain("2,222.00");
-    expect(b.html).toContain("2,222.00");
-    expect(b.html).not.toContain("1,111.00");
+    expect(a.html).toContain(monto(1111));
+    expect(a.html).not.toContain(monto(2222));
+    expect(b.html).toContain(monto(2222));
+    expect(b.html).not.toContain(monto(1111));
   });
 
   it("un negocio creado esta semana no recibe resúmenes de antes de existir", async () => {
@@ -358,6 +365,6 @@ describe("volumen: no se queda con las primeras 1000 filas", () => {
     db = seed({ quick_sales: ventas });
     await runCron("2026-08-24T13:00:00Z");
     const semana = sent.find((m) => m.subject.includes("Tu semana"))!;
-    expect(semana.html).toContain("1,500.00"); // 1500 × ₡1.00
+    expect(semana.html).toContain(monto(1500)); // 1500 × ₡1.00
   });
 });

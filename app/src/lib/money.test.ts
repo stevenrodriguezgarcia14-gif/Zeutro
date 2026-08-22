@@ -39,4 +39,29 @@ describe("formatMoney", () => {
     // @ts-expect-error probando robustez
     expect(typeof formatMoney(null, "USD", "en-US")).toBe("string");
   });
+
+  // Cada moneda se escribe como se escribe en su pais. Formatear colones con
+  // locale mexicano daba "CRC 21,170.55" en vez del simbolo del colon, y eso
+  // salia impreso en las cotizaciones que el negocio le manda a su cliente.
+  it("usa el simbolo y los separadores del pais de la moneda", () => {
+    const crc = formatMoney(2117055, "CRC");
+    expect(crc).toContain("₡");
+    expect(crc).not.toContain("CRC");
+
+    const mxn = formatMoney(2117055, "MXN");
+    expect(mxn).toContain("$");
+    expect(mxn).toContain("21,170.55");
+  });
+
+  it("nunca esconde los centavos, ni en monedas sin decimales", () => {
+    // CLP y COP no usan centavos en la calle, pero Zentro guarda TODO en
+    // centavos: redondear al mostrar ensenaria una cifra distinta a la
+    // que el usuario escribio.
+    expect(formatMoney(2117055, "CLP")).toContain("21.170,55");
+    expect(formatMoney(2117055, "COP")).toContain("21.170,55");
+  });
+
+  it("respeta el locale si se lo pasan a mano", () => {
+    expect(formatMoney(2117055, "CRC", "en-US")).toContain("21,170.55");
+  });
 });
