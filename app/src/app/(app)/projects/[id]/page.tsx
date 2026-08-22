@@ -6,7 +6,7 @@ import { formatMoney, fromMinor } from "@/lib/money";
 import { defaultVatPct } from "@/lib/tax";
 import { updateProjectStatus, deleteProject, createProjectInvoice, updateProject, setProjectWarranty } from "../actions";
 import { createTask, toggleTask, deleteTask } from "@/app/(app)/tasks/actions";
-import { createExpense } from "@/app/(app)/expenses/actions";
+import { createExpense, moveExpenseToProject } from "@/app/(app)/expenses/actions";
 import { deleteDocument } from "@/app/(app)/documents/actions";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 import { ProjectInvoiceForm } from "@/components/ProjectInvoiceForm";
@@ -88,6 +88,7 @@ export default async function ProjectDetailPage({
     { data: docs },
     { data: accounts },
     { data: customers },
+    { data: todosLosTrabajos },
   ] = await Promise.all([
     supabase.from("projects").select("*, customers(id, legal_name)").eq("id", id).single(),
     supabase
@@ -119,6 +120,7 @@ export default async function ProjectDetailPage({
       .order("created_at", { ascending: false }),
     supabase.from("accounts").select("id, name").eq("is_active", true).order("name"),
     supabase.from("customers").select("id, legal_name").order("legal_name"),
+    supabase.from("projects").select("id, name").in("status", ["planning", "active", "on_hold"]).order("created_at", { ascending: false }),
   ]);
   if (!project) notFound();
 
@@ -137,6 +139,7 @@ export default async function ProjectDetailPage({
 
   const accs = (accounts ?? []) as { id: string; name: string }[];
   const custs = (customers ?? []) as { id: string; legal_name: string }[];
+  const otrosTrabajos = (todosLosTrabajos ?? []) as { id: string; name: string }[];
   const exps = (projExpenses ?? []) as { id: string; description: string; category: string | null; vendor: string | null; amount_minor: number; expense_date: string; payment_status: string }[];
   const invs = (projInvoices ?? []) as { id: string; number: string; issue_date: string; subtotal_minor: number; total_minor: number; paid_minor: number; status: string }[];
   const quos = (projQuotations ?? []) as { id: string; number: string; issue_date: string; subtotal_minor: number; total_minor: number; status: string; cost_minor: number | null }[];
@@ -159,6 +162,18 @@ export default async function ProjectDetailPage({
   // COSTO: lo estimado (budget_amount_minor) contra lo realmente gastado.
   const budget = project.budget_amount_minor as number | null;
   const spent = exps.reduce((s, e) => s + (e.amount_minor ?? 0), 0);
+  // En qué se está yendo la plata de este trabajo. Es lo más cerca que
+  // Zentro llega de un control de materiales, y para un negocio de este
+  // tamaño es lo que de verdad se usa: saber cuánto va en materiales,
+  // cuánto en mano de obra y cuánto en subcontratos.
+  const porCategoria = (() => {
+    const m = new Map<string, number>();
+    for (const e of exps) {
+      const k = e.category?.trim() || "Sin categoría";
+      m.set(k, (m.get(k) ?? 0) + (e.amount_minor ?? 0));
+    }
+    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+  })();
   const budgetPct = budget && budget > 0 ? Math.round((spent / budget) * 100) : 0;
   const overBudget = budget != null && budget > 0 && spent > budget;
 
@@ -457,6 +472,28 @@ export default async function ProjectDetailPage({
           ))}
         </datalist>
 
+        {porCategoria.length > 0 && (
+          <div className="mt-5 border-t border-slate-100 pt-4">
+            <h3 className="text-sm font-semibold text-slate-700">¿En qué se va la plata de este trabajo?</h3>
+            <div className="mt-3 space-y-2">
+              {porCategoria.map(([cat, monto]) => {
+                const pct = spent > 0 ? Math.round((monto / spent) * 100) : 0;
+                return (
+                  <div key={cat}>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">{cat}</span>
+                      <span className="font-medium text-slate-900">{formatMoney(monto, currency)} <span className="text-xs text-slate-400">{pct}%</span></span>
+                    </div>
+                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-full bg-slate-400" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {exps.length > 0 && (
           <div className="mt-5 overflow-x-auto border-t border-slate-100 pt-4">
             <table className="w-full text-sm">
@@ -466,6 +503,7 @@ export default async function ProjectDetailPage({
                   <th className="py-2 font-medium">Categoría</th>
                   <th className="py-2 font-medium">Fecha</th>
                   <th className="py-2 font-medium text-right">Monto</th>
+                  <th className="py-2 pl-3 font-medium text-right">Trabajo</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -478,6 +516,19 @@ export default async function ProjectDetailPage({
                     <td className="py-2 text-slate-500">{e.category ?? "—"}</td>
                     <td className="py-2 text-slate-500">{e.expense_date}</td>
                     <td className="py-2 text-right font-medium text-slate-900">{formatMoney(e.amount_minor, currency)}</td>
+                    <td className="py-2 pl-3 text-right">
+                      {/* Mover el gasto a otro trabajo: el material sobrante
+                          que termina en la siguiente obra es el caso normal. */}
+                      <form action={moveExpenseToProject} className="inline-flex items-center gap-1">
+                        <input type="hidden" name="expense_id" value={e.id} />
+                        <input type="hidden" name="redirect_to" value={back} />
+                        <select name="project_id" defaultValue={project.id} className="rounded border border-slate-200 px-1 py-0.5 text-xs text-slate-600" title="Mover este gasto a otro trabajo">
+                          {otrosTrabajos.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
+                          <option value="">— Gasto general —</option>
+                        </select>
+                        <button className="rounded border border-slate-200 px-1.5 py-0.5 text-xs text-slate-500 hover:bg-slate-50" title="Mover">↔</button>
+                      </form>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -485,6 +536,7 @@ export default async function ProjectDetailPage({
                 <tr className="border-t border-slate-200">
                   <td colSpan={3} className="py-2 text-right text-slate-500">Total gastado</td>
                   <td className="py-2 text-right font-bold text-slate-900">{formatMoney(spent, currency)}</td>
+                  <td></td>
                 </tr>
               </tfoot>
             </table>

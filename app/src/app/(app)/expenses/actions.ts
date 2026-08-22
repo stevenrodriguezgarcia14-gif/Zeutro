@@ -111,3 +111,30 @@ export async function deleteExpense(formData: FormData) {
   revalidatePath("/dashboard");
   redirect("/expenses?ok=del");
 }
+
+/**
+ * Mueve un gasto de un trabajo a otro (o lo deja como gasto general).
+ *
+ * Pasa todo el tiempo en obra: se compran materiales para una casa, sobra
+ * media paleta de cerámica y termina en la siguiente. Si el gasto se queda
+ * pegado a la obra equivocada, las dos rentabilidades quedan mal. Antes la
+ * única salida era borrar el gasto y volver a escribirlo — y si venía de un
+ * XML, ni eso, porque la clave ya estaba usada.
+ */
+export async function moveExpenseToProject(formData: FormData) {
+  const id = String(formData.get("expense_id") ?? "");
+  const nuevo = String(formData.get("project_id") ?? "") || null;
+  const redirectTo = String(formData.get("redirect_to") ?? "/expenses");
+
+  const supabase = await createClient();
+  const { data: antes } = await supabase.from("expenses").select("project_id").eq("id", id).single();
+  const { error } = await supabase.from("expenses").update({ project_id: nuevo }).eq("id", id);
+  if (error) redirect(`${redirectTo}?error=${encodeURIComponent(safeError(error))}`);
+
+  // Los dos trabajos cambian de números: del que sale y al que entra.
+  if (antes?.project_id) revalidatePath(`/projects/${antes.project_id}`);
+  if (nuevo) revalidatePath(`/projects/${nuevo}`);
+  revalidatePath("/expenses");
+  revalidatePath("/profitability");
+  redirect(redirectTo);
+}
