@@ -23,6 +23,7 @@ export async function createExpense(formData: FormData) {
   const einvoice_number = String(formData.get("einvoice_number") ?? "").trim() || null;
   const doc_path = String(formData.get("doc_path") ?? "").trim() || null;
   const doc_name = String(formData.get("doc_name") ?? "").trim() || null;
+  const doc_mime = String(formData.get("doc_mime") ?? "").trim() || "application/octet-stream";
   const redirectTo = String(formData.get("redirect_to") ?? "/expenses");
 
   if (!description) {
@@ -68,7 +69,7 @@ export async function createExpense(formData: FormData) {
       organization_id: org.id,
       name: doc_name,
       file_path: doc_path,
-      mime_type: "application/xml",
+      mime_type: doc_mime,
       entity_type: project_id ? "project" : null,
       entity_id: project_id,
       created_by: user?.id,

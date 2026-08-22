@@ -44,21 +44,39 @@ export function ExpenseForm({
   const [date, setDate] = useState(today);
 
   const [inv, setInv] = useState<CrInvoice | null>(null);
+  // Foto o PDF sin datos que leer: solo respaldo.
+  const [adjuntoSuelto, setAdjuntoSuelto] = useState(false);
   const [docPath, setDocPath] = useState("");
   const [docName, setDocName] = useState("");
+  const [docMime, setDocMime] = useState("");
   const [busy, setBusy] = useState(false);
   const [impErr, setImpErr] = useState<string | null>(null);
 
-  async function onXml(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onArchivo(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
     setImpErr(null);
     setBusy(true);
     try {
+      const esXml = /\.xml$/i.test(file.name) || /xml/i.test(file.type);
+
+      // Foto del tiquete o PDF: no hay datos que leer, pero queda el
+      // respaldo pegado al gasto. Muchas compras de obra son de contado en
+      // una ferretería chica y solo dan tiquete de papel.
+      if (!esXml) {
+        const subido = await subirArchivo(file);
+        if (!subido) {
+          setImpErr("No se pudo subir el archivo. Intentá de nuevo.");
+          return;
+        }
+        setAdjuntoSuelto(true);
+        return;
+      }
+
       const parsed = parseCrInvoiceXml(await file.text());
       if (!parsed) {
-        setImpErr("Ese archivo no parece un comprobante electrónico de Hacienda. Buscá el .xml que te llegó por correo (no el PDF).");
+        setImpErr("Ese archivo XML no parece un comprobante electrónico de Hacienda. Buscá el .xml que te llegó por correo del proveedor.");
         return;
       }
 
@@ -74,14 +92,7 @@ export function ExpenseForm({
       if (!category) setCategory("Materiales de obra");
 
       // El XML queda guardado como respaldo del gasto.
-      const supabase = createClient();
-      const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const path = `${orgId}/${Date.now()}-${safe}`;
-      const { error } = await supabase.storage.from("documents").upload(path, file);
-      if (!error) {
-        setDocPath(path);
-        setDocName(file.name);
-      }
+      await subirArchivo(file);
     } catch {
       setImpErr("No se pudo leer el archivo.");
     } finally {
@@ -89,10 +100,24 @@ export function ExpenseForm({
     }
   }
 
+  async function subirArchivo(file: File): Promise<boolean> {
+    const supabase = createClient();
+    const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${orgId}/${Date.now()}-${safe}`;
+    const { error } = await supabase.storage.from("documents").upload(path, file);
+    if (error) return false;
+    setDocPath(path);
+    setDocName(file.name);
+    setDocMime(file.type || "application/octet-stream");
+    return true;
+  }
+
   function limpiarImport() {
     setInv(null);
+    setAdjuntoSuelto(false);
     setDocPath("");
     setDocName("");
+    setDocMime("");
     setImpErr(null);
   }
 
@@ -106,24 +131,44 @@ export function ExpenseForm({
       <input type="hidden" name="einvoice_number" value={inv?.consecutivo ?? ""} />
       <input type="hidden" name="doc_path" value={docPath} />
       <input type="hidden" name="doc_name" value={docName} />
+      <input type="hidden" name="doc_mime" value={docMime} />
 
       {/* ---------- Lector del comprobante ---------- */}
       <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4">
-        {!inv ? (
+        {!inv && !adjuntoSuelto ? (
           <>
-            <p className="text-sm font-medium text-slate-700">¿Tenés el XML de la factura?</p>
+            <p className="text-sm font-medium text-slate-700">Adjuntá la factura o el recibo</p>
             <p className="mt-0.5 text-xs text-slate-500">
-              El de la ferretería, el que te llega por correo junto al PDF. Lo leo y lleno el gasto por vos.
+              Si subís el <b>XML</b> que te manda el proveedor por correo, lleno el gasto solo: proveedor, fecha, monto
+              e IVA. Si solo tenés el tiquete de papel, tomale una <b>foto</b> y queda de respaldo.
             </p>
             <label className="mt-2 inline-block cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100">
-              {busy ? "Leyendo…" : "Subir XML"}
-              <input type="file" accept=".xml,text/xml,application/xml" className="hidden" onChange={onXml} disabled={busy} />
+              {busy ? "Subiendo…" : "Subir XML, foto o PDF"}
+              <input
+                type="file"
+                accept=".xml,text/xml,application/xml,image/*,application/pdf"
+                className="hidden"
+                onChange={onArchivo}
+                disabled={busy}
+              />
             </label>
             <p className="mt-2 text-[11px] text-slate-400">
               Zentro solo lee el archivo que ya tenés. No se conecta con Hacienda ni necesita tus claves.
             </p>
           </>
-        ) : (
+        ) : adjuntoSuelto ? (
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p className="text-sm font-medium text-slate-900">📎 {docName}</p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Queda como respaldo del gasto. Escribí abajo el monto y la fecha.
+              </p>
+            </div>
+            <button type="button" onClick={limpiarImport} className="text-xs text-slate-400 hover:text-red-600">
+              Quitar
+            </button>
+          </div>
+        ) : inv ? (
           <>
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
@@ -149,10 +194,24 @@ export function ExpenseForm({
                 sirve para llevar el control del gasto, pero no como respaldo de crédito de IVA.
               </p>
             )}
+            {aNombre === true && (
+              <p className="mt-2 rounded-lg bg-emerald-50 p-2 text-xs text-emerald-800">
+                ✓ Está a nombre de tu negocio.
+              </p>
+            )}
             {aNombre === null && inv.receptorCedula == null && (
               <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-800">
                 ⚠️ Es un comprobante sin cédula de comprador. Sirve para tu control interno, pero pedí siempre la
                 factura a tu nombre si querés usarla ante Hacienda.
+              </p>
+            )}
+            {/* Sin la cédula del negocio no se puede comparar nada. Callarse
+                sería lo peor: el usuario creería que Zentro ya revisó. */}
+            {aNombre === null && inv.receptorCedula != null && (
+              <p className="mt-2 rounded-lg bg-slate-100 p-2 text-xs text-slate-600">
+                Este comprobante está a nombre de <b>{inv.receptorNombre ?? inv.receptorCedula}</b>. Para que Zentro
+                pueda avisarte cuando una factura <i>no</i> venga a tu nombre, poné la cédula de tu negocio en{" "}
+                <a href="/settings" className="font-medium underline">Configuración</a>.
               </p>
             )}
             {monedaDistinta && (
@@ -163,7 +222,7 @@ export function ExpenseForm({
             )}
             {docPath && <p className="mt-2 text-[11px] text-slate-400">El XML queda guardado como respaldo del gasto.</p>}
           </>
-        )}
+        ) : null}
         {impErr && <p className="mt-2 text-xs text-red-600">{impErr}</p>}
       </div>
 
