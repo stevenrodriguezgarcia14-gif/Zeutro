@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { formatMoney, fromMinor } from "@/lib/money";
-import { issueInvoice, registerPayment, reversePayment, setPaymentLink, voidInvoice } from "../actions";
+import { issueInvoice, registerPayment, reversePayment, setPaymentLink, voidInvoice, emailInvoice } from "../actions";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 import { LineItemsTable } from "@/components/LineItems";
 
@@ -108,6 +108,7 @@ export default async function InvoiceDetailPage({
       )}
       {ok === "void" && <p className="mt-4 rounded-lg bg-slate-100 p-3 text-sm text-slate-600">Factura anulada. Se repuso el stock de sus productos.</p>}
       {ok === "reversed" && <p className="mt-4 rounded-lg bg-slate-100 p-3 text-sm text-slate-600">Pago revertido. El saldo volvió a la factura y se deshizo el movimiento de cuenta.</p>}
+      {ok === "enviada" && <p className="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">Factura enviada a {invoice.customers?.email}. 📩</p>}
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         {invoice.status === "draft" && (
@@ -131,6 +132,34 @@ export default async function InvoiceDetailPage({
           </form>
         )}
       </div>
+
+      {invoice.status !== "draft" && invoice.status !== "void" && (
+        <details className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+          <summary className="cursor-pointer text-sm font-medium text-slate-700">📩 Enviar por correo al cliente</summary>
+          {invoice.customers?.email ? (
+            <form action={emailInvoice} className="mt-3 space-y-2">
+              <input type="hidden" name="invoice_id" value={invoice.id} />
+              <p className="text-xs text-slate-500">
+                Se envía a <b>{invoice.customers.email}</b>, a nombre de tu negocio.
+                {invoice.payment_link ? " Incluye tu link de pago." : ""}
+              </p>
+              <textarea
+                name="message"
+                rows={3}
+                placeholder="Mensaje para el cliente (opcional)."
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900"
+              />
+              <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+                Enviar factura
+              </button>
+            </form>
+          ) : (
+            <p className="mt-3 text-sm text-slate-500">
+              Este cliente no tiene correo registrado. Agrégalo en su ficha para poder enviársela desde aquí.
+            </p>
+          )}
+        </details>
+      )}
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Conceptos + totales */}

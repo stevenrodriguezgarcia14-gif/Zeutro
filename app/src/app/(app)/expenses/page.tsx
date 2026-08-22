@@ -18,7 +18,12 @@ type Row = {
   projects: { name: string } | null;
 };
 
-export default async function ExpensesPage() {
+export default async function ExpensesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ creados?: string; fallos?: string }>;
+}) {
+  const { creados, fallos } = await searchParams;
   const org = await getCurrentOrg();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
@@ -42,12 +47,26 @@ export default async function ExpensesPage() {
 
   return (
     <div>
+      {creados && (
+        <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+          <p className="font-semibold text-emerald-800">
+            Se registraron {creados} gasto(s) desde los comprobantes. 📥
+          </p>
+          {fallos && <p className="mt-1 text-sm text-amber-800">Algunos no entraron: {fallos}</p>}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Gastos</h1>
           <p className="mt-1 text-sm text-slate-500">{rows.length} gasto(s) registrado(s)</p>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            href="/expenses/import"
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Importar XML
+          </Link>
           {/* Descarga CSV servida por un route handler: <a> es correcto (Link haría prefetch del archivo). */}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a

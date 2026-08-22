@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { toMinor } from "@/lib/money";
 import { decrementStockForInvoice } from "@/lib/stock";
+import { sendMail } from "@/lib/email";
+import { renderDocumentEmail } from "@/lib/docEmail";
 
 type LineInput = {
   product_id?: string | null;
@@ -202,4 +204,58 @@ export async function reversePayment(formData: FormData) {
   revalidatePath("/collections");
   revalidatePath("/accounts");
   redirect(`/invoices/${invoice_id}?ok=reversed`);
+}
+
+/**
+ * Envía la factura al correo del cliente, a nombre del negocio.
+ *
+ * Es un documento de cobro, no un comprobante fiscal: el correo lo deja
+ * claro igual que el PDF, y si hay link de pago lo incluye como botón.
+ */
+export async function emailInvoice(formData: FormData) {
+  const id = String(formData.get("invoice_id") ?? "");
+  const message = String(formData.get("message") ?? "").trim() || null;
+  const org = await getCurrentOrg();
+  if (!org) redirect("/onboarding");
+  const supabase = await createClient();
+
+  const [{ data: inv }, { data: items }] = await Promise.all([
+    supabase.from("invoices").select("*, customers(legal_name, email)").eq("id", id).single(),
+    supabase.from("invoice_items").select("*").eq("invoice_id", id).order("position").order("created_at"),
+  ]);
+  if (!inv) redirect("/invoices");
+  if (inv.status === "draft") {
+    redirect(`/invoices/${id}?error=${encodeURIComponent("Emite la factura antes de enviarla.")}`);
+  }
+
+  const cliente = inv.customers as unknown as { legal_name: string; email: string | null } | null;
+  if (!cliente?.email) {
+    redirect(`/invoices/${id}?error=${encodeURIComponent("Ese cliente no tiene correo. Agrégalo en su ficha y vuelve a intentarlo.")}`);
+  }
+
+  const { subject, html } = renderDocumentEmail({
+    kind: "invoice",
+    orgName: org.name,
+    orgLegalName: org.legal_name,
+    orgTaxId: org.tax_id,
+    customerName: cliente.legal_name,
+    number: inv.number,
+    issueDate: inv.issue_date,
+    dueDate: inv.due_date,
+    currency: inv.currency,
+    subtotalMinor: inv.subtotal_minor,
+    taxMinor: inv.tax_minor,
+    totalMinor: inv.total_minor,
+    items: items ?? [],
+    notes: inv.notes,
+    message,
+    paymentLink: inv.payment_link,
+  });
+
+  const enviado = await sendMail(cliente.email, subject, html);
+  if (!enviado) {
+    redirect(`/invoices/${id}?error=${encodeURIComponent("No se pudo enviar el correo. Revisa la dirección o inténtalo de nuevo.")}`);
+  }
+  revalidatePath(`/invoices/${id}`);
+  redirect(`/invoices/${id}?ok=enviada`);
 }

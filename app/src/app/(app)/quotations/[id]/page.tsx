@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { formatMoney } from "@/lib/money";
-import { setQuotationStatus, convertToInvoice, createProjectFromQuotation } from "../actions";
+import { setQuotationStatus, convertToInvoice, createProjectFromQuotation, emailQuotation, duplicateQuotation } from "../actions";
 import { LineItemsTable } from "@/components/LineItems";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -30,10 +30,10 @@ export default async function QuotationDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; ok?: string }>;
 }) {
   const { id } = await params;
-  const { error } = await searchParams;
+  const { error, ok } = await searchParams;
   const org = await getCurrentOrg();
   const currency = org?.base_currency ?? "MXN";
   const supabase = await createClient();
@@ -44,7 +44,7 @@ export default async function QuotationDetailPage({
       // El embed nombra la llave a proposito: con dos relaciones entre
       // quotations y projects, PostgREST no podia decidir cual usar y la
       // consulta fallaba -> notFound() -> 404 en la ficha (ver 0046).
-      .select("*, customers(legal_name), projects!quotations_project_id_fkey(id, name)")
+      .select("*, customers(legal_name, email), projects!quotations_project_id_fkey(id, name)")
       .eq("id", id)
       .single(),
     supabase.from("quotation_items").select("*").eq("quotation_id", id).order("position").order("created_at"),
@@ -52,6 +52,7 @@ export default async function QuotationDetailPage({
   if (!q) notFound();
 
   const project = (q.projects as unknown as { id: string; name: string } | null) ?? null;
+  const correoCliente = (q.customers as unknown as { email: string | null } | null)?.email ?? null;
   // Costeo privado: el margen se mide contra el subtotal, no contra el total.
   // El IVA que cobras no es tuyo.
   const cost = (q.cost_minor as number | null) ?? 0;
@@ -85,6 +86,11 @@ export default async function QuotationDetailPage({
       </div>
 
       {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {ok === "enviada" && (
+        <p className="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">
+          Cotización enviada a {correoCliente}. 📩
+        </p>
+      )}
 
       <div className="mt-4 flex flex-wrap gap-2">
         {q.status === "draft" && <StatusButton id={q.id} status="sent" label="Marcar como enviada" />}
@@ -105,6 +111,12 @@ export default async function QuotationDetailPage({
         {q.status === "converted" && q.invoice_id && (
           <Link href={`/invoices/${q.invoice_id}`} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Ver factura generada →</Link>
         )}
+        <form action={duplicateQuotation}>
+          <input type="hidden" name="quotation_id" value={q.id} />
+          <button className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50" title="Crea un borrador igual para ajustarlo">
+            Duplicar
+          </button>
+        </form>
         {/* Abrir el trabajo: solo cuando el cliente ya dijo que sí y la
             cotización no pertenece todavía a ningún trabajo. */}
         {!project && ["accepted", "converted"].includes(q.status) && (
@@ -116,6 +128,31 @@ export default async function QuotationDetailPage({
           </form>
         )}
       </div>
+
+      <details className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+        <summary className="cursor-pointer text-sm font-medium text-slate-700">📩 Enviar por correo al cliente</summary>
+        {correoCliente ? (
+          <form action={emailQuotation} className="mt-3 space-y-2">
+            <input type="hidden" name="quotation_id" value={q.id} />
+            <p className="text-xs text-slate-500">
+              Se envía a <b>{correoCliente}</b>, a nombre de tu negocio, con el detalle y las condiciones.
+            </p>
+            <textarea
+              name="message"
+              rows={3}
+              placeholder="Mensaje para el cliente (opcional). Ej. Buenas, le adjunto el presupuesto de la remodelación. Cualquier consulta me avisa."
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900"
+            />
+            <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+              Enviar cotización
+            </button>
+          </form>
+        ) : (
+          <p className="mt-3 text-sm text-slate-500">
+            Este cliente no tiene correo registrado. Agrégalo en su ficha para poder enviársela desde aquí.
+          </p>
+        )}
+      </details>
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
         <LineItemsTable items={items ?? []} currency={currency} />

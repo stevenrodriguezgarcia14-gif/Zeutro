@@ -8,6 +8,8 @@ import { getCurrentOrg, getOrgToday } from "@/lib/org";
 import { addDays } from "@/lib/weeks";
 import { toMinor } from "@/lib/money";
 import { decrementStockForInvoice } from "@/lib/stock";
+import { sendMail } from "@/lib/email";
+import { renderDocumentEmail } from "@/lib/docEmail";
 
 type LineInput = {
   product_id?: string | null;
@@ -231,4 +233,139 @@ export async function createProjectFromQuotation(formData: FormData) {
   revalidatePath("/projects");
   revalidatePath("/quotations");
   redirect(`/projects/${project.id}`);
+}
+
+/**
+ * Envía la cotización al correo del cliente, a nombre del negocio.
+ *
+ * Antes había que descargar el PDF y mandarlo por fuera. El correo lleva el
+ * detalle completo (con partidas, si las tiene) y las condiciones, que es
+ * justo lo que evita discusiones después.
+ */
+export async function emailQuotation(formData: FormData) {
+  const id = String(formData.get("quotation_id") ?? "");
+  const message = String(formData.get("message") ?? "").trim() || null;
+  const org = await getCurrentOrg();
+  if (!org) redirect("/onboarding");
+  const supabase = await createClient();
+
+  const [{ data: q }, { data: items }] = await Promise.all([
+    supabase.from("quotations").select("*, customers(legal_name, email)").eq("id", id).single(),
+    supabase.from("quotation_items").select("*").eq("quotation_id", id).order("position").order("created_at"),
+  ]);
+  if (!q) redirect("/quotations");
+
+  const cliente = q.customers as unknown as { legal_name: string; email: string | null } | null;
+  if (!cliente?.email) {
+    redirect(`/quotations/${id}?error=${encodeURIComponent("Ese cliente no tiene correo. Agrégalo en su ficha y vuelve a intentarlo.")}`);
+  }
+
+  const { subject, html } = renderDocumentEmail({
+    kind: "quotation",
+    orgName: org.name,
+    orgLegalName: org.legal_name,
+    orgTaxId: org.tax_id,
+    customerName: cliente.legal_name,
+    number: q.number,
+    issueDate: q.issue_date,
+    dueDate: q.valid_until,
+    currency: q.currency,
+    subtotalMinor: q.subtotal_minor,
+    taxMinor: q.tax_minor,
+    totalMinor: q.total_minor,
+    items: items ?? [],
+    notes: q.notes,
+    message,
+  });
+
+  const enviado = await sendMail(cliente.email, subject, html);
+  if (!enviado) {
+    redirect(`/quotations/${id}?error=${encodeURIComponent("No se pudo enviar el correo. Revisa la dirección o inténtalo de nuevo.")}`);
+  }
+
+  // Si seguía en borrador, mandarla la deja "enviada": es lo que acaba de pasar.
+  if (q.status === "draft") {
+    await supabase.from("quotations").update({ status: "sent" }).eq("id", id);
+  }
+  revalidatePath(`/quotations/${id}`);
+  revalidatePath("/quotations");
+  redirect(`/quotations/${id}?ok=enviada`);
+}
+
+/**
+ * Copia una cotización en un borrador nuevo.
+ *
+ * En trabajos por encargo la mayoría de presupuestos se parecen entre sí.
+ * Duplicar y ajustar es la diferencia entre diez minutos y una hora, sobre
+ * todo con presupuestos largos por partidas.
+ */
+export async function duplicateQuotation(formData: FormData) {
+  const id = String(formData.get("quotation_id") ?? "");
+  const org = await getCurrentOrg();
+  if (!org) redirect("/onboarding");
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const [{ data: q }, { data: items }] = await Promise.all([
+    supabase.from("quotations").select("*").eq("id", id).single(),
+    supabase.from("quotation_items").select("*").eq("quotation_id", id).order("position").order("created_at"),
+  ]);
+  if (!q) redirect("/quotations");
+
+  const { count } = await supabase.from("quotations").select("*", { count: "exact", head: true });
+  const { data: number, error: numErr } = await supabase.rpc("next_doc_number", {
+    p_org: org.id, p_type: "quotation", p_prefix: "C-", p_seed: count ?? 0,
+  });
+  if (numErr || !number) {
+    redirect(`/quotations/${id}?error=${encodeURIComponent(safeError(numErr, "No se pudo generar el folio."))}`);
+  }
+
+  const hoy = await getOrgToday();
+  const { data: copia, error } = await supabase
+    .from("quotations")
+    .insert({
+      organization_id: org.id,
+      customer_id: q.customer_id,
+      number,
+      currency: q.currency,
+      issue_date: hoy,
+      valid_until: addDays(hoy, 15),
+      // Nace en borrador y SIN trabajo ni factura: es una cotización nueva,
+      // no un duplicado de la anterior con su historia.
+      status: "draft",
+      subtotal_minor: q.subtotal_minor,
+      tax_minor: q.tax_minor,
+      total_minor: q.total_minor,
+      notes: q.notes,
+      cost_materials_minor: q.cost_materials_minor ?? 0,
+      cost_labor_minor: q.cost_labor_minor ?? 0,
+      cost_subcontract_minor: q.cost_subcontract_minor ?? 0,
+      cost_other_minor: q.cost_other_minor ?? 0,
+      created_by: user?.id,
+    })
+    .select("id").single();
+  if (error || !copia) {
+    redirect(`/quotations/${id}?error=${encodeURIComponent(safeError(error, "No se pudo duplicar."))}`);
+  }
+
+  if (items && items.length > 0) {
+    await supabase.from("quotation_items").insert(
+      items.map((it, i) => ({
+        organization_id: org.id,
+        quotation_id: copia.id,
+        product_id: it.product_id,
+        section: it.section ?? null,
+        unit: it.unit ?? null,
+        position: it.position ?? i,
+        description: it.description,
+        quantity: it.quantity,
+        unit_price_minor: it.unit_price_minor,
+        tax_rate_bps: it.tax_rate_bps,
+        line_total_minor: it.line_total_minor,
+      })),
+    );
+  }
+
+  revalidatePath("/quotations");
+  redirect(`/quotations/${copia.id}`);
 }
