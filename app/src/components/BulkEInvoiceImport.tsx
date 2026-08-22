@@ -182,7 +182,7 @@ export function BulkEInvoiceImport({
           <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4">
             <div>
               <label className="block text-xs font-medium text-slate-600">Asignar todo al trabajo</label>
-              <select value={obraTodas} onChange={(e) => aplicarATodas("projectId", e.target.value)} className={`mt-1 ${cell}`}>
+              <select name="bulk_project" value={obraTodas} onChange={(e) => aplicarATodas("projectId", e.target.value)} className={`mt-1 ${cell}`}>
                 <option value="">— Sin trabajo —</option>
                 {projects.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
               </select>
