@@ -217,7 +217,6 @@ export async function createProjectFromQuotation(formData: FormData) {
       status: "active",
       start_date: q.issue_date,
       budget_amount_minor: cost > 0 ? cost : null,
-      quotation_id: q.id,
       created_by: user?.id,
     })
     .select("id").single();

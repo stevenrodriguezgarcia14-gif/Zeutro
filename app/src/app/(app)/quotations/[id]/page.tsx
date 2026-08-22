@@ -39,7 +39,14 @@ export default async function QuotationDetailPage({
   const supabase = await createClient();
 
   const [{ data: q }, { data: items }] = await Promise.all([
-    supabase.from("quotations").select("*, customers(legal_name), projects(id, name)").eq("id", id).single(),
+    supabase
+      .from("quotations")
+      // El embed nombra la llave a proposito: con dos relaciones entre
+      // quotations y projects, PostgREST no podia decidir cual usar y la
+      // consulta fallaba -> notFound() -> 404 en la ficha (ver 0046).
+      .select("*, customers(legal_name), projects!quotations_project_id_fkey(id, name)")
+      .eq("id", id)
+      .single(),
     supabase.from("quotation_items").select("*").eq("quotation_id", id).order("position").order("created_at"),
   ]);
   if (!q) notFound();
