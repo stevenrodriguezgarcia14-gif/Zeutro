@@ -421,7 +421,15 @@ export default async function ProjectDetailPage({
 
       {/* ---------------- Gastos ---------------- */}
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
-        <h2 className="font-semibold text-slate-900">Gastos del trabajo</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-semibold text-slate-900">Gastos del trabajo</h2>
+          <Link
+            href={`/expenses/new?project=${project.id}`}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Importar XML de factura
+          </Link>
+        </div>
         <p className="mt-1 text-xs text-slate-400">
           Materiales, mano de obra, subcontratos, acarreos. Todo lo que registres aquí se descuenta de la ganancia de
           este trabajo (y solo de este).

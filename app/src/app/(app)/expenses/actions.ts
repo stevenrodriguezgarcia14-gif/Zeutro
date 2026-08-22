@@ -18,6 +18,11 @@ export async function createExpense(formData: FormData) {
   const account_id = String(formData.get("account_id") ?? "") || null;
   const is_deductible = formData.get("is_deductible") === "on";
   const project_id = String(formData.get("project_id") ?? "") || null;
+  // Datos del comprobante electronico, si el gasto se importo de un XML.
+  const einvoice_key = String(formData.get("einvoice_key") ?? "").trim() || null;
+  const einvoice_number = String(formData.get("einvoice_number") ?? "").trim() || null;
+  const doc_path = String(formData.get("doc_path") ?? "").trim() || null;
+  const doc_name = String(formData.get("doc_name") ?? "").trim() || null;
   const redirectTo = String(formData.get("redirect_to") ?? "/expenses");
 
   if (!description) {
@@ -46,10 +51,29 @@ export async function createExpense(formData: FormData) {
     p_account_id: account_id,
     p_is_deductible: is_deductible,
     p_project_id: project_id,
+    p_einvoice_key: einvoice_key,
+    p_einvoice_number: einvoice_number,
   });
 
   if (error) {
     redirect(`/expenses/new?error=${encodeURIComponent(safeError(error))}`);
+  }
+
+  // El XML del comprobante queda como respaldo, pegado al trabajo si lo hay.
+  // Va despues del gasto a proposito: si el gasto se rechaza (por ejemplo
+  // por comprobante duplicado) no se guarda un documento suelto.
+  if (doc_path && doc_name) {
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.from("documents").insert({
+      organization_id: org.id,
+      name: doc_name,
+      file_path: doc_path,
+      mime_type: "application/xml",
+      entity_type: project_id ? "project" : null,
+      entity_id: project_id,
+      created_by: user?.id,
+    });
+    revalidatePath("/documents");
   }
 
   revalidatePath("/expenses");
